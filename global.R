@@ -1,6 +1,5 @@
 #==============================================================
-# Application to edit data for individual beaches in shellfish
-# database
+# Application to edit data for spawning_ground database
 #
 # Notes:
 #  1. Update portion now works with pool.
@@ -10,13 +9,18 @@
 #     Must be something weird with dbplyr and pool. Each row
 #     of the datatable held all rows.
 #  3. dbplyr does not recognize geometry columns. Need standard
-#     text query. Can use odbc package and pull out lat lons.
+#     text query. Can use odbc package + sf and pull out lat lons.
 #
 # ToDo:
 #  1. Add animation to buttons as in dt_editor example.
 #  2. Add validate and need functions to eliminate crashes
 #  3. Make sure users are set up with permissions and dsn's.
-#  4. For a real application need to verify deletions are allowed.
+#  4. Need to verify deletions are allowed.
+#  5. Create data entry screens in bs_accordiane windows
+#     https://github.com/ijlyttle/bsplus
+#  6. Allow map modal to be resizable and draggable.
+#     Try the shinyjqui package:
+#     https://github.com/nanxstats/awesome-shiny-extensions
 #
 # AS 2019-05-15
 #==============================================================
@@ -35,12 +39,14 @@ library(DT)
 library(tibble)
 library(bsplus)
 library(leaflet)
+library(sf)
 
 # Keep connections pane from opening
 options("connectionObserver" = NULL)
 
 # Read .rds data
 wria_list = readRDS("www/wria_list.rds")
+wria_polys = readRDS("www/wria_polys.rds")
 
 # Define globals ================================================================
 
@@ -70,14 +76,6 @@ get_streams = function(pool, chosen_wria) {
     filter(wria_name %in% chosen_wria)
   return(streams_st)
 }
-
-# Pull out values for drop-down
-wria_list = wria_st %>%
-  select(wria_code, wria_name) %>%
-  st_drop_geometry() %>%
-  arrange(as.integer(wria_code)) %>%
-  mutate(wria_name = paste0(wria_code, " ", wria_name)) %>%
-  select(wria_name)
 
 # Define function to get all trips
 get_trips = function() {

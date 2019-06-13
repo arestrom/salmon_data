@@ -79,7 +79,7 @@ shinyServer(function(input, output, session) {
                    size = 'l',
                    title = NULL,
                    fluidPage (
-                     leafletOutput("stream_map", height = "800px")
+                     leafletOutput("stream_map", height = "700px")
                    ),
                    easyClose = TRUE,
                    footer = NULL
