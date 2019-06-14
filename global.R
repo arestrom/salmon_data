@@ -21,6 +21,8 @@
 #  6. Allow map modal to be resizable and draggable.
 #     Try the shinyjqui package:
 #     https://github.com/nanxstats/awesome-shiny-extensions
+#  7. Need screens to allow entry and edit of RMs and encounters
+#     Start with RMs. Use MapEdit.
 #
 # AS 2019-05-15
 #==============================================================
@@ -77,11 +79,17 @@ get_streams = function(pool, chosen_wria) {
   return(streams_st)
 }
 
-# Define function to get all trips
-get_trips = function() {
-  # Get trip-level data
-  trips = pool %>% tbl("survey") %>%
-    select(survey_id, start_location_id, end_location_id, data_review_status_id,
+# Define function to get survey data for given stream
+# Currently there are no missing river miles for survey end points...keep it that way with rules !!!
+get_surveys = function(pool, waterbody) {
+  qry = glue("select s.survey_id, s.survey_datetime, ds.data_source_name, ",
+             "du.data_source_unit_unit as data_source_unit, ",
+             "sm.survey_method_description = survey_method, ",
+             "dr.data_review_status_description = data_review_status, ",
+             "")
+  surveys = pool %>% tbl("survey") %>%
+    select(survey_id, survey_datetime, data_source_id, data_source_unit_id,
+           survey_method_id, start_location_id, end_location_id, data_review_status_id,
            trip_start_time = start_datetime, trip_end_time = end_datetime,
            trip_comment = comment_text, trip_created_dt = created_datetime,
            trip_created_by = created_by, trip_modified_dt = modified_datetime,

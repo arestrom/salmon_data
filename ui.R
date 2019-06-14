@@ -62,7 +62,7 @@ shinyUI(navbarPage(theme = shinytheme("sandstone"),
                                         bs_collapse(
                                           id = "header",
                                           content = tags$div(
-                                            actionButton(inputId = "toggle_sidebar", label = "Filters", class = "select_button"),
+                                            actionButton(inputId = "toggle_sidebar", label = "Toggle sidebar", class = "select_button"),
                                             actionButton(inputId = "header_add", label = "New", class = "new_button"),
                                             actionButton(inputId = "header_edit", label = "Edit", class = "edit_button"),
                                             actionButton(inputId = "header_delete", label = "Delete", class = "delete_button"),
