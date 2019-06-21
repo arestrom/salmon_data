@@ -10,27 +10,34 @@
 #     of the datatable held all rows.
 #  3. dbplyr does not recognize geometry columns. Need standard
 #     text query. Can use odbc package + sf and pull out lat lons.
+#  4. For posible use with bs_accordion:
+#     https://stackoverflow.com/questions/53642157/shiny-how-to-detect-which-accordion-elements-is-selected/53649246
 #
 # ToDo:
 #  1. Add animation to buttons as in dt_editor example.
 #  2. Add validate and need functions to eliminate crashes
 #  3. Make sure users are set up with permissions and dsn's.
 #  4. Need to verify deletions are allowed.
-#  5. Create data entry screens in bs_accordiane windows
-#     https://github.com/ijlyttle/bsplus
+#  5. Change surveys query to use in (year_select). Need year reactive.
 #  6. Allow map modal to be resizable and draggable.
 #     Try the shinyjqui package:
 #     https://github.com/nanxstats/awesome-shiny-extensions
 #  7. Need screens to allow entry and edit of RMs and encounters
 #     Start with RMs. Use MapEdit.
+#  8. Get rid of rownumber in DT output
+#  9. Trim names in DT output to absolute minimum.
+# 10. Format to bare times and dates where possible.
+# 11. Change data_source_name to code...DONE !!
+# 12. Get rid of white border around map-button.
 #
 # AS 2019-05-15
 #==============================================================
 
 # Load libraries
 library(shiny)
-library(shinythemes)
-library(shinyjs)
+library(shinydashboard)
+library(shinydashboardPlus)
+#library(shinyjs)
 library(odbc)
 library(glue)
 library(tibble)
@@ -39,9 +46,9 @@ library(pool)
 library(dplyr)
 library(DT)
 library(tibble)
-library(bsplus)
 library(leaflet)
 library(sf)
+library(lubridate)
 
 # Keep connections pane from opening
 options("connectionObserver" = NULL)
@@ -49,6 +56,12 @@ options("connectionObserver" = NULL)
 # Read .rds data
 wria_list = readRDS("www/wria_list.rds")
 wria_polys = readRDS("www/wria_polys.rds")
+
+# Read content definitions of data-entry screens
+source("header_data_content.R")
+source("dash_header.R")
+source("dash_rightsidebar.R")
+source("dash_leftsidebar.R")
 
 # Define globals ================================================================
 
@@ -74,56 +87,57 @@ get_streams = function(pool, chosen_wria) {
              "inner join stream as st on wb.waterbody_id = st.waterbody_id ",
              "inner join wria_lut as wr on st_intersects(st.geom, wr.geom)")
   streams_st = pool %>%
-    st_read(query = qry) %>%
+    sf::st_read(query = qry) %>%
     filter(wria_name %in% chosen_wria)
   return(streams_st)
 }
 
-# Define function to get survey data for given stream
-# Currently there are no missing river miles for survey end points...keep it that way with rules !!!
-get_surveys = function(pool, waterbody) {
-  qry = glue("select s.survey_id, s.survey_datetime, ds.data_source_name, ",
-             "du.data_source_unit_unit as data_source_unit, ",
-             "sm.survey_method_description = survey_method, ",
-             "dr.data_review_status_description = data_review_status, ",
-             "")
-  surveys = pool %>% tbl("survey") %>%
-    select(survey_id, survey_datetime, data_source_id, data_source_unit_id,
-           survey_method_id, start_location_id, end_location_id, data_review_status_id,
-           trip_start_time = start_datetime, trip_end_time = end_datetime,
-           trip_comment = comment_text, trip_created_dt = created_datetime,
-           trip_created_by = created_by, trip_modified_dt = modified_datetime,
-           trip_modified_by = modified_by)
-  # Join trip-level lut values
-  trip_locations = pool %>%  tbl("point_location") %>%
-    select(point_location_id, location_type_id, location_name, location_description)
-  location_type_lut = pool %>% tbl("location_type_lut") %>%
-    select(location_type_id, location_type_description)
-  trip_locations = trip_locations %>%
-    left_join(location_type_lut, by = "location_type_id") %>%
-    filter(location_type_description == "Survey location")
-  start_locations = trip_locations %>%
-    select(start_location_id = point_location_id, start_name = location_name,
-           start_description = location_description)
-  end_locations = trip_locations %>%
-    select(end_location_id = point_location_id, end_name = location_name,
-           end_description = location_description)
-  # Join data_review values
-  data_review_lut = pool %>% tbl("data_review_status_lut") %>%
-    select(data_review_status_id, data_review_status_description)
-  trips = trips %>%
-    left_join(start_locations, by = "start_location_id") %>%
-    left_join(end_locations, by = "end_location_id") %>%
-    left_join(data_review_lut, by = "data_review_status_id") %>%
-    collect()
-  return(trips)
+# Function to get header data...just use multiselect for year
+get_surveys = function(pool, waterbody_id, survey_year) {
+  qry = glue("select s.survey_id, s.survey_datetime as survey_date, ds.data_source_name, ",
+             "ds.data_source_code, du.data_source_unit_name as data_source_unit, ",
+             "sm.survey_method_description as survey_method, ",
+             "dr.data_review_status_description as data_review_status, ",
+             "plu.river_mile_measure as upper_rm, ",
+             "pll.river_mile_measure as lower_rm, ",
+             "plu.point_location_id as upper_location_id, ",
+             "pll.point_location_id as lower_location_id, ",
+             "sct.completion_status_description as completion_status, ",
+             "ics.incomplete_survey_description as incomplete_type, ",
+             "s.survey_start_datetime as start_time, ",
+             "s.survey_end_datetime as end_time, ",
+             "s.observer_last_name as observer, ",
+             "s.data_submitter_last_name as submitter, ",
+             "s.created_datetime as created_date, ",
+             "s.created_by, s.modified_datetime as modified_date, ",
+             "s.modified_by ",
+             "from survey as s ",
+             "inner join data_source_lut as ds on s.data_source_id = ds.data_source_id ",
+             "inner join data_source_unit_lut as du on s.data_source_unit_id = du.data_source_unit_id ",
+             "inner join survey_method_lut as sm on s.survey_method_id = sm.survey_method_id ",
+             "inner join data_review_status_lut as dr on s.data_review_status_id = dr.data_review_status_id ",
+             "inner join point_location as plu on s.upper_end_point_id = plu.point_location_id ",
+             "inner join point_location as pll on s.lower_end_point_id = pll.point_location_id ",
+             "left join survey_completion_status_lut as sct on s.survey_completion_status_id = sct.survey_completion_status_id ",
+             "inner join incomplete_survey_type_lut as ics on s.incomplete_survey_type_id = ics.incomplete_survey_type_id ",
+             "where date_part('year', survey_datetime) = {survey_year} ",
+             "and (plu.waterbody_id = '{waterbody}' or pll.waterbody_id = '{waterbody}')")
+  surveys = DBI::dbGetQuery(pool, qry)
+  surveys = surveys %>%
+    mutate(survey_id = tolower(survey_id)) %>%
+    mutate(upper_location_id = tolower(upper_location_id)) %>%
+    mutate(lower_location_id = tolower(lower_location_id)) %>%
+    mutate(survey_date = with_tz(survey_date, tzone = "America/Los_Angeles")) %>%
+    mutate(start_time = with_tz(start_time, tzone = "America/Los_Angeles")) %>%
+    mutate(end_time = with_tz(end_time, tzone = "America/Los_Angeles")) %>%
+    mutate(created_date = with_tz(created_date, tzone = "America/Los_Angeles")) %>%
+    mutate(modified_date = with_tz(modified_date, tzone = "America/Los_Angeles")) %>%
+    arrange(survey_date, start_time)
+  return(surveys)
 }
 
-# # Get trips
-# trips = get_trips()
-
 #=========================================================================
-# Cant do locations inside database, geometry column is lost
+# Cant get coordinates using dbplyr, geometry column is lost..
 #=========================================================================
 
 # Function to get trip locations

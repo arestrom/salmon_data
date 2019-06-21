@@ -1,9 +1,5 @@
 # Create the Shiny server
-shinyServer(function(input, output, session) {
-
-  observeEvent(input$toggle_sidebar, {
-    shinyjs::toggle(id = "Sidebar")
-  })
+server = function(input, output, session) {
 
   # Get streams in wria
   wria_streams = reactive({
@@ -110,40 +106,55 @@ shinyServer(function(input, output, session) {
                          selected = updated_stream[1])
   })
 
-  # Filter to selected beach
-  chosen_stream = reactive({
+  # Filter to selected stream
+  waterbody_id = reactive({
     req(input$stream_select)
-    stream_data %>%
-      filter(stream_name == input$stream_select) %>%
-      select(waterbody_id, stream_name)
+    stream_data = wria_streams() %>%
+      st_drop_geometry() %>%
+      filter(stream_label == input$stream_select) %>%
+      select(waterbody_id) %>%
+      distinct() %>%
+      pull(waterbody_id)
   })
 
-  # # Primary DT datatable for database
-  # output$beaches = renderDT({
-  #   beaches_title = glue("All beaches")
-  #   beaches = get_beaches()[,2:12]
-  #   # Generate table
-  #   datatable(beaches,
-  #             selection = list(mode = 'single'),
-  #             extensions = 'Buttons',
-  #             options = list(dom = 'Blftp',
-  #                            pageLength = 10,
-  #                            lengthMenu = c(5, 10, 20, 40, 60, 100, 500, 5000),
-  #                            scrollX = T,
-  #                            buttons = c('excel', 'print'),
-  #                            initComplete = JS(
-  #                              "function(settings, json) {",
-  #                              "$(this.api().table().header()).css({'background-color': '#9eb3d6'});",
-  #                              "}")),
-  #             caption = htmltools::tags$caption(
-  #               style = 'caption-side: top; text-align: left; color: black;',
-  #               'Table 2: ', htmltools::em(htmltools::strong(beaches_title)))) %>%
-  #     formatDate(c("created_dt", "modified_dt"), "toLocaleString")
-  # })
-  #
-  # # Create beaches DT proxy object
-  # dt_proxy = dataTableProxy("beaches")
-  #
+  # Get surveys for dt
+  dt_surveys = reactive({
+    surveys = get_surveys(pool, waterbody_id(), input$year_select) %>%
+      mutate(survey_date = as.Date(survey_date)) %>%
+      select(survey_id, survey_dt = survey_date, up_rm = upper_rm,
+             lo_rm = lower_rm, start_time, end_time, observer, submitter,
+             data_source = data_source_code, data_review = data_review_status,
+             completion = completion_status, created_dt = created_date,
+             created_by, modified_dt = modified_date, modified_by)
+  })
+
+  # Primary DT datatable for database
+  output$surveys = renderDT({
+    survey_title = glue("Surveys for {input$stream_select}")
+    surveys = dt_surveys()[,2:15]
+    # Generate table
+    datatable(surveys,
+              selection = list(mode = 'single'),
+              extensions = 'Buttons',
+              options = list(dom = 'Blftp',
+                             pageLength = 5,
+                             lengthMenu = c(5, 10, 20, 40, 60, 100, 500),
+                             scrollX = T,
+                             buttons = c('excel', 'print'),
+                             initComplete = JS(
+                               "function(settings, json) {",
+                               "$(this.api().table().header()).css({'background-color': '#9eb3d6'});",
+                               "}")),
+              caption = htmltools::tags$caption(
+                style = 'caption-side: top; text-align: left; color: black;',
+                'Table 2: ', htmltools::em(htmltools::strong(survey_title)))) %>%
+      formatDate(c("survey_dt", "start_time", "end_time", "created_dt", "modified_dt"),
+                 "toLocaleString")
+  })
+
+  # Create beaches DT proxy object
+  dt_proxy = dataTableProxy("surveys")
+
   # #========================================================
   # # Update select inputs to values in selected row
   # #========================================================
@@ -459,4 +470,4 @@ shinyServer(function(input, output, session) {
   #   q("no")
   # })
 
-})
+}

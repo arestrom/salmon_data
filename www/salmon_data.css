@@ -1,8 +1,25 @@
-.container-fluid {
-  width: 90%;
-  font-size: 11px;
-  line-height: 0.9;
+/*
+.skin-blue .main-header .navbar {
+  background-color: #3e3f3a;
 }
+
+.skin-blue .main-header .logo {
+  background-color: #3e3f3a;
+}
+
+.skin-blue .main-header .logo:hover {
+  background-color: #3e3f3a;
+}
+
+
+.skin-blue .left-side, .skin-blue .main-sidebar, .skin-blue .wrapper {
+    background-color: #f8f5f0;
+}
+
+.content-wrapper, .right-side {
+    background-color: #ffffff;
+}
+*/
 
 .shiny-output-error-validation {
   color: #1c3e75;
@@ -10,117 +27,62 @@
   font-size: 1.18em;
 }
 
-#show_map_select .btn-primary {
-  font-size: 9px;
-  font-weight: 300;
-  line-height: 1.1;
-  text-align: center;
-  width: 100%;
-  display: flex; align-items: center; justify-content: center;
-}
-
-#show_header_input .btn-primary {
-  font-size: 9px;
-  font-weight: 300;
-  line-height: 1.1;
-  text-align: center;
-  width: 100%;
-  display: flex; align-items: center; justify-content: center;
-}
-
-#show_species_input .btn-primary {
-  font-size: 9px;
-  font-weight: 300;
-  line-height: 1.1;
-  text-align: center;
-  width: 100%;
-  display: flex; align-items: center; justify-content: center;
-}
-
-#toggle_sidebar {
-  color: #e6ebef;
-  background-color:#325D88;
-  font-size: 9px;
-  font-weight: 300;
-  line-height: 1.1;
-}
-
-#toggle_sidebar, .space-right {
-  margin-right: 0px;
-}
-
 #sthd_image {
   display:inline-block;
   text-align: center;
 }
 
-#filter_text {
-  text-align: center;
-  font-size: 1.4em;
-  font-weight: bold;
-  color: #163463;
-}
-
 #wria_text {
   text-align: center;
-  font-size: 1.2em;
+  font-size: 0.9em;
   font-weight: bold;
 }
 
 #show_map_stream {
   color: #e6ebef;
   background-color:#4d1566;
-  font-size: 9px;
+  font-size: 12px;
   font-weight: 300;
-  line-height: 1.1;
+  line-height: 1.5;
 }
 
 #year_text {
   text-align: center;
-  font-size: 1.2em;
+  font-size: 0.9em;
   font-weight: bold;
-}
-
-#year_type {
-  position: relative;
-  padding-left: 20px;
-  margin-bottom: 0;
-  font-weight: 400;
-  font-size: 14px;
-  line-height: 1.42857143;
-  vertical-align: middle;
-  display: flex; align-items: center; justify-content: center;
-  cursor: pointer;
 }
 
 #header_add {
   color: #e6ebef;
   background-color:#231651;
-  font-size: 9px;
+  font-size: 11px;
   font-weight: 300;
-  line-height: 1.1;
+  line-height: 1.3;
 }
 
 #header_edit {
   color: #e6ebef;
   background-color:#4d1566;
-  font-size: 9px;
+  font-size: 11px;
   font-weight: 300;
-  line-height: 1.1;
+  line-height: 1.3;
 }
 
 #header_delete {
   color: #e6ebef;
   background-color:#590b25;
-  font-size: 9px;
+  font-size: 11px;
   font-weight: 300;
-  line-height: 1.1;
+  line-height: 1.3;
 }
 
 .shiny-input-container {
   display: inline-block;
   vertical-align:top;
+  min-height: 28px;
   height: 28px;
+  font-size: 12px;
+  line-height: 1.0;
 }
 
 .container-fluid {
@@ -135,9 +97,14 @@
 .selectize-input {
   min-height: 28px;
   height: 28px;
-  padding-top: 3px;
-  padding-bottom: 0;
-  margin-bottom: 0;
+  vertical-align: middle;
+  padding-top: 3px;   /* keep: This does the trick in centering vertically */
+}
+
+.dataTables_wrapper {
+  width: 100%;
+  font-size: 11px;
+  line-height: 0.9;
 }
 
 #insert_modal .modal-header {
