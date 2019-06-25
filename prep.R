@@ -181,6 +181,21 @@ survey_year = 2017L
 
 surveys = get_surveys(pool, waterbody_id, survey_year)
 
+get_end_points = function(pool, waterbody_id) {
+  qry = glue("select distinct pt.point_location_id, pt.river_mile_measure as river_mile, ",
+             "pt.location_description as rm_desc ",
+             "from point_location as pt ",
+             "inner join location_type_lut as lt on pt.location_type_id = lt.location_type_id ",
+             "where location_type_description in ('Reach boundary point', 'Section break point') ",
+             "and waterbody_id = '{waterbody_id}'")
+  end_points = DBI::dbGetQuery(pool, qry) %>%
+    mutate(point_location_id = tolower(point_location_id)) %>%
+    arrange(river_mile) %>%
+    mutate(rm_label = if_else(is.na(rm_desc), as.character(river_mile),
+                              paste0(river_mile, " ", rm_desc))) %>%
+    select(point_location_id, rm_label)
+  return(end_points)
+}
 
-
+end_points = get_end_points(pool, waterbody_id)
 

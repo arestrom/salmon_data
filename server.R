@@ -1,6 +1,14 @@
 # Create the Shiny server
 server = function(input, output, session) {
 
+  # observe({
+  #   if (input$left_sidebar %in% c("data_entry", "map_edit")) {
+  #     shinyjs::addClass(selector = "aside.control-sidebar", class = "control-sidebar-open")
+  #   } else {
+  #     shinyjs::removeClass(selector = "aside.control-sidebar", class = "control-sidebar-open")
+  #   }
+  # })
+
   # Get streams in wria
   wria_streams = reactive({
     req(input$wria_select)
@@ -49,22 +57,12 @@ server = function(input, output, session) {
                    label = ~stream_label,
                    layerId = ~stream_label,
                    labelOptions = labelOptions(noHide = FALSE)) %>%
-      addPolygons(data = wria_polys,
-                  group = "WRIAs",
-                  color = "#4d1566",
-                  weight = 2,
-                  fillOpacity = 0.2,
-                  label = ~wria_name,
-                  labelOptions = labelOptions(noHide = FALSE),
-                  highlightOptions = highlightOptions(color = "black", weight = 2,
-                                                      bringToFront = FALSE)) %>%
       addProviderTiles("Esri.WorldImagery", group = "Esri World Imagery") %>%
       addProviderTiles("OpenTopoMap", group = "Open Topo Map") %>%
       addLayersControl(position = 'bottomright',
                        baseGroups = c("Esri World Imagery", "Open Topo Map"),
-                       overlayGroups = c("Streams", "WRIAs"),
-                       options = layersControlOptions(collapsed = FALSE)) %>%
-      hideGroup("WRIAs")
+                       overlayGroups = c("Streams"),
+                       options = layersControlOptions(collapsed = TRUE))
     m
   })
 
@@ -94,7 +92,7 @@ server = function(input, output, session) {
 
   # Observer to record polylines map click
   observeEvent(input$stream_map_shape_click, {
-    selected_stream$map_stream = input$stream_map_shape_click
+    selected_stream$map_stream = input$stream_map_shape_click$id[[1]]
   })
 
   # Update Stream input...use of req here means select stays null
@@ -103,7 +101,7 @@ server = function(input, output, session) {
     # Update
     updateSelectizeInput(session, "stream_select",
                          choices = stream_list(),
-                         selected = updated_stream[1])
+                         selected = updated_stream)
   })
 
   # Filter to selected stream
@@ -117,9 +115,38 @@ server = function(input, output, session) {
       pull(waterbody_id)
   })
 
+  # Get list of river mile end_points for waterbody_id
+  rm_list = reactive({
+    wb_id = waterbody_id()
+    stream_rms = get_end_points(pool, waterbody_id())
+    return(stream_rms)
+  })
+
+  # Update upper_rm select...use of req here means select stays null
+  observe({
+    rm_list()
+    updated_rm_list = rm_list()$rm_label
+    # Update upper rm
+    updateSelectizeInput(session, "upper_rm_select",
+                         choices = updated_rm_list,
+                         selected = updated_rm_list[1])
+    # Update lower rm
+    updateSelectizeInput(session, "lower_rm_select",
+                         choices = updated_rm_list,
+                         selected = updated_rm_list[1])
+  })
+
   # Get surveys for dt
   dt_surveys = reactive({
-    surveys = get_surveys(pool, waterbody_id(), input$year_select) %>%
+    req(input$year_select)
+    year_select = as.integer(input$year_select)
+    validate(
+      need(min(year_select) >= 1930L & max(year_select) <= as.integer(format(Sys.Date(), "%Y")) + 1L,
+             glue("Error: Please use the right sidebar to select a stream and a valid survey year ",
+                  "(between 1930 and {as.integer(format(Sys.Date(), '%Y')) + 1L})"))
+    )
+    year_select = paste0(year_select, collapse = ", ")
+    surveys = get_surveys(pool, waterbody_id(), year_select) %>%
       mutate(survey_date = as.Date(survey_date)) %>%
       select(survey_id, survey_dt = survey_date, up_rm = upper_rm,
              lo_rm = lower_rm, start_time, end_time, observer, submitter,
@@ -131,7 +158,15 @@ server = function(input, output, session) {
   # Primary DT datatable for database
   output$surveys = renderDT({
     survey_title = glue("Surveys for {input$stream_select}")
-    surveys = dt_surveys()[,2:15]
+    surveys = dt_surveys() %>%
+      mutate(survey_dt = format(survey_dt, "%m/%d/%Y")) %>%
+      mutate(start_time = format(start_time, "%H:%M")) %>%
+      mutate(end_time = format(end_time, "%H:%M")) %>%
+      mutate(created_dt = format(created_dt, "%m/%d/%Y %H:%M")) %>%
+      mutate(modified_dt = format(modified_dt, "%m/%d/%Y %H:%M")) %>%
+      select(survey_dt, up_rm, lo_rm, start_time, end_time, observer,
+             submitter, data_source, data_review, completion, created_dt,
+             created_by, modified_dt, modified_by)
     # Generate table
     datatable(surveys,
               selection = list(mode = 'single'),
@@ -147,9 +182,7 @@ server = function(input, output, session) {
                                "}")),
               caption = htmltools::tags$caption(
                 style = 'caption-side: top; text-align: left; color: black;',
-                'Table 2: ', htmltools::em(htmltools::strong(survey_title)))) %>%
-      formatDate(c("survey_dt", "start_time", "end_time", "created_dt", "modified_dt"),
-                 "toLocaleString")
+                'Table 1: ', htmltools::em(htmltools::strong(survey_title))))
   })
 
   # Create beaches DT proxy object

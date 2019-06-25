@@ -1,9 +1,11 @@
 ui = dashboardPagePlus(
+  #shinyjs::useShinyjs(),
   header = dash_header,
   sidebar = dash_leftsidebar,
   rightsidebar = dash_rightsidebar,
   body = dashboardBody(
     includeCSS("www/salmon_data.css"),
+    map_modal,
     fluidRow(
       box(
         title = "Enter, edit, or delete data",

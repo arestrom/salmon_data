@@ -38,12 +38,18 @@
   font-weight: bold;
 }
 
-#show_map_stream {
+#map_text {
+  text-align: center;
+  font-size: 0.9em;
+  font-weight: bold;
+}
+
+#map_modal_button .btn-primary {
   color: #e6ebef;
   background-color:#4d1566;
   font-size: 12px;
-  font-weight: 300;
-  line-height: 1.5;
+  width: 100%;
+  height: 28px;
 }
 
 #year_text {

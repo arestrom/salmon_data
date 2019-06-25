@@ -8,7 +8,7 @@ dash_header = dashboardHeaderPlus(
     span(class = "logo-lg", "Salmon data"),
     img(src = "ShinyDashboardPlus.svg")),
   enable_rightsidebar = TRUE,
-  #rightSidebarIcon = "search-location"
-  rightSidebarIcon = "binoculars"
+  rightSidebarIcon = "bars"
+  #rightSidebarIcon = "binoculars"
 )
 
