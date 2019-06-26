@@ -97,18 +97,21 @@
 
 .box-title {
   font-size: 14px;
-  color: #120433;
+  color: #33079a;
 }
+
+.collapsed {
+  color: #881f8e;
+}
+
+
 
 /*
-.a .collapsed {
-  color: #120433;
+
+#accordian .a {
+  color: #b6a4bf;
 }
 */
-
-.panel.box.box-info {
-  border-top-color: #240c61;
-}
 
 .form-control {
   font-size: 11px;

@@ -11,27 +11,28 @@ ui = dashboardPagePlus(
         title = "Header data",
         closable = FALSE,
         collapsible = TRUE,
+        solidHeader = FALSE,
         width = 12,
         accordion(
           accordionItem(
-            id = "survey",
+            id = 1,
             title = "Survey",
-            color = "info",
-            collapsed = TRUE,
+            color = "purple",
+            collapsed = FALSE,
             survey_content
           ),
           accordionItem(
             id = 2,
             title = "Survey Comments",
-            color = "info",
-            collapsed = FALSE,
+            color = "purple",
+            collapsed = TRUE,
             "This is some text!"
           ),
           accordionItem(
             id = 3,
             title = "Species",
-            color = "info",
-            collapsed = FALSE,
+            color = "purple",
+            collapsed = TRUE,
             "This is some text!"
           )
         )
