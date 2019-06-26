@@ -87,7 +87,7 @@
   vertical-align:top;
   min-height: 28px;
   height: 28px;
-  font-size: 12px;
+  font-size: 11px;
   line-height: 1.0;
 }
 
@@ -95,16 +95,51 @@
   width: 100%;
 }
 
+.box-title {
+  font-size: 14px;
+  color: #120433;
+}
+
+/*
+.a .collapsed {
+  color: #120433;
+}
+*/
+
+.panel.box.box-info {
+  border-top-color: #240c61;
+}
+
 .form-control {
-  font-size: 12px;
-  height: 28px;
+  font-size: 11px;
+  height: 26px;
+  padding: 4px 4px;
 }
 
 .selectize-input {
-  min-height: 28px;
-  height: 28px;
+  min-height: 26px;
+  height: 26px;
+  font-size: 11px;
   vertical-align: middle;
   padding-top: 3px;   /* keep: This does the trick in centering vertically */
+}
+
+#start_time_select {
+  display: inline-block;
+  vertical-align:top;
+  min-height: 28px;
+  height: 28px;
+  font-size: 11px;
+  line-height: 1.0;
+}
+
+#end_time_select {
+  display: inline-block;
+  vertical-align:top;
+  min-height: 28px;
+  height: 28px;
+  font-size: 11px;
+  line-height: 1.0;
 }
 
 .dataTables_wrapper {

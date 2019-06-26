@@ -9,6 +9,5 @@ dash_header = dashboardHeaderPlus(
     img(src = "ShinyDashboardPlus.svg")),
   enable_rightsidebar = TRUE,
   rightSidebarIcon = "bars"
-  #rightSidebarIcon = "binoculars"
 )
 

@@ -62,7 +62,7 @@ wria_list = readRDS("www/wria_list.rds")
 wria_polys = readRDS("www/wria_polys.rds")
 
 # Read content definitions of data-entry screens
-source("header_data_content.R")
+source("survey_content.R")
 source("dash_header.R")
 source("dash_rightsidebar.R")
 source("dash_leftsidebar.R")

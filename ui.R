@@ -7,27 +7,29 @@ ui = dashboardPagePlus(
     includeCSS("www/salmon_data.css"),
     map_modal,
     fluidRow(
-      box(
-        title = "Enter, edit, or delete data",
+      boxPlus(
+        title = "Header data",
+        closable = FALSE,
+        collapsible = TRUE,
         width = 12,
         accordion(
           accordionItem(
-            id = 1,
-            title = "Header data",
+            id = "survey",
+            title = "Survey",
             color = "info",
             collapsed = TRUE,
-            header_data_content
+            survey_content
           ),
           accordionItem(
             id = 2,
-            title = "Species data",
+            title = "Survey Comments",
             color = "info",
             collapsed = FALSE,
             "This is some text!"
           ),
           accordionItem(
             id = 3,
-            title = "Live data",
+            title = "Species",
             color = "info",
             collapsed = FALSE,
             "This is some text!"

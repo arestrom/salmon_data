@@ -3,6 +3,7 @@
 #==========================================================================
 
 dash_leftsidebar = dashboardSidebar(
+  width = 175,
   sidebarMenu(
     id = "left_sidebar",
     menuItem("Data entry", tabName = "data_entry", icon = icon("database")),

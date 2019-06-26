@@ -170,6 +170,7 @@ server = function(input, output, session) {
     # Generate table
     datatable(surveys,
               selection = list(mode = 'single'),
+              rownames = FALSE,
               extensions = 'Buttons',
               options = list(dom = 'Blftp',
                              pageLength = 5,
