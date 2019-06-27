@@ -30,7 +30,11 @@
 #  9. Trim names in DT output to absolute minimum.
 # 10. Format to bare times and dates where possible.
 # 11. Change data_source_name to code...DONE !!
-# 12. Get rid of white border around map-button.
+# 12. Get rid of white border around map-button...DONE !!
+# 13. Add new left-sidebar item below data entry...map entry
+# 14. Make it so Header Data box shows up when sidebars are collapsed
+# 15. Change name of Header Data to Survey...and put survey data in box
+# 16. Only put associated data in accordian...or consider using all boxes.
 #
 # AS 2019-05-15
 #==============================================================
