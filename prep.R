@@ -199,3 +199,17 @@ get_end_points = function(pool, waterbody_id) {
 
 end_points = get_end_points(pool, waterbody_id)
 
+# Later can filter by n-surveys to set priority
+get_data_source = function(pool) {
+  qry = glue("select data_source_id, data_source_name as data_source ",
+             "from data_source_lut")
+  data_source = DBI::dbGetQuery(pool, qry) %>%
+    mutate(data_source_id = tolower(data_source_id)) %>%
+    arrange(data_source) %>%
+    select(data_source_id, data_source)
+  return(data_source)
+}
+
+# Test
+# Pull out data_source_list
+data_source_list = get_data_source(pool)

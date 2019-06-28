@@ -1,13 +1,20 @@
+
 # Create the Shiny server
 server = function(input, output, session) {
 
-  # observe({
-  #   if (input$left_sidebar %in% c("data_entry", "map_edit")) {
-  #     shinyjs::addClass(selector = "aside.control-sidebar", class = "control-sidebar-open")
-  #   } else {
-  #     shinyjs::removeClass(selector = "aside.control-sidebar", class = "control-sidebar-open")
-  #   }
-  # })
+  output$data_source_select = renderUI({
+    data_source_list = get_data_source(pool)$data_source_name
+    selectizeInput("data_source_select", label = "data_source",
+                   choices = data_source_list, selected = data_source_list[1],
+                   width = "175px")
+  })
+
+  output$data_review_select = renderUI({
+    data_review_list = get_data_review(pool)$data_review
+    selectizeInput("data_review_select", label = "data_review",
+                   choices = data_review_list, selected = data_review_list[1],
+                   width = "150px")
+  })
 
   # Get streams in wria
   wria_streams = reactive({
@@ -126,6 +133,7 @@ server = function(input, output, session) {
   observe({
     rm_list()
     updated_rm_list = rm_list()$rm_label
+    updated_rm_list = c(updated_rm_list, "add")
     # Update upper rm
     updateSelectizeInput(session, "upper_rm_select",
                          choices = updated_rm_list,
@@ -146,7 +154,7 @@ server = function(input, output, session) {
                   "(between 1930 and {as.integer(format(Sys.Date(), '%Y')) + 1L})"))
     )
     year_select = paste0(year_select, collapse = ", ")
-    surveys = get_surveys(pool, waterbody_id(), year_select) %>%
+    surveys = get_surveys(pool, waterbody_id(), survey_years = year_select) %>%
       mutate(survey_date = as.Date(survey_date)) %>%
       select(survey_id, survey_dt = survey_date, up_rm = upper_rm,
              lo_rm = lower_rm, start_time, end_time, observer, submitter,
@@ -189,31 +197,37 @@ server = function(input, output, session) {
   # Create beaches DT proxy object
   dt_proxy = dataTableProxy("surveys")
 
-  # #========================================================
-  # # Update select inputs to values in selected row
-  # #========================================================
-  #
-  # # Update all input values to values in selected row
-  # observeEvent(input$beaches_rows_selected, {
-  #   req(input$beaches_rows_selected)
-  #   beaches = get_beaches()
-  #   beach_row = input$beaches_rows_selected
-  #   tide_station = beaches$tide_station[beach_row]
-  #   beach_name = beaches$beach_name[beach_row]
-  #   beach_desc = beaches$beach_desc[beach_row]
-  #   low_corr_min = beaches$low_corr_min[beach_row]
-  #   low_corr_ft = beaches$low_corr_ft[beach_row]
-  #   high_corr_min = beaches$high_corr_min[beach_row]
-  #   high_corr_ft = beaches$high_corr_ft[beach_row]
-  #   updateSelectizeInput(session, "station_input", selected = tide_station)
-  #   updateTextInput(session, "beach_name_input", value = beach_name)
-  #   updateTextInput(session, "beach_desc_input", value = beach_desc)
-  #   updateNumericInput(session, "low_min_input", value = low_corr_min)
-  #   updateNumericInput(session, "low_ft_input", value = low_corr_ft)
-  #   updateNumericInput(session, "high_min_input", value = high_corr_min)
-  #   updateNumericInput(session, "high_ft_input", value = high_corr_ft)
-  # })
-  #
+  #========================================================
+  # Update select inputs to values in selected row
+  #========================================================
+
+  # Update all input values to values in selected row
+  observeEvent(input$surveys_rows_selected, {
+    req(input$surveys_rows_selected)
+    surveys = dt_surveys()
+    survey_row = input$surveys_rows_selected
+    survey_dt = surveys$survey_dt[survey_row]
+    up_rm = as.character(surveys$up_rm[survey_row])
+    lo_rm = as.character(surveys$lo_rm[survey_row])
+    start_time = surveys$start_time[survey_row]
+    end_time = surveys$end_time[survey_row]
+    observer = surveys$observer[survey_row]
+    submitter = surveys$submitter[survey_row]
+    data_source = surveys$data_source[survey_row]
+    data_review = surveys$data_review[survey_row]
+    completed = surveys$completion[survey_row]
+    updateDateInput(session, "survey_date_input", value = survey_dt)
+    updateSelectizeInput(session, "upper_rm_select", selected = up_rm)
+    updateSelectizeInput(session, "lower_rm_select", selected = lo_rm)
+    updateTimeInput(session, "start_time_select", value = start_time)
+    updateTimeInput(session, "end_time_select", value = end_time)
+    updateTextInput(session, "observer_input", value = observer)
+    updateTextInput(session, "submitter_input", value = submitter)
+    updateSelectizeInput(session, "data_source_select", selected = data_source)
+    updateSelectizeInput(session, "data_review_select", selected = data_review)
+    updateSelectizeInput(session, "completion_select", selected = completed)
+  })
+
   # #========================================================
   # # Collect values from selected row for later use
   # #========================================================

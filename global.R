@@ -20,21 +20,13 @@
 #  2. Add validate and need functions to eliminate crashes
 #  3. Make sure users are set up with permissions and dsn's.
 #  4. Need to verify deletions are allowed.
-#  5. Change surveys query to use in (year_select). Need year reactive.
-#  6. Allow map modal to be resizable and draggable.
+#  5. Allow map modal to be resizable and draggable.
 #     Try the shinyjqui package:
 #     https://github.com/nanxstats/awesome-shiny-extensions
-#  7. Need screens to allow entry and edit of RMs and encounters
+#  6. Need screens to allow entry and edit of RMs and encounters
 #     Start with RMs. Use MapEdit.
-#  8. Get rid of rownumber in DT output
-#  9. Trim names in DT output to absolute minimum.
-# 10. Format to bare times and dates where possible.
-# 11. Change data_source_name to code...DONE !!
-# 12. Get rid of white border around map-button...DONE !!
-# 13. Add new left-sidebar item below data entry...map entry
-# 14. Make it so Header Data box shows up when sidebars are collapsed
-# 15. Change name of Header Data to Survey...and put survey data in box
-# 16. Only put associated data in accordian...or consider using all boxes.
+#  7. Set data_source order using number of surveys in category.
+#     Can do a query of data to arrange by n, then name.
 #
 # AS 2019-05-15
 #==============================================================
@@ -45,7 +37,7 @@ library(shinydashboard)
 library(shinydashboardPlus)
 library(shinyTime)
 library(bsplus)
-#library(shinyjs)
+library(shinyjs)
 library(odbc)
 library(glue)
 library(tibble)
@@ -127,8 +119,8 @@ get_end_points = function(pool, waterbody_id) {
 
 # Function to get header data...just use multiselect for year
 get_surveys = function(pool, waterbody_id, survey_years) {
-  qry = glue("select s.survey_id, s.survey_datetime as survey_date, ds.data_source_name, ",
-             "ds.data_source_code, du.data_source_unit_name as data_source_unit, ",
+  qry = glue("select s.survey_id, s.survey_datetime as survey_date, data_source_code,
+             ds.data_source_name, du.data_source_unit_name as data_source_unit, ",
              "sm.survey_method_description as survey_method, ",
              "dr.data_review_status_description as data_review_status, ",
              "plu.river_mile_measure as upper_rm, ",
@@ -168,6 +160,35 @@ get_surveys = function(pool, waterbody_id, survey_years) {
     arrange(survey_date, start_time)
   return(surveys)
 }
+
+#==========================================================================
+# Get generic input values...data_source, data_review, and completed_status
+#==========================================================================
+
+# Later can filter by n-surveys to set priority
+get_data_source = function(pool) {
+  qry = glue("select data_source_id, data_source_code, data_source_name ",
+             "from data_source_lut")
+  data_source = DBI::dbGetQuery(pool, qry) %>%
+    mutate(data_source_id = tolower(data_source_id)) %>%
+    arrange(data_source_name) %>%
+    select(data_source_id, data_source_code, data_source_name)
+  return(data_source)
+}
+
+# Later can filter by n-surveys to set priority
+get_data_review = function(pool) {
+  qry = glue("select data_review_status_id, data_review_status_description as data_review ",
+             "from data_review_status_lut")
+  data_review_list = DBI::dbGetQuery(pool, qry) %>%
+    mutate(data_review_status_id = tolower(data_review_status_id)) %>%
+    arrange(data_review) %>%
+    select(data_review_status_id, data_review)
+  return(data_review_list)
+}
+
+# Get the data_review_list
+data_review_list = get_data_review(pool)
 
 #=========================================================================
 # Cant get coordinates using dbplyr, geometry column is lost..

@@ -7,35 +7,70 @@ ui = dashboardPagePlus(
     includeCSS("www/salmon_data.css"),
     map_modal,
     fluidRow(
+      br(),
+      br(),
       boxPlus(
-        title = "Header data",
+        title = "Survey",
         closable = FALSE,
         collapsible = TRUE,
         solidHeader = FALSE,
+        collapsed = FALSE,
+        survey_content,
         width = 12,
         accordion(
           accordionItem(
             id = 1,
-            title = "Survey",
+            title = "Survey comments",
             color = "purple",
-            collapsed = FALSE,
-            survey_content
+            collapsed = TRUE,
+            "This is some text!"
+            #survey_content
           ),
           accordionItem(
             id = 2,
-            title = "Survey Comments",
+            title = "Survey intent",
             color = "purple",
             collapsed = TRUE,
             "This is some text!"
           ),
           accordionItem(
             id = 3,
-            title = "Species",
+            title = "Waterbody measurements",
             color = "purple",
             collapsed = TRUE,
             "This is some text!"
           )
         )
+      ),
+      boxPlus(
+        title = "Species event",
+        closable = FALSE,
+        collapsible = TRUE,
+        solidHeader = FALSE,
+        collapsed = TRUE,
+        #species_content,
+        width = 12,
+        "This is some text"
+      ),
+      boxPlus(
+        title = "Fish encounter",
+        closable = FALSE,
+        collapsible = TRUE,
+        solidHeader = FALSE,
+        collapsed = TRUE,
+        #fish_encounter_content,
+        width = 12,
+        "This is some text"
+      ),
+      boxPlus(
+        title = "Redd encounter",
+        closable = FALSE,
+        collapsible = TRUE,
+        solidHeader = FALSE,
+        collapsed = TRUE,
+        #redd_encounter_content,
+        width = 12,
+        "This is some text"
       )
     )
   ),
