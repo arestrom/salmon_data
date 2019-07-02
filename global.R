@@ -27,6 +27,7 @@
 #     Start with RMs. Use MapEdit.
 #  7. Set data_source order using number of surveys in category.
 #     Can do a query of data to arrange by n, then name.
+#  8. Need to add survey_method to survey CRUD screens.
 #
 # AS 2019-05-15
 #==============================================================
@@ -37,7 +38,7 @@ library(shinydashboard)
 library(shinydashboardPlus)
 library(shinyTime)
 library(bsplus)
-library(shinyjs)
+# library(shinyjs)
 library(odbc)
 library(glue)
 library(tibble)
@@ -121,7 +122,7 @@ get_end_points = function(pool, waterbody_id) {
 get_surveys = function(pool, waterbody_id, survey_years) {
   qry = glue("select s.survey_id, s.survey_datetime as survey_date, data_source_code,
              ds.data_source_name, du.data_source_unit_name as data_source_unit, ",
-             "sm.survey_method_description as survey_method, ",
+             "sm.survey_method_code as survey_method, ",
              "dr.data_review_status_description as data_review_status, ",
              "plu.river_mile_measure as upper_rm, ",
              "pll.river_mile_measure as lower_rm, ",
@@ -162,24 +163,38 @@ get_surveys = function(pool, waterbody_id, survey_years) {
 }
 
 #==========================================================================
-# Get generic input values...data_source, data_review, and completed_status
+# Get generic lut input values...data_source, etc.
 #==========================================================================
 
-# Later can filter by n-surveys to set priority
+# Data source
 get_data_source = function(pool) {
-  qry = glue("select data_source_id, data_source_code, data_source_name ",
-             "from data_source_lut")
+  qry = glue("select data_source_id, data_source_code ",
+             "from data_source_lut ",
+             "where obsolete_datetime is null")
   data_source = DBI::dbGetQuery(pool, qry) %>%
     mutate(data_source_id = tolower(data_source_id)) %>%
-    arrange(data_source_name) %>%
-    select(data_source_id, data_source_code, data_source_name)
+    arrange(data_source_code) %>%
+    select(data_source_id, data_source_code)
   return(data_source)
 }
 
-# Later can filter by n-surveys to set priority
+# Survey method
+get_survey_method = function(pool) {
+  qry = glue("select survey_method_id, survey_method_code as survey_method ",
+             "from survey_method_lut ",
+             "where obsolete_datetime is null")
+  survey_method_list = DBI::dbGetQuery(pool, qry) %>%
+    mutate(survey_method_id = tolower(survey_method_id)) %>%
+    arrange(survey_method) %>%
+    select(survey_method_id, survey_method)
+  return(survey_method_list)
+}
+
+# Data review
 get_data_review = function(pool) {
   qry = glue("select data_review_status_id, data_review_status_description as data_review ",
-             "from data_review_status_lut")
+             "from data_review_status_lut ",
+             "where obsolete_datetime is null")
   data_review_list = DBI::dbGetQuery(pool, qry) %>%
     mutate(data_review_status_id = tolower(data_review_status_id)) %>%
     arrange(data_review) %>%
@@ -187,124 +202,44 @@ get_data_review = function(pool) {
   return(data_review_list)
 }
 
-# Get the data_review_list
-data_review_list = get_data_review(pool)
-
-#=========================================================================
-# Cant get coordinates using dbplyr, geometry column is lost..
-#=========================================================================
-
-# Function to get trip locations
-get_trip_locs = function(db_dsn = "local_myco") {
-  qry = glue::glue("select point_location_id, ",
-                   "st_y(geog::geometry) as lat, ",
-                   "st_x(geog::geometry) as lon ",
-                   "from point_location as pl ",
-                   "inner join location_type_lut as lt ",
-                   "on pl.location_type_id = lt.location_type_id ",
-                   "where location_type_description = 'Survey location'")
-
-  db_con = dbConnect(drv = odbc::odbc(), dsn = db_dsn, timezone = "UTC")
-  trip_locs = DBI::dbGetQuery(db_con, qry)
-  dbDisconnect(db_con)
-  return(trip_locs)
+# Completion status
+get_completion_status = function(pool) {
+  qry = glue("select survey_completion_status_id, completion_status_description as completion ",
+             "from survey_completion_status_lut ",
+             "where obsolete_datetime is null")
+  completion_list = DBI::dbGetQuery(pool, qry) %>%
+    mutate(survey_completion_status_id = tolower(survey_completion_status_id)) %>%
+    arrange(completion) %>%
+    select(survey_completion_status_id, completion)
+  return(completion_list)
 }
 
-#=======================================
-# Need to wrap below
-#=======================================
+#==========================================================================
+# Validate survey create operations
+#==========================================================================
 
-# Create function
-trips_locations = function(db_dsn = "local_myco") {
-  # Get trips
-  trips = get_trips()
-  # Get trip_locations
-  trip_locations = get_trip_locs()
-  # Separate out to enable joins
-  start_locations = trip_locations %>%
-    select(start_location_id = point_location_id,
-           start_lat = lat, start_lon = lon)
-
-  end_locations = trip_locations %>%
-    select(end_location_id = point_location_id,
-           end_lat = lat, end_lon = lon)
-
-  # Add coordinates to trips
-  trips = trips %>%
-    left_join(start_locations, by = "start_location_id") %>%
-    left_join(end_locations, by = "end_location_id")
-  return(trips)
+# Check for existing surveys prior to survey insert operation
+dup_survey = function(new_survey_vals, existing_survey_vals) {
+  new_survey_vals = new_survey_vals %>%
+    select(survey_dt, survey_method, up_rm, lo_rm, observer, data_source)
+  matching_rows = new_survey_vals %>%
+    inner_join(existing_survey_vals,
+               by = c("survey_dt", "survey_method", "up_rm", "lo_rm",
+                      "observer", "data_source"))
+  if (nrow(matching_rows) > 0 ) {
+    dup_flag = TRUE
+  } else {
+    dup_flag = FALSE
+  }
+  return(dup_flag)
 }
-
-# # Run to test....all good
-# trips_with_locations = trips_locations()
-
-#===================================================
-# Add companions
-#===================================================
-
-# Wrap as function
-get_companions = function() {
-  # Get companions and create single column of names
-  companions = pool %>% tbl("companions") %>%
-    mutate(companion_name = paste0(first_name, " ", last_name)) %>%
-    select(companions_id, companion_name)
-
-  # Get survey_ids
-  survey_companions = pool %>% tbl("survey_companions") %>%
-    left_join(companions, by = "companions_id") %>%
-    select(survey_id, companion_name) %>%
-    arrange(companion_name) %>%
-    collect()
-  # Spread not possible inside database
-  survey_companions = survey_companions %>%
-    group_by(survey_id) %>%
-    mutate(nseq = row_number()) %>%
-    spread(nseq, companion_name, fill = "") %>%
-    ungroup()
-
-  # Need new line because ncol changes
-  survey_companions = survey_companions %>%
-    unite(companion_names, 2:ncol(survey_companions), sep = "  ") %>%
-    mutate(companion_names = trimws(companion_names)) %>%
-    mutate(companion_names = gsub("  ", "; ", companion_names))
-  return(survey_companions)
-}
-
-# # Run to test....all good.
-# companions = get_companions()
-# trips_with_locations = trips_locations()
-# trips_with_companions = trips_with_locations %>%
-#   left_join(companions, by = "survey_id")
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 #========================================================
 # Insert callback
 #========================================================
 
 # Define the insert callback
-beach_insert = function(new_values) {
+survey_insert = function(new_values) {
   # Get insert values
   tide_station = new_values$tide_station
   if ( tide_station == "Seattle" ) {

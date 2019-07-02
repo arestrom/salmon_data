@@ -4,7 +4,7 @@
 
 dash_rightsidebar = rightSidebar(
   width = 200,
-  div(id = "sthd_image", img(src = "steelhead.png", width = "80%")),
+  div(id = "sthd_image", img(src = "steelhead.png", width = "90%")),
   br(),
   br(),
   br(),

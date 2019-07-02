@@ -210,6 +210,108 @@ get_data_source = function(pool) {
   return(data_source)
 }
 
-# Test
-# Pull out data_source_list
-data_source_list = get_data_source(pool)
+# Check for existing surveys prior to insert operation
+dup_survey = function(new_vals, old_vals) {
+  matching_rows = new_vals %>%
+    inner_join(old_vals, by = c("survey_dt", "observer"))
+  if (nrow(matching_rows) > 0 ) {
+    dup_flag = TRUE
+  } else {
+    dup_flag = FALSE
+  }
+  return(dup_flag)
+}
+
+#=====================================================================================================
+# Survey insert code
+#=====================================================================================================
+
+data_source = "WDFW"
+data_source = data_source %>%
+  mutate(data_source_id = case_when(
+    data_source == "WD"
+  ))
+
+
+
+# Mimic what comes out of survey_create() reactive
+new_values = tibble(survey_dt = as.POSIXct("2019-06-02", tz = "America/Los_Angeles"),
+
+                    up_rm = input$upper_rm_select,
+                    lo_rm = input$lower_rm_select,
+                    start_time = format(input$start_time_select, "%H:%M"),
+                    end_time = format(input$end_time_select, "%H:%M"),
+                    observer = input$observer_input,
+                    submitter = input$submitter_input,
+                    data_source = input$data_source_select,
+                    data_review = input$data_review_select,
+                    completion = input$completion_select,
+                    created_dt = lubridate::with_tz(Sys.time(), "UTC"),
+                    created_by = Sys.getenv("USERNAME"))
+
+# Define the insert callback
+survey_insert = function(new_values) {
+  survey_dt = new_values$survey_dt
+  # Format start and end times
+  if (substr(new_values$start_time, 12, 13) == "00" ) {
+    new_values$start_time = with_tz(as.POSIXct(NA), tzone = "UTC")
+  } else {
+    new_values$start_time = as.POSIXct(paste0(format(survey_dt, " ", start_time)), tz = "America/Los_Angeles")
+    new_values$start_time = with_tz(new_values$start_time, tzone = "UTC")
+  }
+
+  if (substr(new_values$end_time, 12, 13) == "00" ) {
+    new_values$end_time = with_tz(as.POSIXct(NA), tzone = "UTC")
+  } else {
+    new_values$end_time = as.POSIXct(paste0(format(survey_dt, " ", end_time)), tz = "America/Los_Angeles")
+    new_values$end_time = with_tz(new_values$end_time, tzone = "UTC")
+  }
+  # Format remaining values
+  beach_name = new_values$beach_name
+  if (is.na(beach_name) | beach_name == "") { beach_name = NA }
+  beach_desc = new_values$beach_desc
+  if (is.na(beach_desc) | beach_desc == "" | beach_desc == "NA") { beach_desc = NA }
+  low_corr_min = new_values$low_corr_min
+  low_corr_ft = new_values$low_corr_ft
+  high_corr_min = new_values$high_corr_min
+  high_corr_ft = new_values$high_corr_ft
+  create_dt = lubridate::with_tz(Sys.time(), "UTC")
+  create_by = Sys.getenv("USERNAME")
+  # Checkout a connection
+  con = poolCheckout(pool)
+  insert_result = dbSendStatement(
+    con, glue_sql("INSERT INTO survey (",
+                  "survey_datetime, ",
+                  "data_source_id, ",
+                  "beach_description, ",
+                  "low_tide_correction_minutes, ",
+                  "low_tide_correction_feet, ",
+                  "high_tide_correction_minutes, ",
+                  "high_tide_correction_feet, ",
+                  "created_datetime, ",
+                  "created_by) ",
+                  "VALUES (",
+                  "?, ?, ?, ?, ?, ?, ?, ?, ?)"))
+  dbBind(insert_result, list(tide_station_location_id, beach_name, beach_desc,
+                             low_corr_min, low_corr_ft, high_corr_min,
+                             high_corr_ft, create_dt, create_by))
+  dbGetRowsAffected(insert_result)
+  dbClearResult(insert_result)
+  poolReturn(con)
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

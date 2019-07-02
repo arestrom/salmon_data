@@ -2,17 +2,31 @@
 # Create the Shiny server
 server = function(input, output, session) {
 
+  output$survey_method_select = renderUI({
+    survey_method_list = get_survey_method(pool)$survey_method
+    selectizeInput("survey_method_select", label = "survey_method",
+                   choices = survey_method_list, selected = "Foot",
+                   width = "100px")
+  })
+
   output$data_source_select = renderUI({
-    data_source_list = get_data_source(pool)$data_source_name
+    data_source_list = get_data_source(pool)$data_source_code
     selectizeInput("data_source_select", label = "data_source",
-                   choices = data_source_list, selected = data_source_list[1],
-                   width = "175px")
+                   choices = data_source_list, selected = "WDFW",
+                   width = "100px")
   })
 
   output$data_review_select = renderUI({
     data_review_list = get_data_review(pool)$data_review
     selectizeInput("data_review_select", label = "data_review",
                    choices = data_review_list, selected = data_review_list[1],
+                   width = "115px")
+  })
+
+  output$completion_select = renderUI({
+    completion_list = get_completion_status(pool)$completion
+    selectizeInput("completion_select", label = "completed?",
+                   choices = completion_list, selected = completion_list[1],
                    width = "150px")
   })
 
@@ -156,7 +170,7 @@ server = function(input, output, session) {
     year_select = paste0(year_select, collapse = ", ")
     surveys = get_surveys(pool, waterbody_id(), survey_years = year_select) %>%
       mutate(survey_date = as.Date(survey_date)) %>%
-      select(survey_id, survey_dt = survey_date, up_rm = upper_rm,
+      select(survey_id, survey_dt = survey_date, survey_method, up_rm = upper_rm,
              lo_rm = lower_rm, start_time, end_time, observer, submitter,
              data_source = data_source_code, data_review = data_review_status,
              completion = completion_status, created_dt = created_date,
@@ -172,9 +186,9 @@ server = function(input, output, session) {
       mutate(end_time = format(end_time, "%H:%M")) %>%
       mutate(created_dt = format(created_dt, "%m/%d/%Y %H:%M")) %>%
       mutate(modified_dt = format(modified_dt, "%m/%d/%Y %H:%M")) %>%
-      select(survey_dt, up_rm, lo_rm, start_time, end_time, observer,
-             submitter, data_source, data_review, completion, created_dt,
-             created_by, modified_dt, modified_by)
+      select(survey_dt, survey_method, up_rm, lo_rm, start_time, end_time,
+             observer, submitter, data_source, data_review, completion,
+             created_dt, created_by, modified_dt, modified_by)
     # Generate table
     datatable(surveys,
               selection = list(mode = 'single'),
@@ -190,12 +204,12 @@ server = function(input, output, session) {
                                "$(this.api().table().header()).css({'background-color': '#9eb3d6'});",
                                "}")),
               caption = htmltools::tags$caption(
-                style = 'caption-side: top; text-align: left; color: black;',
+                style = 'caption-side: top; text-align: left; color: black; width: auto;',
                 'Table 1: ', htmltools::em(htmltools::strong(survey_title))))
   })
 
   # Create beaches DT proxy object
-  dt_proxy = dataTableProxy("surveys")
+  survey_dt_proxy = dataTableProxy("surveys")
 
   #========================================================
   # Update select inputs to values in selected row
@@ -207,6 +221,7 @@ server = function(input, output, session) {
     surveys = dt_surveys()
     survey_row = input$surveys_rows_selected
     survey_dt = surveys$survey_dt[survey_row]
+    survey_method = surveys$survey_method[survey_row]
     up_rm = as.character(surveys$up_rm[survey_row])
     lo_rm = as.character(surveys$lo_rm[survey_row])
     start_time = surveys$start_time[survey_row]
@@ -217,6 +232,7 @@ server = function(input, output, session) {
     data_review = surveys$data_review[survey_row]
     completed = surveys$completion[survey_row]
     updateDateInput(session, "survey_date_input", value = survey_dt)
+    updateSelectizeInput(session, "survey_method_select", selected = survey_method)
     updateSelectizeInput(session, "upper_rm_select", selected = up_rm)
     updateSelectizeInput(session, "lower_rm_select", selected = lo_rm)
     updateTimeInput(session, "start_time_select", value = start_time)
@@ -228,141 +244,207 @@ server = function(input, output, session) {
     updateSelectizeInput(session, "completion_select", selected = completed)
   })
 
-  # #========================================================
-  # # Collect values from selected row for later use
-  # #========================================================
-  #
-  # # Create reactive to collect input values for update and delete actions
-  # beach_selected_data = reactive({
-  #   beaches = get_beaches()
-  #   beach_row = input$beaches_rows_selected
-  #   old_data = tibble(beach_id = beaches$beach_id[beach_row],
-  #                     tide_station = beaches$tide_station[beach_row],
-  #                     beach_name = beaches$beach_name[beach_row],
-  #                     beach_desc = beaches$beach_desc[beach_row],
-  #                     low_corr_min = beaches$low_corr_min[beach_row],
-  #                     low_corr_ft = beaches$low_corr_ft[beach_row],
-  #                     high_corr_min = beaches$high_corr_min[beach_row],
-  #                     high_corr_ft = beaches$high_corr_ft[beach_row])
-  #   return(old_data)
-  # })
-  #
-  # #========================================================
-  # # Insert operations: reactives, observers and modals
-  # #========================================================
-  #
+  #========================================================
+  # Collect survey values from selected row for later use
+  #========================================================
+
+  # Create reactive to collect input values for update and delete actions
+  survey_selected_data = reactive({
+    surveys = dt_surveys()
+    survey_row = input$surveys_rows_selected
+    existing_surveys = tibble(survey_id = surveys$survey_id[survey_row],
+                              survey_dt = surveys$survey_dt[survey_row],
+                              survey_method = surveys$survey_method[survey_row],
+                              up_rm = as.character(surveys$up_rm[survey_row]),
+                              lo_rm = as.character(surveys$lo_rm[survey_row]),
+                              start_time = surveys$start_time[survey_row],
+                              end_time = surveys$end_time[survey_row],
+                              observer = surveys$observer[survey_row],
+                              submitter = surveys$submitter[survey_row],
+                              data_source = surveys$data_source[survey_row],
+                              data_review = surveys$data_review[survey_row],
+                              completed = surveys$completion[survey_row])
+    return(existing_surveys)
+  })
+
+  #========================================================
+  # Insert operations: reactives, observers and modals
+  #========================================================
+
   # # Create reactive to collect input values for insert actions
-  # beach_create = reactive({
-  #   beaches = get_beaches()
-  #   new_bch = tibble(tide_station = input$station_input,
-  #                    beach_name = input$beach_name_input,
-  #                    beach_desc = input$beach_desc_input,
-  #                    low_corr_min = input$low_min_input,
-  #                    low_corr_ft = input$low_ft_input,
-  #                    high_corr_min = input$high_min_input,
-  #                    high_corr_ft = input$high_ft_input,
-  #                    created_dt = lubridate::with_tz(Sys.time(), "UTC"),
-  #                    created_by = Sys.getenv("USERNAME"))
-  #   new_bch = new_bch %>%
-  #     mutate(tide_station = if_else(is.na(tide_station) | tide_station == "", NA_character_, tide_station)) %>%
-  #     mutate(beach_name = if_else(is.na(beach_name) | beach_name == "", NA_character_, beach_name)) %>%
-  #     mutate(beach_desc = if_else(is.na(beach_desc) | beach_desc == "", NA_character_, beach_desc)) %>%
-  #     mutate(low_corr_min = as.integer(low_corr_min)) %>%
-  #     mutate(low_corr_ft = as.numeric(low_corr_ft)) %>%
-  #     mutate(high_corr_min = as.integer(high_corr_min)) %>%
-  #     mutate(high_corr_ft = as.numeric(high_corr_ft))
-  #   return(new_bch)
+  # survey_create = reactive({
+  #   new_survey = tibble(survey_dt = input$survey_date_input,
+  #                       up_rm = input$upper_rm_select,
+  #                       lo_rm = input$lower_rm_select,
+  #                       start_time = as.POSIXct(input$start_time_select),
+  #                       end_time = as.POSIXct(input$end_time_select),
+  #                       observer = input$observer_input,
+  #                       submitter = input$submitter_input,
+  #                       data_source = input$data_source_select,
+  #                       data_review = input$data_review_select,
+  #                       completion = input$completion_select,
+  #                       created_dt = lubridate::with_tz(Sys.time(), "UTC"),
+  #                       created_by = Sys.getenv("USERNAME"))
+  #   # print(new_survey$start_time)
+  #   # print(new_survey$end_time)
+  #   # print(class(new_survey$start_time))
+  #   # print(class(new_survey$end_time))
+  #   new_survey = new_survey %>%
+  #     mutate(start_time = if_else(is.na(start_time), as.POSIXct(NA), start_time)) %>%
+  #     mutate(end_time = if_else(is.na(end_time), as.POSIXct(NA), end_time)) %>%
+  #     mutate(observer = if_else(is.na(observer) | observer == "", NA_character_, observer)) %>%
+  #     mutate(submitter = if_else(is.na(submitter) | submitter == "", NA_character_, submitter))
+  #   return(new_survey)
   # })
-  #
-  # # Generate values to show in modal
-  # output$modal_insert_vals = renderDT({
-  #   modal_in_vals = beach_create() %>%
-  #     select(tide_station, beach_name, beach_desc, low_corr_min,
-  #            low_corr_ft, high_corr_min, high_corr_ft)
-  #   # Generate table
-  #   datatable(modal_in_vals,
-  #             rownames = FALSE,
-  #             options = list(dom = 't',
-  #                            scrollX = T,
-  #                            ordering = FALSE,
-  #                            initComplete = JS(
-  #                              "function(settings, json) {",
-  #                              "$(this.api().table().header()).css({'background-color': '#9eb3d6'});",
-  #                              "}")))
-  # })
-  #
-  # observeEvent(input$beaches_add, {
-  #   new_vals = beach_create()
-  #   showModal(
-  #     tags$div(id = "insert_modal",
-  #              if ( is.na(new_vals$tide_station) ) {
-  #                modalDialog (
-  #                  size = "s",
-  #                  title = "Warning",
-  #                  paste0("Please select a tide_station"),
-  #                  easyClose = TRUE,
-  #                  footer = NULL
-  #                )
-  #              } else if ( is.na(new_vals$beach_name) ) {
-  #                modalDialog (
-  #                  size = "s",
-  #                  title = "Warning",
-  #                  paste0("Please enter a new beach name"),
-  #                  easyClose = TRUE,
-  #                  footer = NULL
-  #                )
-  #              } else if ( is.na(new_vals$low_corr_min) ) {
-  #                modalDialog (
-  #                  size = "s",
-  #                  title = "Warning",
-  #                  paste0("Please enter a value for low_corr_min"),
-  #                  easyClose = TRUE,
-  #                  footer = NULL
-  #                )
-  #              } else if ( new_vals$beach_name %in% get_beaches()$beach_name ) {
-  #                modalDialog (
-  #                  size = "s",
-  #                  title = "Warning",
-  #                  paste0("Please enter a beach name that is not already in the database" ),
-  #                  easyClose = TRUE,
-  #                  footer = NULL
-  #                )
-  #              } else {
-  #                modalDialog (
-  #                  size = 'l',
-  #                  title = glue("Insert {input$beach_name_input} to the database?"),
-  #                  fluidPage (
-  #                    DT::DTOutput("modal_insert_vals"),
-  #                    br(),
-  #                    br(),
-  #                    actionButton("insert_beach","Insert beach")
-  #                  ),
-  #                  easyClose = TRUE,
-  #                  footer = NULL
-  #                )
-  #              }
-  #     ))
-  # })
-  #
-  # # Update DB and reload DT
-  # observeEvent(input$insert_beach, {
-  #   beach_insert(beach_create())
-  #   removeModal()
-  #   replaceData(dt_proxy, get_beaches()[,2:12])
-  # })
-  #
-  # # # Could also set priority and do:
-  # # # Update DB
-  # # observeEvent(input$insert_beach, {
-  # #   beach_insert(beach_create())
-  # #   removeModal()
-  # # }, priority = 999)
-  # #
-  # # # Then reload DT
-  # # observeEvent(input$insert_beach, {
-  # #   replaceData(dt_proxy, get_beaches()[,2:12])
-  # # }, priority = -999)
-  #
+
+  # Create reactive to collect input values for insert actions
+  survey_create = reactive({
+    # Data source
+    data_source_vals = get_data_source(pool)
+    data_source_input = input$data_source_select
+    data_source_id = data_source_vals %>%
+      filter(data_source_code == data_source_input) %>%
+      pull(data_source_id)
+    # Survey method
+    survey_method_vals = get_survey_method(pool)
+    survey_method_input = input$survey_method_select
+    survey_method_id = survey_method_vals %>%
+      filter(survey_method == survey_method_input) %>%
+      pull(survey_method_id)
+    # Data review
+    data_review_vals = get_data_review(pool)
+    data_review_input = input$data_review_select
+    data_review_status_id = data_review_vals %>%
+      filter(data_review == data_review_input) %>%
+      pull(data_review_status_id)
+    # RM values
+    rm_vals = rm_list()
+    up_rm_input = input$upper_rm_select
+    upper_end_point_id = rm_vals %>%
+      filter(rm_label == up_rm_input) %>%
+      pull(point_location_id)
+    lo_rm_input = input$lower_rm_select
+    lower_end_point_id = rm_vals %>%
+      filter(rm_label == lo_rm_input) %>%
+      pull(point_location_id)
+    # Data source
+    completion_vals = get_completion_status(pool)
+    completion_input = input$completion_select
+    survey_completion_status_id = completion_vals %>%
+      filter(completion == completion_input) %>%
+      pull(survey_completion_status_id)
+    new_survey = tibble(survey_dt = input$survey_date_input,
+                        data_source = data_source_input,
+                        data_source_id = data_source_id,
+                        survey_method = survey_method_input,
+                        survey_method_id = survey_method_id,
+                        data_review = data_review_input,
+                        data_review_status_id = data_review_status_id,
+                        up_rm = up_rm_input,
+                        upper_end_point_id = upper_end_point_id,
+                        lo_rm = lo_rm_input,
+                        lower_end_point_id = lower_end_point_id,
+                        start_time = format(input$start_time_select, "%H:%M"),
+                        end_time = format(input$end_time_select, "%H:%M"),
+                        observer = input$observer_input,
+                        submitter = input$submitter_input,
+                        completion = completion_input,
+                        survey_completion_status_id = survey_completion_status_id,
+                        created_dt = lubridate::with_tz(Sys.time(), "UTC"),
+                        created_by = Sys.getenv("USERNAME"))
+    new_survey = new_survey %>%
+      mutate(start_time = if_else(is.na(start_time) | start_time == "", NA_character_, start_time)) %>%
+      mutate(end_time = if_else(is.na(end_time) | end_time == "", NA_character_, end_time)) %>%
+      mutate(observer = if_else(is.na(observer) | observer == "", NA_character_, observer)) %>%
+      mutate(submitter = if_else(is.na(submitter) | submitter == "", NA_character_, submitter))
+    return(new_survey)
+  })
+
+  # Generate values to show in modal
+  output$survey_modal_insert_vals = renderDT({
+    survey_modal_in_vals = survey_create() %>%
+      select(survey_dt, survey_method, up_rm, lo_rm, start_time, end_time,
+             observer, submitter, data_source, data_review, completion)
+    # Generate table
+    datatable(survey_modal_in_vals,
+              rownames = FALSE,
+              options = list(dom = 't',
+                             scrollX = T,
+                             ordering = FALSE,
+                             initComplete = JS(
+                               "function(settings, json) {",
+                               "$(this.api().table().header()).css({'background-color': '#9eb3d6'});",
+                               "}")))
+  })
+
+  observeEvent(input$survey_add, {
+    new_survey_vals = survey_create()
+    existing_survey_vals = dt_surveys() %>%
+      mutate(up_rm = as.character(up_rm)) %>%
+      mutate(lo_rm = as.character(lo_rm)) %>%
+      select(survey_dt, survey_method, up_rm, lo_rm, observer, data_source)
+    dup_flag = dup_survey(new_survey_vals, existing_survey_vals)
+    showModal(
+      # Verify required fields have values
+      tags$div(id = "survey_insert_modal",
+               if ( is.na(new_survey_vals$survey_dt) |
+                    is.na(new_survey_vals$survey_method) |
+                    is.na(new_survey_vals$up_rm) |
+                    is.na(new_survey_vals$lo_rm) |
+                    is.na(new_survey_vals$observer) |
+                    is.na(new_survey_vals$submitter) |
+                    is.na(new_survey_vals$data_source) |
+                    is.na(new_survey_vals$data_review) |
+                    is.na(new_survey_vals$completion) ) {
+                 modalDialog (
+                   size = "s",
+                   title = "Warning",
+                   paste0("All data fields are mandatory (except start and stop times)"),
+                   easyClose = TRUE,
+                   footer = NULL
+                 )
+                 # Verify survey is not already in database
+               } else if ( dup_flag == TRUE ) {
+                 modalDialog (
+                   size = "s",
+                   title = "Warning",
+                   paste0("Survey already exists. Please edit the date, RMs, observer, or source before proceeding." ),
+                   easyClose = TRUE,
+                   footer = NULL
+                 )
+               } else {
+                 modalDialog (
+                   size = 'l',
+                   title = glue("Insert new survey to the database?"),
+                   fluidPage (
+                     DT::DTOutput("survey_modal_insert_vals"),
+                     br(),
+                     br(),
+                     actionButton("insert_survey", "Insert survey")
+                   ),
+                   easyClose = TRUE,
+                   footer = NULL
+                 )
+               }
+      ))
+  })
+
+  # Update DB and reload DT
+  observeEvent(input$insert_survey, {
+    survey_insert(survey_create())
+    removeModal()
+    replaceData(survey_dt_proxy,
+                surveys = dt_surveys() %>%
+                  mutate(survey_dt = format(survey_dt, "%m/%d/%Y")) %>%
+                  mutate(start_time = format(start_time, "%H:%M")) %>%
+                  mutate(end_time = format(end_time, "%H:%M")) %>%
+                  mutate(created_dt = format(created_dt, "%m/%d/%Y %H:%M")) %>%
+                  mutate(modified_dt = format(modified_dt, "%m/%d/%Y %H:%M")) %>%
+                  select(survey_dt, up_rm, lo_rm, start_time, end_time, observer,
+                         submitter, data_source, data_review, completion, created_dt,
+                         created_by, modified_dt, modified_by))
+  })
+
   # #========================================================
   # # Edit operations: reactives, observers and modals
   # #========================================================

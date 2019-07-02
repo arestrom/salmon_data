@@ -58,7 +58,7 @@
   font-weight: bold;
 }
 
-#header_add {
+#survey_add {
   color: #e6ebef;
   background-color:#231651;
   font-size: 11px;
@@ -66,7 +66,15 @@
   line-height: 1.3;
 }
 
-#header_edit {
+#survey_insert_modal .modal-lg {
+  width: 1200px;
+}
+
+#survey_insert_modal .modal-content {
+  border-radius: 6px;
+}
+
+#survey_edit {
   color: #e6ebef;
   background-color:#4d1566;
   font-size: 11px;
@@ -74,7 +82,7 @@
   line-height: 1.3;
 }
 
-#header_delete {
+#survey_delete {
   color: #e6ebef;
   background-color:#590b25;
   font-size: 11px;
@@ -151,13 +159,13 @@
   line-height: 0.9;
 }
 
-#insert_modal .modal-header {
+#survey_insert_modal .modal-header {
   background-color: #becc4a;
   border-top-left-radius: 6px;
   border-top-right-radius: 6px;
 }
 
-#insert_modal .modal-body {
+#survey_insert_modal .modal-body {
   background-color: #ffffff;
   border-bottom-left-radius: 6px;
   border-bottom-right-radius: 6px;
@@ -167,18 +175,18 @@
   font-weight: bold;
 }
 
-#insert_modal .modal-title {
+#survey_insert_modal .modal-title {
   font-size: 15px;
   font-weight: bold;
   color: #191c13;
 }
 
-#insert_modal .btn-default {
+#survey_insert_modal .btn-default {
   color: #e6ebef;
   background-color:#231651;
-  font-size: 9px;
+  font-size: 11px;
   font-weight: 300;
-  line-height: 1.1;
+  line-height: 1.3;
 }
 
 #update_modal .modal-header {
@@ -206,9 +214,9 @@
 #update_modal .btn-default {
   color: #e6ebef;
   background-color:#4d1566;
-  font-size: 9px;
+  font-size: 11px;
   font-weight: 300;
-  line-height: 1.1;
+  line-height: 1.3;
 }
 
 #delete_modal .modal-header {
