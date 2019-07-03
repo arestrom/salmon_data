@@ -226,14 +226,6 @@ dup_survey = function(new_vals, old_vals) {
 # Survey insert code
 #=====================================================================================================
 
-data_source = "WDFW"
-data_source = data_source %>%
-  mutate(data_source_id = case_when(
-    data_source == "WD"
-  ))
-
-
-
 # Mimic what comes out of survey_create() reactive
 new_values = tibble(survey_dt = as.POSIXct("2019-06-02", tz = "America/Los_Angeles"),
 
@@ -252,14 +244,14 @@ new_values = tibble(survey_dt = as.POSIXct("2019-06-02", tz = "America/Los_Angel
 # Define the insert callback
 survey_insert = function(new_values) {
   survey_dt = new_values$survey_dt
-  # Format start and end times
+  # Format start times
   if (substr(new_values$start_time, 12, 13) == "00" ) {
     new_values$start_time = with_tz(as.POSIXct(NA), tzone = "UTC")
   } else {
     new_values$start_time = as.POSIXct(paste0(format(survey_dt, " ", start_time)), tz = "America/Los_Angeles")
     new_values$start_time = with_tz(new_values$start_time, tzone = "UTC")
   }
-
+  # Format end times
   if (substr(new_values$end_time, 12, 13) == "00" ) {
     new_values$end_time = with_tz(as.POSIXct(NA), tzone = "UTC")
   } else {

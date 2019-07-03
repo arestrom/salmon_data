@@ -28,6 +28,7 @@
 #  7. Set data_source order using number of surveys in category.
 #     Can do a query of data to arrange by n, then name.
 #  8. Need to add survey_method to survey CRUD screens.
+#  9. Start back in on server.R line 452....survey inserted correctly, but replaceData function doesn't work !!!!!!!!!!!!!!!!!!!
 #
 # AS 2019-05-15
 #==============================================================
@@ -240,45 +241,45 @@ dup_survey = function(new_survey_vals, existing_survey_vals) {
 
 # Define the insert callback
 survey_insert = function(new_values) {
-  # Get insert values
-  tide_station = new_values$tide_station
-  if ( tide_station == "Seattle" ) {
-    tide_station_location_id = "74c2ccff-2a7d-47e0-99f5-0c4c8d96ca5c"
-  } else if ( tide_station == "Port Townsend") {
-    tide_station_location_id = "2ae45919-d13b-4cf6-bdcb-c0e5305d843f"
-  } else {
-    stop("No tide station was selected")
-  }
-  beach_name = new_values$beach_name
-  if (is.na(beach_name) | beach_name == "") { beach_name = NA }
-  beach_desc = new_values$beach_desc
-  if (is.na(beach_desc) | beach_desc == "" | beach_desc == "NA") { beach_desc = NA }
-  low_corr_min = new_values$low_corr_min
-  low_corr_ft = new_values$low_corr_ft
-  high_corr_min = new_values$high_corr_min
-  high_corr_ft = new_values$high_corr_ft
-  create_dt = lubridate::with_tz(Sys.time(), "UTC")
-  create_by = Sys.getenv("USERNAME")
+  new_values = new_values %>%
+    mutate(incomplete_survey_type_id = "cde5d9fb-bb33-47c6-9018-177cd65d15f5") %>%   # Not applicable
+    mutate(data_source_unit_id = "e2d51ceb-398c-49cb-9aa5-d20a839e9ad9")             # Not applicable
   # Checkout a connection
   con = poolCheckout(pool)
-  insert_res = dbSendStatement(
-    con, glue_sql("INSERT INTO beach (",
-                  "tide_station_location_id, ",
-                  "local_beach_name, ",
-                  "beach_description, ",
-                  "low_tide_correction_minutes, ",
-                  "low_tide_correction_feet, ",
-                  "high_tide_correction_minutes, ",
-                  "high_tide_correction_feet, ",
-                  "created_datetime, ",
+  insert_result = dbSendStatement(
+    con, glue_sql("INSERT INTO survey (",
+                  "survey_datetime, ",
+                  "data_source_id, ",
+                  "data_source_unit_id, ",
+                  "survey_method_id, ",
+                  "data_review_status_id, ",
+                  "upper_end_point_id, ",
+                  "lower_end_point_id, ",
+                  "survey_completion_status_id, ",
+                  "incomplete_survey_type_id, ",
+                  "survey_start_datetime, ",
+                  "survey_end_datetime, ",
+                  "observer_last_name, ",
+                  "data_submitter_last_name, ",
                   "created_by) ",
                   "VALUES (",
-                  "?, ?, ?, ?, ?, ?, ?, ?, ?)"))
-  dbBind(insert_res, list(tide_station_location_id, beach_name, beach_desc,
-                          low_corr_min, low_corr_ft, high_corr_min,
-                          high_corr_ft, create_dt, create_by))
-  dbGetRowsAffected(insert_res)
-  dbClearResult(insert_res)
+                  "?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)"))
+  dbBind(insert_result, list(new_values$survey_datetime,
+                             new_values$data_source_id,
+                             new_values$data_source_unit_id,
+                             new_values$survey_method_id,
+                             new_values$data_review_status_id,
+                             new_values$upper_end_point_id,
+                             new_values$lower_end_point_id,
+                             new_values$survey_completion_status_id,
+                             new_values$incomplete_survey_type_id,
+                             new_values$survey_start_datetime,
+                             new_values$survey_end_datetime,
+                             new_values$observer_last_name,
+                             new_values$data_submitter_last_name,
+                             new_values$created_by))
+  dbGetRowsAffected(insert_result)
+  dbClearResult(insert_result)
   poolReturn(con)
 }
 

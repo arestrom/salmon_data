@@ -357,6 +357,7 @@ server = function(input, output, session) {
       mutate(end_time = if_else(is.na(end_time) | end_time == "", NA_character_, end_time)) %>%
       mutate(observer = if_else(is.na(observer) | observer == "", NA_character_, observer)) %>%
       mutate(submitter = if_else(is.na(submitter) | submitter == "", NA_character_, submitter))
+    print(new_survey)
     return(new_survey)
   })
 
@@ -431,8 +432,24 @@ server = function(input, output, session) {
 
   # Update DB and reload DT
   observeEvent(input$insert_survey, {
-    survey_insert(survey_create())
+    new_values = survey_create() %>%
+      mutate(survey_start_datetime = case_when(
+        substr(start_time, 12, 13) == "00" ~ as.POSIXct(NA),
+        substr(start_time, 12, 13) != "00" ~ as.POSIXct(paste0(format(survey_dt), " ", start_time), tz = "America/Los_Angeles"))) %>%
+      mutate(survey_start_datetime = with_tz(survey_start_datetime, tzone = "UTC")) %>%
+      mutate(survey_end_datetime = case_when(
+        substr(end_time, 12, 13) == "00" ~ as.POSIXct(NA),
+        substr(end_time, 12, 13) != "00" ~ as.POSIXct(paste0(format(survey_dt), " ", end_time), tz = "America/Los_Angeles"))) %>%
+      mutate(survey_end_datetime = with_tz(survey_end_datetime, tzone = "UTC")) %>%
+      mutate(survey_dt = as.POSIXct(survey_dt)) %>%
+      select(survey_datetime = survey_dt, data_source_id, survey_method_id, data_review_status_id,
+             upper_end_point_id, lower_end_point_id, survey_completion_status_id, survey_start_datetime,
+             survey_end_datetime, observer_last_name = observer, data_submitter_last_name = submitter,
+             created_by)
+    #print(new_values)
+    survey_insert(new_values)
     removeModal()
+    # STOPPED HERE.....the surveys stuff below does not work....need to copy beach_data app
     replaceData(survey_dt_proxy,
                 surveys = dt_surveys() %>%
                   mutate(survey_dt = format(survey_dt, "%m/%d/%Y")) %>%
@@ -440,9 +457,9 @@ server = function(input, output, session) {
                   mutate(end_time = format(end_time, "%H:%M")) %>%
                   mutate(created_dt = format(created_dt, "%m/%d/%Y %H:%M")) %>%
                   mutate(modified_dt = format(modified_dt, "%m/%d/%Y %H:%M")) %>%
-                  select(survey_dt, up_rm, lo_rm, start_time, end_time, observer,
-                         submitter, data_source, data_review, completion, created_dt,
-                         created_by, modified_dt, modified_by))
+                  select(survey_dt, survey_method, up_rm, lo_rm, start_time, end_time,
+                         observer, submitter, data_source, data_review, completion,
+                         created_dt, created_by, modified_dt, modified_by))
   })
 
   # #========================================================
