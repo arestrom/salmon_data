@@ -27,8 +27,11 @@
 #     Start with RMs. Use MapEdit.
 #  7. Set data_source order using number of surveys in category.
 #     Can do a query of data to arrange by n, then name.
-#  8. Need to add survey_method to survey CRUD screens.
-#  9. Start back in on server.R line 452....survey inserted correctly, but replaceData function doesn't work !!!!!!!!!!!!!!!!!!!
+#  8. Need to use just one function to get survey data....but
+#     also add and include the other fields needed for display
+#     in time and date slots of DT. Just pull the one's needed.
+#     Problem in the ordering of the tables. Getting the wrong
+#     selection when selecting rows. Read up on DT ordering !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 #
 # AS 2019-05-15
 #==============================================================
@@ -121,8 +124,8 @@ get_end_points = function(pool, waterbody_id) {
 
 # Function to get header data...just use multiselect for year
 get_surveys = function(pool, waterbody_id, survey_years) {
-  qry = glue("select s.survey_id, s.survey_datetime as survey_date, data_source_code,
-             ds.data_source_name, du.data_source_unit_name as data_source_unit, ",
+  qry = glue("select s.survey_id, s.survey_datetime as survey_date, data_source_code, ",
+             "ds.data_source_name, du.data_source_unit_name as data_source_unit, ",
              "sm.survey_method_code as survey_method, ",
              "dr.data_review_status_description as data_review_status, ",
              "plu.river_mile_measure as upper_rm, ",
@@ -159,7 +162,61 @@ get_surveys = function(pool, waterbody_id, survey_years) {
     mutate(end_time = with_tz(end_time, tzone = "America/Los_Angeles")) %>%
     mutate(created_date = with_tz(created_date, tzone = "America/Los_Angeles")) %>%
     mutate(modified_date = with_tz(modified_date, tzone = "America/Los_Angeles")) %>%
-    arrange(survey_date, start_time)
+    mutate(survey_date = as.Date(survey_date)) %>%
+    select(survey_id, survey_dt = survey_date, survey_method, up_rm = upper_rm,
+           lo_rm = lower_rm, start_time, end_time, observer, submitter,
+           data_source = data_source_code, data_review = data_review_status,
+           completion = completion_status, created_dt = created_date,
+           created_by, modified_dt = modified_date, modified_by) %>%
+    arrange(survey_dt, start_time, end_time, created_dt)
+  return(surveys)
+}
+
+# Function to get header data...just use multiselect for year
+get_dtf_surveys = function(pool, waterbody_id, survey_years) {
+  qry = glue("select s.survey_id, s.survey_datetime as survey_date, data_source_code, ",
+             "ds.data_source_name, du.data_source_unit_name as data_source_unit, ",
+             "sm.survey_method_code as survey_method, ",
+             "dr.data_review_status_description as data_review, ",
+             "plu.river_mile_measure as upper_rm, ",
+             "pll.river_mile_measure as lower_rm, ",
+             "sct.completion_status_description as completion, ",
+             "ics.incomplete_survey_description as incomplete_type, ",
+             "s.survey_start_datetime as start_time, ",
+             "s.survey_end_datetime as end_time, ",
+             "s.observer_last_name as observer, ",
+             "s.data_submitter_last_name as submitter, ",
+             "s.created_datetime as created_date, ",
+             "s.created_by, s.modified_datetime as modified_date, ",
+             "s.modified_by ",
+             "from survey as s ",
+             "inner join data_source_lut as ds on s.data_source_id = ds.data_source_id ",
+             "inner join data_source_unit_lut as du on s.data_source_unit_id = du.data_source_unit_id ",
+             "inner join survey_method_lut as sm on s.survey_method_id = sm.survey_method_id ",
+             "inner join data_review_status_lut as dr on s.data_review_status_id = dr.data_review_status_id ",
+             "inner join point_location as plu on s.upper_end_point_id = plu.point_location_id ",
+             "inner join point_location as pll on s.lower_end_point_id = pll.point_location_id ",
+             "left join survey_completion_status_lut as sct on s.survey_completion_status_id = sct.survey_completion_status_id ",
+             "inner join incomplete_survey_type_lut as ics on s.incomplete_survey_type_id = ics.incomplete_survey_type_id ",
+             "where date_part('year', survey_datetime) in ({survey_years}) ",
+             "and (plu.waterbody_id = '{waterbody_id}' or pll.waterbody_id = '{waterbody_id}')")
+  surveys = DBI::dbGetQuery(pool, qry)
+  surveys = surveys %>%
+    mutate(survey_id = tolower(survey_id)) %>%
+    mutate(survey_dt = with_tz(survey_date, tzone = "America/Los_Angeles")) %>%
+    mutate(start_time = with_tz(start_time, tzone = "America/Los_Angeles")) %>%
+    mutate(end_time = with_tz(end_time, tzone = "America/Los_Angeles")) %>%
+    mutate(created_dt = with_tz(created_date, tzone = "America/Los_Angeles")) %>%
+    mutate(modified_dt = with_tz(modified_date, tzone = "America/Los_Angeles")) %>%
+    arrange(survey_dt, start_time, end_time, created_dt) %>%
+    # mutate(survey_dt = format(survey_dt, "%m/%d/%Y")) %>%
+    # mutate(start_time = format(start_time, "%H:%M")) %>%
+    # mutate(end_time = format(end_time, "%H:%M")) %>%
+    mutate(created_dt = format(created_dt, "%m/%d/%Y %H:%M")) %>%
+    mutate(modified_dt = format(modified_dt, "%m/%d/%Y %H:%M")) %>%
+    select(survey_dt, survey_method, up_rm = upper_rm, lo_rm = lower_rm,
+           start_time, end_time, observer, submitter, data_source = data_source_code,
+           data_review, completion, created_dt, created_by, modified_dt, modified_by)
   return(surveys)
 }
 
@@ -336,14 +393,14 @@ beach_update = function(edit_values) {
 #========================================================
 
 # Define delete callback
-beach_delete = function(delete_values) {
-  bch_id = delete_values$beach_id
+survey_delete = function(delete_values) {
+  survey_id = delete_values$survey_id
   con = poolCheckout(pool)
-  delete_res = dbSendStatement(
-    con, glue_sql("DELETE FROM beach WHERE beach_id = ?"))
-  dbBind(delete_res, list(bch_id))
-  dbGetRowsAffected(delete_res)
-  dbClearResult(delete_res)
+  delete_result = dbSendStatement(
+    con, glue_sql("DELETE FROM survey WHERE survey_id = ?"))
+  dbBind(delete_result, list(survey_id))
+  dbGetRowsAffected(delete_result)
+  dbClearResult(delete_result)
   poolReturn(con)
 }
 
