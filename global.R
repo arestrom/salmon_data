@@ -21,6 +21,8 @@
 #     query functions from global directly. I tested by just
 #     putting a reactive between functions in beach_data and
 #     got failures right away.
+#  8. Do not use rownames = FALSE in DT. Data will not reload
+#     when using replaceData() function.
 #
 #
 # ToDo:
@@ -32,7 +34,7 @@
 #     Try the shinyjqui package:
 #     https://github.com/nanxstats/awesome-shiny-extensions
 #  6. Need screens to allow entry and edit of RMs and encounters
-#     Start with RMs. Use MapEdit.
+#     Start with RMs. Use MapEdit. Trigger using RM == "add".
 #  7. Set data_source order using number of surveys in category.
 #     Can do a query of data to arrange by n, then name.
 #  8. Need to use just one function to get survey data....but
@@ -309,46 +311,48 @@ survey_insert = function(new_values) {
 #========================================================
 
 # Define update callback
-beach_update = function(edit_values) {
+survey_update = function(edit_values) {
   # Pull out data
-  tide_station = edit_values$tide_station
-  if (is.na(tide_station) | tide_station == "") {
-    tide_station_location_id = NA
-  } else if ( tide_station == "Seattle" ) {
-    tide_station_location_id = "74c2ccff-2a7d-47e0-99f5-0c4c8d96ca5c"
-  } else if ( tide_station == "Port Townsend" ) {
-    tide_station_location_id = "2ae45919-d13b-4cf6-bdcb-c0e5305d843f"
-  }
-  beach_name = edit_values$beach_name
-  if (is.na(beach_name) | beach_name == "") { beach_name = NA }
-  beach_desc = edit_values$beach_desc
-  if (is.na(beach_desc) | beach_desc == "" | beach_desc == "NA") { beach_desc = NA }
-  low_corr_min = edit_values$low_corr_min
-  low_corr_ft = edit_values$low_corr_ft
-  high_corr_min = edit_values$high_corr_min
-  high_corr_ft = edit_values$high_corr_ft
+  survey_datetime = edit_values$survey_datetime
+  data_source_id = edit_values$data_source_id
+  survey_method_id = edit_values$survey_method_id
+  data_review_status_id = edit_values$data_review_status_id
+  upper_end_point_id = edit_values$upper_end_point_id
+  lower_end_point_id = edit_values$lower_end_point_id
+  survey_completion_status_id = edit_values$survey_completion_status_id
+  survey_start_datetime = edit_values$survey_start_datetime
+  survey_end_datetime = edit_values$survey_end_datetime
+  observer_last_name = edit_values$observer
+  data_submitter_last_name = edit_values$submitter
   mod_dt = lubridate::with_tz(Sys.time(), "UTC")
   mod_by = Sys.getenv("USERNAME")
-  bch_id = edit_values$beach_id
+  survey_id = edit_values$survey_id
   # Checkout a connection
   con = poolCheckout(pool)
-  update_res = dbSendStatement(
-    con, glue_sql("UPDATE beach SET ",
-                  "tide_station_location_id = ?, ",
-                  "local_beach_name = ?, ",
-                  "beach_description = ?, ",
-                  "low_tide_correction_minutes = ?, ",
-                  "low_tide_correction_feet = ?, ",
-                  "high_tide_correction_minutes = ?, ",
-                  "high_tide_correction_feet = ?, ",
+  update_result = dbSendStatement(
+    con, glue_sql("UPDATE survey SET ",
+                  "survey_datetime = ?, ",
+                  "data_source_id = ?, ",
+                  "survey_method_id = ?, ",
+                  "data_review_status_id = ?, ",
+                  "upper_end_point_id = ?, ",
+                  "lower_end_point_id = ?, ",
+                  "survey_completion_status_id = ?, ",
+                  "survey_start_datetime = ?, ",
+                  "survey_end_datetime = ?, ",
+                  "observer_last_name = ?, ",
+                  "data_submitter_last_name = ?, ",
                   "modified_datetime = ?, ",
                   "modified_by = ? ",
-                  "where beach_id = ?"))
-  dbBind(update_res, list(tide_station_location_id, beach_name, beach_desc,
-                          low_corr_min, low_corr_ft, high_corr_min,
-                          high_corr_ft, mod_dt, mod_by, bch_id))
-  dbGetRowsAffected(update_res)
-  dbClearResult(update_res)
+                  "where survey_id = ?"))
+  dbBind(update_result, list(survey_datetime, data_source_id, survey_method_id,
+                             data_review_status_id, upper_end_point_id,
+                             lower_end_point_id, survey_completion_status_id,
+                             survey_start_datetime, survey_end_datetime,
+                             observer_last_name, data_submitter_last_name,
+                             mod_dt, mod_by, survey_id))
+  dbGetRowsAffected(update_result)
+  dbClearResult(update_result)
   poolReturn(con)
 }
 

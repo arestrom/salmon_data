@@ -82,6 +82,14 @@
   line-height: 1.3;
 }
 
+#survey_update_modal .modal-lg {
+  width: 1200px;
+}
+
+#survey_update_modal .modal-content {
+  border-radius: 6px;
+}
+
 #survey_delete {
   color: #e6ebef;
   background-color:#590b25;
