@@ -123,16 +123,17 @@ onStop(function() {
   poolClose(pool)
 })
 
-get_surveys = function(pool, waterbody_id, survey_year) {
-  qry = glue("select s.survey_id, s.survey_datetime as survey_date, ds.data_source_name, ",
-             "du.data_source_unit_name as data_source_unit, ",
-             "sm.survey_method_description as survey_method, ",
-             "dr.data_review_status_description as data_review_status, ",
+# Function to get header data...use multiselect for year
+get_surveys = function(pool, waterbody_id, survey_years) {
+  qry = glue("select s.survey_id, s.survey_datetime as survey_date,  ",
+             "ds.data_source_code, du.data_source_unit_name as data_unit, ",
+             "sm.survey_method_code as survey_method, ",
+             "dr.data_review_status_description as data_review, ",
              "plu.river_mile_measure as upper_rm, ",
              "pll.river_mile_measure as lower_rm, ",
              "plu.point_location_id as upper_location_id, ",
              "pll.point_location_id as lower_location_id, ",
-             "sct.completion_status_description as completion_status, ",
+             "sct.completion_status_description as completion, ",
              "ics.incomplete_survey_description as incomplete_type, ",
              "s.survey_start_datetime as start_time, ",
              "s.survey_end_datetime as end_time, ",
@@ -150,19 +151,30 @@ get_surveys = function(pool, waterbody_id, survey_year) {
              "inner join point_location as pll on s.lower_end_point_id = pll.point_location_id ",
              "left join survey_completion_status_lut as sct on s.survey_completion_status_id = sct.survey_completion_status_id ",
              "inner join incomplete_survey_type_lut as ics on s.incomplete_survey_type_id = ics.incomplete_survey_type_id ",
-             "where date_part('year', survey_datetime) = {survey_year} ",
-             "and (plu.waterbody_id = '{waterbody}' or pll.waterbody_id = '{waterbody}')")
+             "where date_part('year', survey_datetime) in ({survey_years}) ",
+             "and (plu.waterbody_id = '{waterbody_id}' or pll.waterbody_id = '{waterbody_id}')")
   surveys = DBI::dbGetQuery(pool, qry)
   surveys = surveys %>%
     mutate(survey_id = tolower(survey_id)) %>%
     mutate(upper_location_id = tolower(upper_location_id)) %>%
     mutate(lower_location_id = tolower(lower_location_id)) %>%
     mutate(survey_date = with_tz(survey_date, tzone = "America/Los_Angeles")) %>%
+    mutate(survey_date_dt = format(survey_date, "%m/%d/%Y")) %>%
     mutate(start_time = with_tz(start_time, tzone = "America/Los_Angeles")) %>%
+    mutate(start_time_dt = format(start_time, "%H:%M")) %>%
     mutate(end_time = with_tz(end_time, tzone = "America/Los_Angeles")) %>%
+    mutate(end_time_dt = format(end_time, "%H:%M")) %>%
     mutate(created_date = with_tz(created_date, tzone = "America/Los_Angeles")) %>%
+    mutate(created_dt = format(created_date, "%m/%d/%Y %H:%M")) %>%
     mutate(modified_date = with_tz(modified_date, tzone = "America/Los_Angeles")) %>%
-    arrange(survey_date, start_time)
+    mutate(modified_dt = format(modified_dt, "%m/%d/%Y %H:%M")) %>%
+    mutate(survey_date = as.Date(survey_date)) %>%
+    select(survey_id, survey_date, survey_date_dt, survey_method, up_rm = upper_rm,
+           lo_rm = lower_rm, start_time, start_time_dt, end_time, end_time_dt,
+           observer, submitter, data_source = data_source_code, data_unit,
+           data_review, completion, created_date, created_dt,
+           created_by, modified_date, modified_dt, modified_by) %>%
+    arrange(survey_date, start_time, end_time, created_date)
   return(surveys)
 }
 

@@ -166,28 +166,19 @@ server = function(input, output, session) {
                          selected = updated_rm_list[1])
   })
 
-  # # Get surveys for dt
-  # dt_surveys = reactive({
-  #   req(input$year_select)
-  #   input$insert_survey
-  #   input$delete_survey
-  #   year_select = as.integer(input$year_select)
-  #   validate(
-  #     need(min(year_select) >= 1930L & max(year_select) <= as.integer(format(Sys.Date(), "%Y")) + 1L,
-  #            glue("Error: Please use the right sidebar to select a stream and a valid survey year ",
-  #                 "(between 1930 and {as.integer(format(Sys.Date(), '%Y')) + 1L})"))
-  #   )
-  #   surveys = get_surveys(pool, waterbody_id(), survey_years = year_vals())
-  # })
-
   # Primary DT datatable for database
   output$surveys = renderDT({
     survey_title = glue("Surveys for {input$stream_select} in {year_vals()}")
-    survey_data = get_dtf_surveys(pool, waterbody_id(), year_vals())
+    survey_data = get_surveys(pool, waterbody_id(), year_vals()) %>%
+      mutate(start_time = start_time_dt, end_time = end_time_dt) %>%
+      select(survey_dt = survey_date_dt, survey_method, up_rm,
+             lo_rm, start_time, end_time, observer, submitter,
+             data_source, data_review, completion, created_dt,
+             created_by, modified_dt, modified_by)
     # Generate table
     datatable(survey_data,
               selection = list(mode = 'single'),
-              #rownames = FALSE,
+              #rownames = FALSE, THIS CAUSED DT TO NOT RELOAD !!!!!!!!!!!!!
               extensions = 'Buttons',
               options = list(dom = 'Blftp',
                              pageLength = 5,
@@ -211,60 +202,44 @@ server = function(input, output, session) {
   #========================================================
 
   # Create reactive to collect input values for update and delete actions
-  survey_selected_data = reactive({
+  selected_survey_data = reactive({
     req(input$surveys_rows_selected)
-    # input$survey_delete
-    # input$survey_insert
-    surveys = get_dtf_surveys(pool, waterbody_id(), survey_years = year_vals())
+    surveys = get_surveys(pool, waterbody_id(), year_vals())
     survey_row = input$surveys_rows_selected
-    existing_surveys = tibble(survey_id = surveys$survey_id[survey_row],
-                              survey_dt = surveys$survey_dt[survey_row],
-                              survey_method = surveys$survey_method[survey_row],
-                              up_rm = as.character(surveys$up_rm[survey_row]),
-                              lo_rm = as.character(surveys$lo_rm[survey_row]),
-                              start_time = surveys$start_time[survey_row],
-                              end_time = surveys$end_time[survey_row],
-                              observer = surveys$observer[survey_row],
-                              submitter = surveys$submitter[survey_row],
-                              data_source = surveys$data_source[survey_row],
-                              data_review = surveys$data_review[survey_row],
-                              completed = surveys$completion[survey_row])
-    return(existing_surveys)
+    selected_survey = tibble(survey_id = surveys$survey_id[survey_row],
+                             survey_date = surveys$survey_date[survey_row],
+                             survey_method = surveys$survey_method[survey_row],
+                             up_rm = as.character(surveys$up_rm[survey_row]),
+                             lo_rm = as.character(surveys$lo_rm[survey_row]),
+                             start_time = surveys$start_time[survey_row],
+                             end_time = surveys$end_time[survey_row],
+                             observer = surveys$observer[survey_row],
+                             submitter = surveys$submitter[survey_row],
+                             data_source = surveys$data_source[survey_row],
+                             data_review = surveys$data_review[survey_row],
+                             completed = surveys$completion[survey_row])
+    return(selected_survey)
   })
 
   #========================================================
   # Update select inputs to values in selected row
   #========================================================
 
-  # NEED TO USE survey_selected_values for obs_event below !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-
   # Update all input values to values in selected row
   observeEvent(input$surveys_rows_selected, {
     req(input$surveys_rows_selected)
-    dt_surveys = get_dtf_surveys(pool, waterbody_id(), year_vals())
-    survey_row = input$surveys_rows_selected
-    survey_dt = dt_surveys$survey_dt[survey_row]
-    survey_method = dt_surveys$survey_method[survey_row]
-    up_rm = as.character(dt_surveys$up_rm[survey_row])
-    lo_rm = as.character(dt_surveys$lo_rm[survey_row])
-    start_time = dt_surveys$start_time[survey_row]
-    end_time = dt_surveys$end_time[survey_row]
-    observer = dt_surveys$observer[survey_row]
-    submitter = dt_surveys$submitter[survey_row]
-    data_source = dt_surveys$data_source[survey_row]
-    data_review = dt_surveys$data_review[survey_row]
-    completed = dt_surveys$completion[survey_row]
-    updateDateInput(session, "survey_date_input", value = survey_dt)
-    updateSelectizeInput(session, "survey_method_select", selected = survey_method)
-    updateSelectizeInput(session, "upper_rm_select", selected = up_rm)
-    updateSelectizeInput(session, "lower_rm_select", selected = lo_rm)
-    updateTimeInput(session, "start_time_select", value = start_time)
-    updateTimeInput(session, "end_time_select", value = end_time)
-    updateTextInput(session, "observer_input", value = observer)
-    updateTextInput(session, "submitter_input", value = submitter)
-    updateSelectizeInput(session, "data_source_select", selected = data_source)
-    updateSelectizeInput(session, "data_review_select", selected = data_review)
-    updateSelectizeInput(session, "completion_select", selected = completed)
+    ssdat = selected_survey_data()
+    updateDateInput(session, "survey_date_input", value = ssdat$survey_date)
+    updateSelectizeInput(session, "survey_method_select", selected = ssdat$survey_method)
+    updateSelectizeInput(session, "upper_rm_select", selected = ssdat$up_rm)
+    updateSelectizeInput(session, "lower_rm_select", selected = ssdat$lo_rm)
+    updateTimeInput(session, "start_time_select", value = ssdat$start_time)
+    updateTimeInput(session, "end_time_select", value = ssdat$end_time)
+    updateTextInput(session, "observer_input", value = ssdat$observer)
+    updateTextInput(session, "submitter_input", value = ssdat$submitter)
+    updateSelectizeInput(session, "data_source_select", selected = ssdat$data_source)
+    updateSelectizeInput(session, "data_review_select", selected = ssdat$data_review)
+    updateSelectizeInput(session, "completion_select", selected = ssdat$completed)
   })
 
   #========================================================
@@ -273,6 +248,8 @@ server = function(input, output, session) {
 
   # Create reactive to collect input values for insert actions
   survey_create = reactive({
+    # Survey date
+    survey_date_input = input$survey_date_input
     # Data source
     data_source_vals = get_data_source(pool)
     data_source_input = input$data_source_select
@@ -307,7 +284,7 @@ server = function(input, output, session) {
     survey_completion_status_id = completion_vals %>%
       filter(completion == completion_input) %>%
       pull(survey_completion_status_id)
-    new_survey = tibble(survey_dt = input$survey_date_input,
+    new_survey = tibble(survey_dt = survey_date_input,
                         data_source = data_source_input,
                         data_source_id = data_source_id,
                         survey_method = survey_method_input,
@@ -353,10 +330,11 @@ server = function(input, output, session) {
 
   observeEvent(input$survey_add, {
     new_survey_vals = survey_create()
-    existing_survey_vals = get_surveys(pool, waterbody_id(), survey_years = year_vals()) %>%
+    existing_survey_vals = get_surveys(pool, waterbody_id(), year_vals()) %>%
       mutate(up_rm = as.character(up_rm)) %>%
       mutate(lo_rm = as.character(lo_rm)) %>%
-      select(survey_dt, survey_method, up_rm, lo_rm, observer, data_source)
+      select(survey_dt = survey_date, survey_method, up_rm, lo_rm,
+             observer, data_source)
     dup_flag = dup_survey(new_survey_vals, existing_survey_vals)
     showModal(
       # Verify required fields have values
@@ -414,7 +392,7 @@ server = function(input, output, session) {
         substr(end_time, 12, 13) == "00" ~ as.POSIXct(NA),
         substr(end_time, 12, 13) != "00" ~ as.POSIXct(paste0(format(survey_dt), " ", end_time), tz = "America/Los_Angeles"))) %>%
       mutate(survey_end_datetime = with_tz(survey_end_datetime, tzone = "UTC")) %>%
-      mutate(survey_dt = as.POSIXct(survey_dt, tz = "America/Los_Angeles")) %>%
+      mutate(survey_dt = as.POSIXct(format(survey_dt), tz = "America/Los_Angeles")) %>%
       mutate(survey_dt = with_tz(survey_dt, tzone = "UTC")) %>%
       select(survey_dt, data_source_id, survey_method_id, data_review_status_id,
              upper_end_point_id, lower_end_point_id, survey_completion_status_id, survey_start_datetime,
@@ -427,7 +405,13 @@ server = function(input, output, session) {
   observeEvent(input$insert_survey, {
     survey_insert(survey_insert_vals())
     removeModal()
-    replaceData(survey_dt_proxy, get_dtf_surveys(pool, waterbody_id(), survey_years = year_vals()))
+    post_insert_vals = get_surveys(pool, waterbody_id(), year_vals()) %>%
+      mutate(start_time = start_time_dt, end_time = end_time_dt) %>%
+      select(survey_dt = survey_date_dt, survey_method, up_rm,
+             lo_rm, start_time, end_time, observer, submitter,
+             data_source, data_review, completion, created_dt,
+             created_by, modified_dt, modified_by)
+    replaceData(survey_dt_proxy, post_insert_vals)
   })
 
   # #========================================================
@@ -527,8 +511,14 @@ server = function(input, output, session) {
 
   # Generate values to show in modal
   output$survey_modal_delete_vals = renderDT({
-    survey_modal_del_vals = survey_selected_data()
-
+    survey_modal_del_id = selected_survey_data()$survey_id
+    survey_modal_del_vals = get_surveys(pool, waterbody_id(), year_vals()) %>%
+      filter(survey_id == survey_modal_del_id) %>%
+      mutate(start_time = start_time_dt, end_time = end_time_dt) %>%
+      select(survey_dt = survey_date_dt, survey_method, up_rm,
+             lo_rm, start_time, end_time, observer, submitter,
+             data_source, data_review, completion, created_dt,
+             created_by, modified_dt, modified_by)
     # Generate table
     datatable(survey_modal_del_vals,
               rownames = FALSE,
@@ -542,7 +532,7 @@ server = function(input, output, session) {
   })
 
   observeEvent(input$survey_delete, {
-    survey_id = survey_selected_data()$survey_id
+    survey_id = selected_survey_data()$survey_id
     showModal(
       tags$div(id = "survey_delete_modal",
                if ( length(survey_id) == 0 ) {
@@ -572,9 +562,15 @@ server = function(input, output, session) {
 
   # Update DB and reload DT
   observeEvent(input$delete_survey, {
-    survey_delete(survey_selected_data())
+    survey_delete(selected_survey_data())
     removeModal()
-    replaceData(survey_dt_proxy, get_dtf_surveys(pool, waterbody_id(), survey_years = year_vals()))
+    surveys_after_delete = get_surveys(pool, waterbody_id(), year_vals()) %>%
+      mutate(start_time = start_time_dt, end_time = end_time_dt) %>%
+      select(survey_dt = survey_date_dt, survey_method, up_rm,
+             lo_rm, start_time, end_time, observer, submitter,
+             data_source, data_review, completion, created_dt,
+             created_by, modified_dt, modified_by)
+    replaceData(survey_dt_proxy, surveys_after_delete)
   })
 
   # # close the R session when Chrome closes
