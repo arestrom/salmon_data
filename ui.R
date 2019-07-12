@@ -23,8 +23,7 @@ ui = dashboardPagePlus(
             title = "Survey comments",
             color = "purple",
             collapsed = TRUE,
-            "This is some text!"
-            #survey_content
+            survey_comment_content
           ),
           accordionItem(
             id = 2,
