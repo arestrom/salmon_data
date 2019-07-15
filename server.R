@@ -1,4 +1,5 @@
 
+
 # Create the Shiny server
 server = function(input, output, session) {
 
@@ -45,9 +46,9 @@ server = function(input, output, session) {
   })
 
   output$abundance_condition_select = renderUI({
-    abundance_condition_list = get_abundance_condition(pool)$abundance
+    abundance_condition_list = get_abundance_condition(pool)$abundance_condition
     abundance_condition_list = c("", abundance_condition_list)
-    selectizeInput("abundance_condition_select", label = "abundance",
+    selectizeInput("abundance_condition_select", label = "abundance_condition",
                    choices = abundance_condition_list, selected = NULL,
                    width = "125px")
   })
@@ -115,7 +116,6 @@ server = function(input, output, session) {
                    choices = weather_type_list, selected = NULL,
                    width = "150px")
   })
-
 
   # Get streams in wria
   wria_streams = reactive({
@@ -278,7 +278,7 @@ server = function(input, output, session) {
                                "}")),
               caption = htmltools::tags$caption(
                 style = 'caption-side: top; text-align: left; color: black; width: auto;',
-                'Table 1: ', htmltools::em(htmltools::strong(survey_title))))
+                htmltools::em(htmltools::strong(survey_title))))
   })
 
   # Create surveys DT proxy object
@@ -313,10 +313,10 @@ server = function(input, output, session) {
   })
 
   #========================================================
-  # Update select inputs to values in selected row
+  # Update survey select inputs to values in selected row
   #========================================================
 
-  # Update all input values to values in selected row
+  # Update all survey input values to values in selected row
   observeEvent(input$surveys_rows_selected, {
     req(input$surveys_rows_selected)
     ssdat = selected_survey_data()
@@ -364,11 +364,11 @@ server = function(input, output, session) {
     up_rm_input = input$upper_rm_select
     upper_end_point_id = rm_vals %>%
       filter(rm_label == up_rm_input) %>%
-      pull(point_location_id)
+      pull(location_id)
     lo_rm_input = input$lower_rm_select
     lower_end_point_id = rm_vals %>%
       filter(rm_label == lo_rm_input) %>%
-      pull(point_location_id)
+      pull(location_id)
     # Data source
     completion_vals = get_completion_status(pool)
     completion_input = input$completion_select
@@ -477,11 +477,13 @@ server = function(input, output, session) {
     new_values = survey_create() %>%
       mutate(survey_start_datetime = case_when(
         substr(start_time, 12, 13) == "00" ~ as.POSIXct(NA),
-        substr(start_time, 12, 13) != "00" ~ as.POSIXct(paste0(format(survey_dt), " ", start_time), tz = "America/Los_Angeles"))) %>%
+        substr(start_time, 12, 13) != "00" ~ as.POSIXct(paste0(format(survey_dt), " ", start_time),
+                                                        tz = "America/Los_Angeles"))) %>%
       mutate(survey_start_datetime = with_tz(survey_start_datetime, tzone = "UTC")) %>%
       mutate(survey_end_datetime = case_when(
         substr(end_time, 12, 13) == "00" ~ as.POSIXct(NA),
-        substr(end_time, 12, 13) != "00" ~ as.POSIXct(paste0(format(survey_dt), " ", end_time), tz = "America/Los_Angeles"))) %>%
+        substr(end_time, 12, 13) != "00" ~ as.POSIXct(paste0(format(survey_dt), " ", end_time),
+                                                      tz = "America/Los_Angeles"))) %>%
       mutate(survey_end_datetime = with_tz(survey_end_datetime, tzone = "UTC")) %>%
       mutate(survey_dt = as.POSIXct(format(survey_dt), tz = "America/Los_Angeles")) %>%
       mutate(survey_dt = with_tz(survey_dt, tzone = "UTC")) %>%
@@ -534,11 +536,11 @@ server = function(input, output, session) {
     up_rm_input = input$upper_rm_select
     upper_end_point_id = rm_vals %>%
       filter(rm_label == up_rm_input) %>%
-      pull(point_location_id)
+      pull(location_id)
     lo_rm_input = input$lower_rm_select
     lower_end_point_id = rm_vals %>%
       filter(rm_label == lo_rm_input) %>%
-      pull(point_location_id)
+      pull(location_id)
     # Data source
     completion_vals = get_completion_status(pool)
     completion_input = input$completion_select
@@ -572,11 +574,13 @@ server = function(input, output, session) {
       mutate(end_time = if_else(is.na(end_time) | end_time == "", NA_character_, end_time)) %>%
       mutate(survey_start_datetime = case_when(
         substr(start_time, 12, 13) == "00" ~ as.POSIXct(NA),
-        substr(start_time, 12, 13) != "00" ~ as.POSIXct(paste0(format(survey_dt), " ", start_time), tz = "America/Los_Angeles"))) %>%
+        substr(start_time, 12, 13) != "00" ~ as.POSIXct(paste0(format(survey_dt), " ", start_time),
+                                                        tz = "America/Los_Angeles"))) %>%
       mutate(survey_start_datetime = with_tz(survey_start_datetime, tzone = "UTC")) %>%
       mutate(survey_end_datetime = case_when(
         substr(end_time, 12, 13) == "00" ~ as.POSIXct(NA),
-        substr(end_time, 12, 13) != "00" ~ as.POSIXct(paste0(format(survey_dt), " ", end_time), tz = "America/Los_Angeles"))) %>%
+        substr(end_time, 12, 13) != "00" ~ as.POSIXct(paste0(format(survey_dt), " ", end_time),
+                                                      tz = "America/Los_Angeles"))) %>%
       mutate(survey_end_datetime = with_tz(survey_end_datetime, tzone = "UTC")) %>%
       mutate(observer = if_else(is.na(observer) | observer == "", NA_character_, observer)) %>%
       mutate(submitter = if_else(is.na(submitter) | submitter == "", NA_character_, submitter))

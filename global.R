@@ -117,18 +117,18 @@ get_streams = function(pool, chosen_wria) {
 }
 
 get_end_points = function(pool, waterbody_id) {
-  qry = glue("select distinct pt.point_location_id, pt.river_mile_measure as river_mile, ",
-             "pt.location_description as rm_desc ",
-             "from point_location as pt ",
-             "inner join location_type_lut as lt on pt.location_type_id = lt.location_type_id ",
+  qry = glue("select distinct loc.location_id, loc.river_mile_measure as river_mile, ",
+             "loc.location_description as rm_desc ",
+             "from location as loc ",
+             "inner join location_type_lut as lt on loc.location_type_id = lt.location_type_id ",
              "where location_type_description in ('Reach boundary point', 'Section break point') ",
              "and waterbody_id = '{waterbody_id}'")
   end_points = DBI::dbGetQuery(pool, qry) %>%
-    mutate(point_location_id = tolower(point_location_id)) %>%
+    mutate(location_id = tolower(location_id)) %>%
     arrange(river_mile) %>%
     mutate(rm_label = if_else(is.na(rm_desc), as.character(river_mile),
                               paste0(river_mile, " ", rm_desc))) %>%
-    select(point_location_id, rm_label)
+    select(location_id, rm_label)
   return(end_points)
 }
 
@@ -138,10 +138,10 @@ get_surveys = function(pool, waterbody_id, survey_years) {
              "ds.data_source_code, du.data_source_unit_name as data_unit, ",
              "sm.survey_method_code as survey_method, ",
              "dr.data_review_status_description as data_review, ",
-             "plu.river_mile_measure as upper_rm, ",
-             "pll.river_mile_measure as lower_rm, ",
-             "plu.point_location_id as upper_location_id, ",
-             "pll.point_location_id as lower_location_id, ",
+             "locu.river_mile_measure as upper_rm, ",
+             "locl.river_mile_measure as lower_rm, ",
+             "locu.location_id as upper_location_id, ",
+             "locl.location_id as lower_location_id, ",
              "sct.completion_status_description as completion, ",
              "ics.incomplete_survey_description as incomplete_type, ",
              "s.survey_start_datetime as start_time, ",
@@ -156,12 +156,12 @@ get_surveys = function(pool, waterbody_id, survey_years) {
              "inner join data_source_unit_lut as du on s.data_source_unit_id = du.data_source_unit_id ",
              "inner join survey_method_lut as sm on s.survey_method_id = sm.survey_method_id ",
              "inner join data_review_status_lut as dr on s.data_review_status_id = dr.data_review_status_id ",
-             "inner join point_location as plu on s.upper_end_point_id = plu.point_location_id ",
-             "inner join point_location as pll on s.lower_end_point_id = pll.point_location_id ",
+             "inner join location as locu on s.upper_end_point_id = locu.location_id ",
+             "inner join location as locl on s.lower_end_point_id = locl.location_id ",
              "left join survey_completion_status_lut as sct on s.survey_completion_status_id = sct.survey_completion_status_id ",
              "inner join incomplete_survey_type_lut as ics on s.incomplete_survey_type_id = ics.incomplete_survey_type_id ",
              "where date_part('year', survey_datetime) in ({survey_years}) ",
-             "and (plu.waterbody_id = '{waterbody_id}' or pll.waterbody_id = '{waterbody_id}')")
+             "and (locu.waterbody_id = '{waterbody_id}' or locl.waterbody_id = '{waterbody_id}')")
   surveys = DBI::dbGetQuery(pool, qry)
   surveys = surveys %>%
     mutate(survey_id = tolower(survey_id)) %>%
@@ -253,13 +253,13 @@ get_area_surveyed = function(pool) {
 
 # Abundance
 get_abundance_condition = function(pool) {
-  qry = glue("select fish_abundance_condition_id, fish_abundance_condition as abundance ",
+  qry = glue("select fish_abundance_condition_id, fish_abundance_condition as abundance_condition ",
              "from fish_abundance_condition_lut ",
              "where obsolete_datetime is null")
   fish_abundance_list = DBI::dbGetQuery(pool, qry) %>%
     mutate(fish_abundance_condition_id = tolower(fish_abundance_condition_id)) %>%
-    arrange(abundance) %>%
-    select(fish_abundance_condition_id, abundance)
+    arrange(abundance_condition) %>%
+    select(fish_abundance_condition_id, abundance_condition)
   return(fish_abundance_list)
 }
 
