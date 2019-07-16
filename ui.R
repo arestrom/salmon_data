@@ -15,7 +15,7 @@ ui = dashboardPagePlus(
         collapsible = TRUE,
         solidHeader = FALSE,
         collapsed = FALSE,
-        survey_content,
+        survey_ui,
         width = 12,
         accordion(
           accordionItem(
@@ -23,7 +23,7 @@ ui = dashboardPagePlus(
             title = "Survey comments",
             color = "purple",
             collapsed = TRUE,
-            survey_comment_content
+            survey_comment_ui
           ),
           accordionItem(
             id = 2,
