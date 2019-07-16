@@ -23,6 +23,8 @@
 #     got failures right away.
 #  8. Do not use rownames = FALSE in DT. Data will not reload
 #     when using replaceData() function.
+#  9. For sourcing server code: https://r-bar.net/organize-r-shiny-list-source/
+#                               https://shiny.rstudio.com/articles/scoping.html
 #
 #
 # ToDo:
@@ -77,6 +79,7 @@ source("survey_comment_content.R")
 source("dash_header.R")
 source("dash_rightsidebar.R")
 source("dash_leftsidebar.R")
+source("modules/mod_surveyData.R")
 
 # Define globals ================================================================
 
