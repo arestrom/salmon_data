@@ -4,7 +4,7 @@ output$area_surveyed_select = renderUI({
   area_surveyed_list = c("", area_surveyed_list)
   selectizeInput("area_surveyed_select", label = "area_surveyed",
                  choices = area_surveyed_list, selected = NULL,
-                 width = "175px")
+                 multiple = TRUE, width = "175px")
 })
 
 output$abundance_condition_select = renderUI({
@@ -74,7 +74,494 @@ output$visibility_type_select = renderUI({
 output$weather_type_select = renderUI({
   weather_type_list = get_weather_type(pool)$weather_type
   weather_type_list = c("", weather_type_list)
-  selectizeInput("weather_type_select", label = "weather_type",
+  selectInput("weather_type_select", label = "weather_type",
                  choices = weather_type_list, selected = NULL,
-                 width = "150px")
+                 multiple = TRUE, selectize = FALSE, width = "150px")
 })
+
+# Primary DT datatable for database
+output$survey_comments = renderDT({
+  survey_comment_title = glue("Survey comments for {input$stream_select} on ",
+                              "{selected_survey_data()$survey_date} from river mile {selected_survey_data()$up_rm} ",
+                              "to {selected_survey_data()$lo_rm}")
+  survey_comment_data = get_survey_comment(pool, selected_survey_data()$survey_id) %>%
+    select(area_surveyed, abundance_condition, stream_condition,
+           stream_flow, count_condition, survey_direction, survey_timing,
+           visibility_condition, visibility_type, weather_type, survey_comment,
+           created_dt, created_by, modified_dt, modified_by)
+  # Generate table
+  datatable(survey_comment_data,
+            selection = list(mode = 'single'),
+            #rownames = FALSE, THIS CAUSED DT TO NOT RELOAD !!!!!!!!!!!!!
+            extensions = 'Buttons',
+            options = list(dom = 'Blftp',
+                           pageLength = 5,
+                           lengthMenu = c(5, 10, 20, 40, 60, 100, 500),
+                           scrollX = T,
+                           buttons = c('excel', 'print'),
+                           initComplete = JS(
+                             "function(settings, json) {",
+                             "$(this.api().table().header()).css({'background-color': '#9eb3d6'});",
+                             "}")),
+            caption = htmltools::tags$caption(
+              style = 'caption-side: top; text-align: left; color: black; width: auto;',
+              htmltools::em(htmltools::strong(survey_comment_title))))
+})
+
+# Create surveys DT proxy object
+survey_comment_dt_proxy = dataTableProxy(outputId = "survey_comments")
+
+#========================================================
+# Collect survey values from selected row for later use
+#========================================================
+
+# Create reactive to collect input values for update and delete actions
+selected_survey_comment_data = reactive({
+  req(input$survey_comments_rows_selected)
+  survey_comment_data = get_survey_comment(pool, selected_survey_data()$survey_id)
+  survey_comment_row = input$survey_comments_rows_selected
+  selected_survey_comment = tibble(survey_comment_id = survey_comment_data$survey_comment_id[survey_comment_row],
+                                   area_surveyed = survey_comment_data$area_surveyed[survey_comment_row],
+                                   abundance_condition = survey_comment_data$abundance_condition[survey_comment_row],
+                                   stream_condition = survey_comment_data$stream_condition[survey_comment_row],
+                                   stream_flow = survey_comment_data$stream_flow[survey_comment_row],
+                                   count_condition = survey_comment_data$count_condition[survey_comment_row],
+                                   survey_direction = survey_comment_data$survey_direction[survey_comment_row],
+                                   survey_timing = survey_comment_data$survey_timing[survey_comment_row],
+                                   visibility_condition = survey_comment_data$visibility_condition[survey_comment_row],
+                                   visibility_type = survey_comment_data$visibility_type[survey_comment_row],
+                                   weather_type = survey_comment_data$weather_type[survey_comment_row],
+                                   survey_comment_text = survey_comment_data$survey_comment[survey_comment_row],
+                                   created_date = survey_comment_data$created_date[survey_comment_row],
+                                   created_by = survey_comment_data$created_by[survey_comment_row],
+                                   modified_date = survey_comment_data$modified_date[survey_comment_row],
+                                   modified_by = survey_comment_data$modified_by[survey_comment_row])
+  return(selected_survey_comment)
+})
+
+#========================================================
+# Update survey select inputs to values in selected row
+#========================================================
+
+# Update all survey input values to values in selected row
+observeEvent(input$survey_comments_rows_selected, {
+  req(input$survey_comments_rows_selected)
+  sscdat = selected_survey_comment_data()
+  updateSelectizeInput(session, "area_surveyed_select", selected = sscdat$area_surveyed)
+  updateSelectizeInput(session, "abundance_condition_select", selected = sscdat$abundance_condition)
+  updateSelectizeInput(session, "stream_condition_select", selected = sscdat$stream_condition)
+  updateSelectizeInput(session, "stream_flow_select", selected = sscdat$stream_flow)
+  updateSelectizeInput(session, "count_condition_select", selected = sscdat$count_condition)
+  updateSelectizeInput(session, "survey_direction_select", selected = sscdat$survey_direction)
+  updateSelectizeInput(session, "survey_timing_select", selected = sscdat$survey_timing)
+  updateSelectizeInput(session, "visibility_condition_select", selected = sscdat$visibility_condition)
+  updateSelectizeInput(session, "visibility_type_select", selected = sscdat$visibility_type)
+  updateSelectizeInput(session, "weather_type_select", selected = sscdat$weather_type)
+  updateTextAreaInput(session, "sc_comment_input", value = sscdat$survey_comment_text)
+})
+
+#========================================================
+# Insert operations: reactives, observers and modals
+#========================================================
+
+# Create reactive to collect input values for insert actions
+survey_comment_create = reactive({
+  # Survey_id
+  survey_id_input = selected_survey_data()$survey_id
+  # Area surveyed
+  area_surveyed_vals = get_area_surveyed(pool)
+  area_surveyed_input = input$area_surveyed_select
+  print(area_surveyed_input)
+  area_surveyed_id = area_surveyed_vals %>%
+    filter(area_surveyed == area_surveyed_input) %>%
+    pull(area_surveyed_id)
+  # Fish abundance condition
+  abundance_condition_vals = get_abundance_condition(pool)
+  abundance_condition_input = input$abundance_condition_select
+  fish_abundance_condition_id = abundance_condition_vals %>%
+    filter(abundance_condition == abundance_condition_input) %>%
+    pull(fish_abundance_condition_id)
+  # Stream condition
+  stream_condition_vals = get_stream_condition(pool)
+  stream_condition_input = input$stream_condition_select
+  stream_condition_id = stream_condition_vals %>%
+    filter(stream_condition == stream_condition_input) %>%
+    pull(stream_condition_id)
+  # Stream flow type
+  stream_flow_vals = get_stream_flow(pool)
+  stream_flow_input = input$stream_flow_select
+  stream_flow_type_id = stream_flow_vals %>%
+    filter(stream_flow == stream_flow_input) %>%
+    pull(stream_flow_type_id)
+  # Count condition
+  count_condition_vals = get_count_condition(pool)
+  count_condition_input = input$count_condition_select
+  survey_count_condition_id = count_condition_vals %>%
+    filter(count_condition == count_condition_input) %>%
+    pull(survey_count_condition_id)
+  # Survey direction
+  survey_direction_vals = get_survey_direction(pool)
+  survey_direction_input = input$survey_direction_select
+  survey_direction_id = survey_direction_vals %>%
+    filter(survey_direction == survey_direction_input) %>%
+    pull(survey_direction_id)
+  # Survey timing
+  survey_timing_vals = get_survey_timing(pool)
+  survey_timing_input = input$survey_timing_select
+  survey_timing_id = survey_timing_vals %>%
+    filter(survey_timing == survey_timing_input) %>%
+    pull(survey_timing_id)
+  # Visibility condition
+  visibility_condition_vals = get_visibility_condition(pool)
+  visibility_condition_input = input$visibility_condition_select
+  visibility_condition_id = visibility_condition_vals %>%
+    filter(visibility_condition == visibility_condition_input) %>%
+    pull(visibility_condition_id)
+  # Visibility type
+  visibility_type_vals = get_visibility_type(pool)
+  visibility_type_input = input$visibility_type_select
+  visibility_type_id = visibility_type_vals %>%
+    filter(visibility_type == visibility_type_input) %>%
+    pull(visibility_type_id)
+  # Weather type
+  weather_type_vals = get_weather_type(pool)
+  weather_type_input = input$weather_type_select
+  weather_type_id = weather_type_vals %>%
+    filter(weather_type == weather_type_input) %>%
+    pull(weather_type_id)
+  new_survey_comment = tibble(survey_id = survey_id_input,
+                              area_surveyed = area_surveyed_input,
+                              area_surveyed_id = area_surveyed_id,
+                              abundance_condition = abundance_condition_input,
+                              fish_abundance_condition_id = fish_abundance_condition_id,
+                              stream_condition = stream_condition_input,
+                              stream_condition_id = stream_condition_id,
+                              stream_flow = stream_flow_input,
+                              stream_flow_type_id = stream_flow_type_id,
+                              count_condition = count_condition_input,
+                              survey_count_condition_id = survey_count_condition_id,
+                              survey_direction = survey_direction_input,
+                              survey_direction_id = survey_direction_id,
+                              survey_timing = survey_timing_input,
+                              survey_timing_id = survey_timing_id,
+                              visibility_condition = visibility_condition_input,
+                              visibility_condition_id = visibility_condition_id,
+                              visibility_type = visibility_type_input,
+                              visibility_type_id = visibility_type_id,
+                              weather_type = weather_type_input,
+                              weather_type_id = weather_type_id,
+                              comment_text = input$sc_comment_input,
+                              created_dt = lubridate::with_tz(Sys.time(), "UTC"),
+                              created_by = Sys.getenv("USERNAME"))
+  new_survey_comment = new_survey_comment %>%
+    mutate(comment_text = if_else(is.na(comment_text) | comment_text == "", NA_character_, comment_text))
+  return(new_survey_comment)
+})
+
+# Generate values to show in modal
+output$survey_comment_modal_insert_vals = renderDT({
+  survey_comment_modal_in_vals = survey_comment_create() %>%
+    select(area_surveyed, abundance_condition, stream_condition, stream_flow,
+           count_condition, survey_direction, survey_timing, visibility_condition,
+           visibility_type, weather_type, comment_text)
+  # Generate table
+  datatable(survey_comment_modal_in_vals,
+            rownames = FALSE,
+            options = list(dom = 't',
+                           scrollX = T,
+                           ordering = FALSE,
+                           initComplete = JS(
+                             "function(settings, json) {",
+                             "$(this.api().table().header()).css({'background-color': '#9eb3d6'});",
+                             "}")))
+})
+
+observeEvent(input$comment_add, {
+  new_survey_comment_vals = survey_comment_create()
+  existing_survey_comment_vals = get_survey_comment(pool, selected_survey_data()$survey_id) %>%
+    select(area_surveyed, abundance_condition, stream_condition, stream_flow,
+           count_condition, survey_direction, survey_timing, visibility_condition,
+           visibility_type, weather_type, comment_text = survey_comment)
+  dup_flag = dup_survey_comment(new_survey_comment_vals, existing_survey_comment_vals)
+  showModal(
+    # Verify required fields have values
+    tags$div(id = "survey_comment_insert_modal",
+             if ( dup_flag == TRUE ) {
+               modalDialog (
+                 size = "m",
+                 title = "Warning",
+                 paste0("Survey comments already exists. Please edit at least one value before proceeding." ),
+                 easyClose = TRUE,
+                 footer = NULL
+               )
+             } else {
+               modalDialog (
+                 size = 'l',
+                 title = glue("Insert new survey comments to the database?"),
+                 fluidPage (
+                   DT::DTOutput("survey_comment_modal_insert_vals"),
+                   br(),
+                   br(),
+                   actionButton("insert_survey_comment", "Insert comments")
+                 ),
+                 easyClose = TRUE,
+                 footer = NULL
+               )
+             }
+    ))
+})
+
+# Reactive to hold values actually inserted
+survey_comment_insert_vals = reactive({
+  new_comment_values = survey_comment_create() %>%
+    select(survey_id, area_surveyed_id, fish_abundance_condition_id, stream_condition_id,
+           stream_flow_type_id, survey_count_condition_id, survey_direction_id,
+           survey_timing_id, visibility_condition_id, visibility_type_id,
+           weather_type_id, comment_text, created_by)
+  return(new_comment_values)
+})
+
+# Update DB and reload DT
+observeEvent(input$insert_survey_comment, {
+  survey_comment_insert(survey_comment_insert_vals())
+  removeModal()
+  post_comment_insert_vals = get_survey_comment(pool, selected_survey_data()$survey_id) %>%
+    select(area_surveyed, abundance_condition, stream_condition,
+           stream_flow, count_condition, survey_direction, survey_timing,
+           visibility_condition, visibility_type, weather_type, survey_comment,
+           created_dt, created_by, modified_dt, modified_by)
+  replaceData(survey_comment_dt_proxy, post_comment_insert_vals)
+})
+
+# #========================================================
+# # Edit operations: reactives, observers and modals
+# #========================================================
+#
+# # Create reactive to collect input values for insert actions
+# survey_edit = reactive({
+#   # Data source
+#   data_source_vals = get_data_source(pool)
+#   data_source_input = input$data_source_select
+#   data_source_id = data_source_vals %>%
+#     filter(data_source_code == data_source_input) %>%
+#     pull(data_source_id)
+#   # Survey method
+#   survey_method_vals = get_survey_method(pool)
+#   survey_method_input = input$survey_method_select
+#   survey_method_id = survey_method_vals %>%
+#     filter(survey_method == survey_method_input) %>%
+#     pull(survey_method_id)
+#   # Data review
+#   data_review_vals = get_data_review(pool)
+#   data_review_input = input$data_review_select
+#   data_review_status_id = data_review_vals %>%
+#     filter(data_review == data_review_input) %>%
+#     pull(data_review_status_id)
+#   # RM values
+#   rm_vals = rm_list()
+#   up_rm_input = input$upper_rm_select
+#   upper_end_point_id = rm_vals %>%
+#     filter(rm_label == up_rm_input) %>%
+#     pull(location_id)
+#   lo_rm_input = input$lower_rm_select
+#   lower_end_point_id = rm_vals %>%
+#     filter(rm_label == lo_rm_input) %>%
+#     pull(location_id)
+#   # Data source
+#   completion_vals = get_completion_status(pool)
+#   completion_input = input$completion_select
+#   survey_completion_status_id = completion_vals %>%
+#     filter(completion == completion_input) %>%
+#     pull(survey_completion_status_id)
+#   edit_survey = tibble(survey_id = selected_survey_data()$survey_id,
+#                        survey_dt = input$survey_date_input,
+#                        data_source = data_source_input,
+#                        data_source_id = data_source_id,
+#                        survey_method = survey_method_input,
+#                        survey_method_id = survey_method_id,
+#                        data_review = data_review_input,
+#                        data_review_status_id = data_review_status_id,
+#                        up_rm = up_rm_input,
+#                        upper_end_point_id = upper_end_point_id,
+#                        lo_rm = lo_rm_input,
+#                        lower_end_point_id = lower_end_point_id,
+#                        start_time = format(input$start_time_select, "%H:%M"),
+#                        end_time = format(input$end_time_select, "%H:%M"),
+#                        observer = input$observer_input,
+#                        submitter = input$submitter_input,
+#                        completion = completion_input,
+#                        survey_completion_status_id = survey_completion_status_id,
+#                        modified_dt = lubridate::with_tz(Sys.time(), "UTC"),
+#                        modified_by = Sys.getenv("USERNAME"))
+#   edit_survey = edit_survey %>%
+#     mutate(survey_datetime = as.POSIXct(format(survey_dt), tz = "America/Los_Angeles")) %>%
+#     mutate(survey_datetime = lubridate::with_tz(survey_datetime, tzone = "UTC")) %>%
+#     mutate(start_time = if_else(is.na(start_time) | start_time == "", NA_character_, start_time)) %>%
+#     mutate(end_time = if_else(is.na(end_time) | end_time == "", NA_character_, end_time)) %>%
+#     mutate(survey_start_datetime = case_when(
+#       substr(start_time, 12, 13) == "00" ~ as.POSIXct(NA),
+#       substr(start_time, 12, 13) != "00" ~ as.POSIXct(paste0(format(survey_dt), " ", start_time),
+#                                                       tz = "America/Los_Angeles"))) %>%
+#     mutate(survey_start_datetime = with_tz(survey_start_datetime, tzone = "UTC")) %>%
+#     mutate(survey_end_datetime = case_when(
+#       substr(end_time, 12, 13) == "00" ~ as.POSIXct(NA),
+#       substr(end_time, 12, 13) != "00" ~ as.POSIXct(paste0(format(survey_dt), " ", end_time),
+#                                                     tz = "America/Los_Angeles"))) %>%
+#     mutate(survey_end_datetime = with_tz(survey_end_datetime, tzone = "UTC")) %>%
+#     mutate(observer = if_else(is.na(observer) | observer == "", NA_character_, observer)) %>%
+#     mutate(submitter = if_else(is.na(submitter) | submitter == "", NA_character_, submitter))
+#   return(edit_survey)
+# })
+#
+# # Generate values to show in modal
+# output$survey_modal_update_vals = renderDT({
+#   survey_modal_up_vals = survey_edit() %>%
+#     select(survey_dt, survey_method, up_rm, lo_rm, start_time, end_time,
+#            observer, submitter, data_source, data_review, completion)
+#   # Generate table
+#   datatable(survey_modal_up_vals,
+#             rownames = FALSE,
+#             options = list(dom = 't',
+#                            scrollX = T,
+#                            ordering = FALSE,
+#                            initComplete = JS(
+#                              "function(settings, json) {",
+#                              "$(this.api().table().header()).css({'background-color': '#9eb3d6'});",
+#                              "}")))
+# })
+#
+# observeEvent(input$survey_edit, {
+#   old_vals = selected_survey_data() %>%
+#     mutate(start_time = format(start_time, "%H:%M")) %>%
+#     mutate(end_time = format(end_time, "%H:%M")) %>%
+#     select(survey_dt = survey_date, survey_method, up_rm, lo_rm, start_time,
+#            end_time, observer, submitter, data_source, data_review,
+#            completion = completed)
+#   new_vals = survey_edit() %>%
+#     select(survey_dt, survey_method, up_rm, lo_rm, start_time, end_time,
+#            observer, submitter, data_source, data_review, completion)
+#   showModal(
+#     tags$div(id = "survey_update_modal",
+#              if ( !length(input$surveys_rows_selected) == 1 ) {
+#                modalDialog (
+#                  size = "m",
+#                  title = "Warning",
+#                  paste("Please select a row to edit!"),
+#                  easyClose = TRUE,
+#                  footer = NULL
+#                )
+#              } else if ( isTRUE(all_equal(old_vals, new_vals)) ) {
+#                modalDialog (
+#                  size = "m",
+#                  title = "Warning",
+#                  paste("Please change at least one value!"),
+#                  easyClose = TRUE,
+#                  footer = NULL
+#                )
+#              } else {
+#                modalDialog (
+#                  size = 'l',
+#                  title = "Update data for survey to these new values?",
+#                  fluidPage (
+#                    DT::DTOutput("survey_modal_update_vals"),
+#                    br(),
+#                    br(),
+#                    actionButton("save_edits","Save changes")
+#                  ),
+#                  easyClose = TRUE,
+#                  footer = NULL
+#                )
+#              }
+#     ))
+# })
+#
+# # Update DB and reload DT
+# observeEvent(input$save_edits, {
+#   survey_update(survey_edit())
+#   removeModal()
+#   post_edit_vals = get_surveys(pool, waterbody_id(), year_vals()) %>%
+#     mutate(start_time = start_time_dt, end_time = end_time_dt) %>%
+#     select(survey_dt = survey_date_dt, survey_method, up_rm,
+#            lo_rm, start_time, end_time, observer, submitter,
+#            data_source, data_review, completion, created_dt,
+#            created_by, modified_dt, modified_by)
+#   replaceData(survey_dt_proxy, post_edit_vals)
+# })
+#
+# #========================================================
+# # Delete operations: reactives, observers and modals
+# #========================================================
+#
+# # Generate values to show in modal
+# output$survey_modal_delete_vals = renderDT({
+#   survey_modal_del_id = selected_survey_data()$survey_id
+#   survey_modal_del_vals = get_surveys(pool, waterbody_id(), year_vals()) %>%
+#     filter(survey_id == survey_modal_del_id) %>%
+#     mutate(start_time = start_time_dt, end_time = end_time_dt) %>%
+#     select(survey_dt = survey_date_dt, survey_method, up_rm,
+#            lo_rm, start_time, end_time, observer, submitter,
+#            data_source, data_review, completion, created_dt,
+#            created_by, modified_dt, modified_by)
+#   # Generate table
+#   datatable(survey_modal_del_vals,
+#             rownames = FALSE,
+#             options = list(dom = 't',
+#                            scrollX = T,
+#                            ordering = FALSE,
+#                            initComplete = JS(
+#                              "function(settings, json) {",
+#                              "$(this.api().table().header()).css({'background-color': '#9eb3d6'});",
+#                              "}")))
+# })
+#
+# observeEvent(input$survey_delete, {
+#   survey_id = selected_survey_data()$survey_id
+#   showModal(
+#     tags$div(id = "survey_delete_modal",
+#              if ( length(survey_id) == 0 ) {
+#                modalDialog (
+#                  size = "m",
+#                  title = "Warning",
+#                  paste("Please select a row to delete!" ),
+#                  easyClose = TRUE,
+#                  footer = NULL
+#                )
+#              } else {
+#                modalDialog (
+#                  size = 'l',
+#                  title = "Are you sure you want to delete this survey from the database?",
+#                  fluidPage (
+#                    DT::DTOutput("survey_modal_delete_vals"),
+#                    br(),
+#                    br(),
+#                    actionButton("delete_survey", "Delete survey")
+#                  ),
+#                  easyClose = TRUE,
+#                  footer = NULL
+#                )
+#              }
+#     ))
+# })
+#
+# # Update DB and reload DT
+# observeEvent(input$delete_survey, {
+#   survey_delete(selected_survey_data())
+#   removeModal()
+#   surveys_after_delete = get_surveys(pool, waterbody_id(), year_vals()) %>%
+#     mutate(start_time = start_time_dt, end_time = end_time_dt) %>%
+#     select(survey_dt = survey_date_dt, survey_method, up_rm,
+#            lo_rm, start_time, end_time, observer, submitter,
+#            data_source, data_review, completion, created_dt,
+#            created_by, modified_dt, modified_by)
+#   replaceData(survey_dt_proxy, surveys_after_delete)
+# })
+
+
+
+
+
+
+
+
+
+

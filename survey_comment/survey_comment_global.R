@@ -1,3 +1,48 @@
+# Main survey comment query
+get_survey_comment = function(pool, survey_id) {
+  qry = glue("select sc.survey_comment_id, ars.area_surveyed, ",
+             "fa.fish_abundance_condition as abundance_condition, ",
+             "stc.stream_condition, sf.flow_type_short_description as stream_flow, ",
+             "cc.survey_count_condition as count_condition, ",
+             "sd.survey_direction_description as survey_direction, ",
+             "st.survey_timing, vc.visibility_condition, ",
+             "vt.visibility_type_short_description as visibility_type, ",
+             "wt.weather_type_description as weather_type, ",
+             "sc.comment_text as survey_comment, ",
+             "sc.created_datetime as created_date, ",
+             "sc.created_by, sc.modified_datetime as modified_date, ",
+             "sc.modified_by ",
+             "from survey_comment as sc ",
+             "left join area_surveyed_lut as ars on sc.area_surveyed_id = ars.area_surveyed_id ",
+             "left join fish_abundance_condition_lut as fa on sc.fish_abundance_condition_id = fa.fish_abundance_condition_id ",
+             "left join stream_condition_lut as stc on sc.stream_condition_id = stc.stream_condition_id ",
+             "left join stream_flow_type_lut as sf on sc.stream_flow_type_id = sf.stream_flow_type_id ",
+             "left join survey_count_condition_lut as cc on sc.survey_count_condition_id = cc.survey_count_condition_id ",
+             "left join survey_direction_lut as sd on sc.survey_direction_id = sd.survey_direction_id ",
+             "left join survey_timing_lut as st on sc.survey_timing_id = st.survey_timing_id ",
+             "left join visibility_condition_lut as vc on sc.visibility_condition_id = vc.visibility_condition_id ",
+             "left join visibility_type_lut as vt on sc.visibility_type_id = vt.visibility_type_id ",
+             "left join weather_type_lut as wt on sc.weather_type_id = wt.weather_type_id ",
+             "where sc.survey_id = '{survey_id}'")
+  survey_comments = DBI::dbGetQuery(pool, qry)
+  survey_comments = survey_comments %>%
+    mutate(survey_comment_id = tolower(survey_comment_id)) %>%
+    mutate(created_date = with_tz(created_date, tzone = "America/Los_Angeles")) %>%
+    mutate(created_dt = format(created_date, "%m/%d/%Y %H:%M")) %>%
+    mutate(modified_date = with_tz(modified_date, tzone = "America/Los_Angeles")) %>%
+    mutate(modified_dt = format(modified_date, "%m/%d/%Y %H:%M")) %>%
+    select(survey_comment_id, area_surveyed, abundance_condition, stream_condition,
+           stream_flow, count_condition, survey_direction, survey_timing,
+           visibility_condition, visibility_type, weather_type, survey_comment,
+           created_date, created_dt, created_by, modified_date, modified_dt,
+           modified_by) %>%
+    arrange(created_date)
+  return(survey_comments)
+}
+
+#==========================================================================
+# Get generic lut input values...data_source, etc.
+#==========================================================================
 
 # Area surveyed
 get_area_surveyed = function(pool) {
@@ -118,3 +163,74 @@ get_weather_type = function(pool) {
     select(weather_type_id, weather_type)
   return(weather_type_list)
 }
+
+#==========================================================================
+# Validate survey comment create operations
+#==========================================================================
+
+# Check existing survey comments prior to survey_comment insert operation
+dup_survey_comment = function(new_survey_comment_vals, existing_survey_comment_vals) {
+  new_survey_comment_vals = new_survey_comment_vals %>%
+    select(area_surveyed, abundance_condition, stream_condition, stream_flow,
+           count_condition, survey_direction, survey_timing, visibility_condition,
+           visibility_type, weather_type, comment_text)
+  matching_rows = new_survey_comment_vals %>%
+    inner_join(existing_survey_comment_vals,
+               by = c("area_surveyed", "abundance_condition", "stream_condition", "stream_flow",
+                      "count_condition", "survey_direction", "survey_timing", "visibility_condition",
+                      "visibility_type", "weather_type", "comment_text"))
+  if (nrow(matching_rows) > 0 ) {
+    dup_flag = TRUE
+  } else {
+    dup_flag = FALSE
+  }
+  return(dup_flag)
+}
+
+#========================================================
+# Insert callback
+#========================================================
+
+# Define the insert callback
+survey_comment_insert = function(new_comment_values) {
+  new_comment_values = new_comment_values
+  # Checkout a connection
+  con = poolCheckout(pool)
+  insert_result = dbSendStatement(
+    con, glue_sql("INSERT INTO survey_comment (",
+                  "survey_id, ",
+                  "area_surveyed_id, ",
+                  "fish_abundance_condition_id, ",
+                  "stream_condition_id, ",
+                  "stream_flow_type_id, ",
+                  "survey_count_condition_id, ",
+                  "survey_direction_id, ",
+                  "survey_timing_id, ",
+                  "visibility_condition_id, ",
+                  "visibility_type_id, ",
+                  "weather_type_id, ",
+                  "comment_text, ",
+                  "created_by) ",
+                  "VALUES (",
+                  "?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)"))
+  dbBind(insert_result, list(new_comment_values$survey_id,
+                             new_comment_values$area_surveyed_id,
+                             new_comment_values$fish_abundance_condition_id,
+                             new_comment_values$stream_condition_id,
+                             new_comment_values$stream_flow_type_id,
+                             new_comment_values$survey_count_condition_id,
+                             new_comment_values$survey_direction_id,
+                             new_comment_values$survey_timing_id,
+                             new_comment_values$visibility_condition_id,
+                             new_comment_values$visibility_type_id,
+                             new_comment_values$weather_type_id,
+                             new_comment_values$comment_text,
+                             new_comment_values$created_by))
+  dbGetRowsAffected(insert_result)
+  dbClearResult(insert_result)
+  poolReturn(con)
+}
+
+
+
+

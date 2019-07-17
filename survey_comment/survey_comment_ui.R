@@ -24,5 +24,5 @@ survey_comment_ui = tags$div(
   br(),
   br(),
   br(),
-  DT::DTOutput("survey_comment")
+  DT::DTOutput("survey_comments")
 )

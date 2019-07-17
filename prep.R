@@ -304,8 +304,53 @@ survey_insert = function(new_values) {
   poolReturn(con)
 }
 
+# Survey_comment query
+# Function to get header data...use multiselect for year
+get_survey_comment = function(pool, survey_id) {
+  qry = glue("select sc.survey_comment_id, ars.area_surveyed, ",
+             "fa.fish_abundance_condition as abundance_condition, ",
+             "stc.stream_condition, sf.flow_type_short_description as stream_flow, ",
+             "cc.survey_count_condition as count_condition, ",
+             "sd.survey_direction_description as survey_direction, ",
+             "st.survey_timing, vc.visibility_condition, ",
+             "vt.visibility_type_short_description as visibility_type, ",
+             "wt.weather_type_description as weather_type, ",
+             "sc.comment_text as survey_comment, ",
+             "sc.created_datetime as created_date, ",
+             "sc.created_by, sc.modified_datetime as modified_date, ",
+             "sc.modified_by ",
+             "from survey_comment as sc ",
+             "left join area_surveyed_lut as ars on sc.area_surveyed_id = ars.area_surveyed_id ",
+             "left join fish_abundance_condition_lut as fa on sc.fish_abundance_condition_id = fa.fish_abundance_condition_id ",
+             "left join stream_condition_lut as stc on sc.stream_condition_id = stc.stream_condition_id ",
+             "left join stream_flow_type_lut as sf on sc.stream_flow_type_id = sf.stream_flow_type_id ",
+             "left join survey_count_condition_lut as cc on sc.survey_count_condition_id = cc.survey_count_condition_id ",
+             "left join survey_direction_lut as sd on sc.survey_direction_id = sd.survey_direction_id ",
+             "left join survey_timing_lut as st on sc.survey_timing_id = st.survey_timing_id ",
+             "left join visibility_condition_lut as vc on sc.visibility_condition_id = vc.visibility_condition_id ",
+             "left join visibility_type_lut as vt on sc.visibility_type_id = vt.visibility_type_id ",
+             "left join weather_type_lut as wt on sc.weather_type_id = wt.weather_type_id ",
+             "where sc.survey_id = '{survey_id}'")
+  survey_comments = DBI::dbGetQuery(pool, qry)
+  survey_comments = survey_comments %>%
+    mutate(survey_comment_id = tolower(survey_comment_id)) %>%
+    mutate(created_date = with_tz(created_date, tzone = "America/Los_Angeles")) %>%
+    mutate(created_dt = format(created_date, "%m/%d/%Y %H:%M")) %>%
+    mutate(modified_date = with_tz(modified_date, tzone = "America/Los_Angeles")) %>%
+    mutate(modified_dt = format(modified_date, "%m/%d/%Y %H:%M")) %>%
+    select(survey_comment_id, area_surveyed, abundance_condition, stream_condition,
+           stream_flow, count_condition, survey_direction, survey_timing,
+           visibility_condition, visibility_type, weather_type, survey_comment,
+           created_date, created_dt, created_by, modified_date, modified_dt,
+           modified_by) %>%
+    arrange(created_date)
+  return(survey_comments)
+}
 
+# Test
+survey_id = "60ee72dc-f48f-4f7b-b9be-4dd0517c7bf6"    # Arbitary
 
+survey_comments = get_survey_comment(pool, survey_id = survey_id)
 
 
 

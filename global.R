@@ -42,7 +42,16 @@
 #  8. Need to use just one function to get survey data....but
 #     also add and include the other fields needed for display
 #     in time and date slots of DT. DONE !!
-#  9.
+#  9. Add info icons to inform only one line of survey comments
+#     per survey. Otherwise add verbose comment to comment_text.
+#     Use shinyjs to disable "New" button if one line has already
+#     been entered.
+# 10. Allow comment multi-select for relevant selects. But push
+#     any additional to comment field as text.
+# 11. Need cascade code to delete survey now. Check in query
+#     planner first to see what happens.
+# 12. Allow selectizeInput to get larger:
+#     https://community.rstudio.com/t/how-to-allow-select-input-list-to-overflow-height-of-absolutepanel/6442    ????
 #
 # AS 2019-07-15
 #==============================================================
