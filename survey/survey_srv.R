@@ -117,39 +117,63 @@ survey_create = reactive({
   # Survey date
   survey_date_input = input$survey_date_input
   # Data source
-  data_source_vals = get_data_source(pool)
   data_source_input = input$data_source_select
-  data_source_id = data_source_vals %>%
-    filter(data_source_code == data_source_input) %>%
-    pull(data_source_id)
+  if (data_source_input == "" ) {
+    data_source_id = NA
+  } else {
+    data_source_vals = get_data_source(pool)
+    data_source_id = data_source_vals %>%
+      filter(data_source_code == data_source_input) %>%
+      pull(data_source_id)
+  }
   # Survey method
-  survey_method_vals = get_survey_method(pool)
   survey_method_input = input$survey_method_select
-  survey_method_id = survey_method_vals %>%
-    filter(survey_method == survey_method_input) %>%
-    pull(survey_method_id)
+  if (survey_method_input == "" ) {
+    survey_method_id = NA
+  } else {
+    survey_method_vals = get_survey_method(pool)
+    survey_method_id = survey_method_vals %>%
+      filter(survey_method == survey_method_input) %>%
+      pull(survey_method_id)
+  }
   # Data review
-  data_review_vals = get_data_review(pool)
   data_review_input = input$data_review_select
-  data_review_status_id = data_review_vals %>%
-    filter(data_review == data_review_input) %>%
-    pull(data_review_status_id)
+  if ( data_review_input == "" ) {
+    data_review_status_id = NA
+  } else {
+    data_review_vals = get_data_review(pool)
+    data_review_status_id = data_review_vals %>%
+      filter(data_review == data_review_input) %>%
+      pull(data_review_status_id)
+  }
   # RM values
   rm_vals = rm_list()
   up_rm_input = input$upper_rm_select
-  upper_end_point_id = rm_vals %>%
-    filter(rm_label == up_rm_input) %>%
-    pull(location_id)
+  if (up_rm_input == "" ) {
+    upper_end_point_id = NA
+  } else {
+    upper_end_point_id = rm_vals %>%
+      filter(rm_label == up_rm_input) %>%
+      pull(location_id)
+  }
   lo_rm_input = input$lower_rm_select
-  lower_end_point_id = rm_vals %>%
-    filter(rm_label == lo_rm_input) %>%
-    pull(location_id)
-  # Data source
-  completion_vals = get_completion_status(pool)
+  if ( lo_rm_input == "" ) {
+    lower_end_point_id = NA
+  } else {
+    lower_end_point_id = rm_vals %>%
+      filter(rm_label == lo_rm_input) %>%
+      pull(location_id)
+  }
+  # Survey completion
   completion_input = input$completion_select
-  survey_completion_status_id = completion_vals %>%
-    filter(completion == completion_input) %>%
-    pull(survey_completion_status_id)
+  if (completion_input == "" ) {
+    survey_completion_status_id = NA
+  } else {
+    completion_vals = get_completion_status(pool)
+    survey_completion_status_id = completion_vals %>%
+      filter(completion == completion_input) %>%
+      pull(survey_completion_status_id)
+  }
   new_survey = tibble(survey_dt = survey_date_input,
                       data_source = data_source_input,
                       data_source_id = data_source_id,

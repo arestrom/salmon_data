@@ -46,12 +46,9 @@
 #     per survey. Otherwise add verbose comment to comment_text.
 #     Use shinyjs to disable "New" button if one line has already
 #     been entered.
-# 10. Allow comment multi-select for relevant selects. But push
-#     any additional to comment field as text.
+# 10. Clean-up survey_comment DT. No need for search etc...
 # 11. Need cascade code to delete survey now. Check in query
 #     planner first to see what happens.
-# 12. Allow selectizeInput to get larger:
-#     https://community.rstudio.com/t/how-to-allow-select-input-list-to-overflow-height-of-absolutepanel/6442    ????
 #
 # AS 2019-07-15
 #==============================================================
@@ -61,6 +58,7 @@ library(shiny)
 library(shinydashboard)
 library(shinydashboardPlus)
 library(shinyTime)
+library(shinyjs)
 library(bsplus)
 library(odbc)
 library(glue)
@@ -73,7 +71,6 @@ library(tibble)
 library(leaflet)
 library(sf)
 library(lubridate)
-# library(shinyjs)
 
 # Keep connections pane from opening
 options("connectionObserver" = NULL)

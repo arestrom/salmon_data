@@ -20,7 +20,7 @@ survey_comment_ui = tags$div(
   uiOutput("visibility_type_select", inline = TRUE),
   uiOutput("weather_type_select", inline = TRUE),
   textAreaInput(inputId = "sc_comment_input", label = "survey_comment", value = "",
-                width = "200px", resize = "both"),
+                width = "300px", resize = "both"),
   br(),
   br(),
   br(),

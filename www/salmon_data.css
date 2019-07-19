@@ -79,14 +79,6 @@
   line-height: 1.3;
 }
 
-#survey_insert_modal .modal-lg {
-  width: 1200px;
-}
-
-#survey_insert_modal .modal-content {
-  border-radius: 6px;
-}
-
 #survey_edit {
   color: #e6ebef;
   background-color:#4d1566;
@@ -103,14 +95,6 @@
   line-height: 1.3;
 }
 
-#survey_update_modal .modal-lg {
-  width: 1200px;
-}
-
-#survey_update_modal .modal-content {
-  border-radius: 6px;
-}
-
 #survey_delete {
   color: #e6ebef;
   background-color:#590b25;
@@ -125,14 +109,6 @@
   font-size: 11px;
   font-weight: 300;
   line-height: 1.3;
-}
-
-#survey_delete_modal .modal-lg {
-  width: 1200px;
-}
-
-#survey_delete_modal .modal-content {
-  border-radius: 6px;
 }
 
 .shiny-input-container {
@@ -172,10 +148,10 @@
 
 .selectize-input {
   min-height: 26px;
-  height: 26px;
+  height: 26px;             /* keep: Sets consistent height across inputs...but hides multi-selections */
   font-size: 11px;
   vertical-align: middle;
-  padding-top: 3px;   /* keep: This does the trick in centering vertically */
+  padding-top: 3px;         /* keep: This does the trick in centering vertically */
 }
 
 #start_time_select {
@@ -200,6 +176,14 @@
   width: 100%;
   font-size: 11px;
   line-height: 0.9;
+}
+
+#survey_insert_modal .modal-lg {
+  width: 1200px;
+}
+
+#survey_insert_modal .modal-content {
+  border-radius: 6px;
 }
 
 #survey_insert_modal .modal-header {
@@ -232,6 +216,14 @@
   line-height: 1.3;
 }
 
+#survey_update_modal .modal-lg {
+  width: 1200px;
+}
+
+#survey_update_modal .modal-content {
+  border-radius: 6px;
+}
+
 #survey_update_modal .modal-header {
   background-color: #becc4a;
   border-top-left-radius: 6px;
@@ -262,6 +254,14 @@
   line-height: 1.3;
 }
 
+#survey_delete_modal .modal-lg {
+  width: 1200px;
+}
+
+#survey_delete_modal .modal-content {
+  border-radius: 6px;
+}
+
 #survey_delete_modal .modal-header {
   background-color: #becc4a;
   border-top-left-radius: 6px;
@@ -285,6 +285,82 @@
 }
 
 #survey_delete_modal .btn-default {
+  color: #e6ebef;
+  background-color:#590b25;
+  font-size: 11px;
+  font-weight: 300;
+  line-height: 1.3;
+}
+
+#survey_comment_insert_modal .modal-lg {
+  width: 1200px;
+}
+
+#survey_comment_insert_modal .modal-content {
+  border-radius: 6px;
+}
+
+#survey_comment_insert_modal .modal-header {
+  background-color: #becc4a;
+  border-top-left-radius: 6px;
+  border-top-right-radius: 6px;
+}
+
+#survey_comment_insert_modal .modal-body {
+  background-color: #ffffff;
+  border-bottom-left-radius: 6px;
+  border-bottom-right-radius: 6px;
+  border-top-left-radius: 6px;
+  border-top-right-radius: 6px;
+  font-size: 14px;
+  font-weight: bold;
+}
+
+#survey_comment_insert_modal .modal-title {
+  font-size: 15px;
+  font-weight: bold;
+  color: #191c13;
+}
+
+#survey_comment_insert_modal .btn-default {
+  color: #e6ebef;
+  background-color:#590b25;
+  font-size: 11px;
+  font-weight: 300;
+  line-height: 1.3;
+}
+
+#survey_comment_delete_modal .modal-lg {
+  width: 1200px;
+}
+
+#survey_comment_delete_modal .modal-content {
+  border-radius: 6px;
+}
+
+#survey_comment_delete_modal .modal-header {
+  background-color: #becc4a;
+  border-top-left-radius: 6px;
+  border-top-right-radius: 6px;
+}
+
+#survey_comment_delete_modal .modal-body {
+  background-color: #ffffff;
+  border-bottom-left-radius: 6px;
+  border-bottom-right-radius: 6px;
+  border-top-left-radius: 6px;
+  border-top-right-radius: 6px;
+  font-size: 14px;
+  font-weight: bold;
+}
+
+#survey_comment_delete_modal .modal-title {
+  font-size: 15px;
+  font-weight: bold;
+  color: #191c13;
+}
+
+#survey_comment_delete_modal .btn-default {
   color: #e6ebef;
   background-color:#590b25;
   font-size: 11px;

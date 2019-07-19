@@ -164,29 +164,6 @@ get_weather_type = function(pool) {
   return(weather_type_list)
 }
 
-#==========================================================================
-# Validate survey comment create operations
-#==========================================================================
-
-# Check existing survey comments prior to survey_comment insert operation
-dup_survey_comment = function(new_survey_comment_vals, existing_survey_comment_vals) {
-  new_survey_comment_vals = new_survey_comment_vals %>%
-    select(area_surveyed, abundance_condition, stream_condition, stream_flow,
-           count_condition, survey_direction, survey_timing, visibility_condition,
-           visibility_type, weather_type, comment_text)
-  matching_rows = new_survey_comment_vals %>%
-    inner_join(existing_survey_comment_vals,
-               by = c("area_surveyed", "abundance_condition", "stream_condition", "stream_flow",
-                      "count_condition", "survey_direction", "survey_timing", "visibility_condition",
-                      "visibility_type", "weather_type", "comment_text"))
-  if (nrow(matching_rows) > 0 ) {
-    dup_flag = TRUE
-  } else {
-    dup_flag = FALSE
-  }
-  return(dup_flag)
-}
-
 #========================================================
 # Insert callback
 #========================================================
@@ -228,6 +205,22 @@ survey_comment_insert = function(new_comment_values) {
                              new_comment_values$created_by))
   dbGetRowsAffected(insert_result)
   dbClearResult(insert_result)
+  poolReturn(con)
+}
+
+#========================================================
+# Delete callback
+#========================================================
+
+# Define delete callback
+survey_comment_delete = function(delete_values) {
+  survey_comment_id = delete_values$survey_comment_id
+  con = poolCheckout(pool)
+  delete_result = dbSendStatement(
+    con, glue_sql("DELETE FROM survey_comment WHERE survey_comment_id = ?"))
+  dbBind(delete_result, list(survey_comment_id))
+  dbGetRowsAffected(delete_result)
+  dbClearResult(delete_result)
   poolReturn(con)
 }
 
