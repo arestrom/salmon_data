@@ -1,4 +1,6 @@
-
+#=========================================================
+# bsplus ui elements
+#=========================================================
 
 # Create the Shiny server
 server = function(input, output, session) {

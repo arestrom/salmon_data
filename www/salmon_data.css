@@ -19,6 +19,11 @@
 .content-wrapper, .right-side {
     background-color: #ffffff;
 }
+
+.shinyhelper-container {
+  position: absolute;
+  display: inline-block;
+}
 */
 
 /* Controls space under inputs to provide space for label when wrapping */
