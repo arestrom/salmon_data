@@ -94,13 +94,8 @@ output$survey_comments = renderDT({
   # Generate table
   datatable(survey_comment_data,
             selection = list(mode = 'single'),
-            #rownames = FALSE, THIS CAUSED DT TO NOT RELOAD !!!!!!!!!!!!!
-            extensions = 'Buttons',
-            options = list(dom = 'Blftp',
-                           pageLength = 5,
-                           lengthMenu = c(5, 10, 20, 40, 60, 100, 500),
+            options = list(dom = 'tp',
                            scrollX = T,
-                           buttons = c('excel', 'print'),
                            initComplete = JS(
                              "function(settings, json) {",
                              "$(this.api().table().header()).css({'background-color': '#9eb3d6'});",
@@ -458,59 +453,41 @@ survey_comment_edit = reactive({
     filter(weather_type == weather_type_input) %>%
     pull(weather_type_id)
   edit_survey_comment = tibble(survey_comment_id = selected_survey_comment_data()$survey_comment_id,
-
-
-
-                              # STOPPED HERE !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-
-
-
                                survey_dt = input$survey_date_input,
-                               data_source = data_source_input,
-                               data_source_id = data_source_id,
-                               survey_method = survey_method_input,
-                               survey_method_id = survey_method_id,
-                               data_review = data_review_input,
-                               data_review_status_id = data_review_status_id,
-                               up_rm = up_rm_input,
-                               upper_end_point_id = upper_end_point_id,
-                               lo_rm = lo_rm_input,
-                               lower_end_point_id = lower_end_point_id,
-                               start_time = format(input$start_time_select, "%H:%M"),
-                               end_time = format(input$end_time_select, "%H:%M"),
-                               observer = input$observer_input,
-                               submitter = input$submitter_input,
-                               completion = completion_input,
-                               survey_completion_status_id = survey_completion_status_id,
+                               area_surveyed = area_surveyed_input,
+                               area_surveyed_id = area_surveyed_id,
+                               abundance_condition = abundance_condition_input,
+                               fish_abundance_condition_id = fish_abundance_condition_id,
+                               stream_condition = stream_condition_input,
+                               stream_condition_id = stream_condition_id,
+                               stream_flow = stream_flow_input,
+                               stream_flow_type_id = stream_flow_type_id,
+                               count_condition = count_condition_input,
+                               survey_count_condition_id = survey_count_condition_id,
+                               survey_direction = survey_direction_input,
+                               survey_direction_id = survey_direction_id,
+                               survey_timing = survey_timing_input,
+                               survey_timing_id = survey_timing_id,
+                               visibility_condition = visibility_condition_input,
+                               visibility_condition_id = visibility_condition_id,
+                               weather_type = weather_type_input,
+                               weather_type_id = weather_type_id,
+                               comment_text = input$sc_comment_input,
                                modified_dt = lubridate::with_tz(Sys.time(), "UTC"),
                                modified_by = Sys.getenv("USERNAME"))
-  edit_survey = edit_survey %>%
-    mutate(survey_datetime = as.POSIXct(format(survey_dt), tz = "America/Los_Angeles")) %>%
-    mutate(survey_datetime = lubridate::with_tz(survey_datetime, tzone = "UTC")) %>%
-    mutate(start_time = if_else(is.na(start_time) | start_time == "", NA_character_, start_time)) %>%
-    mutate(end_time = if_else(is.na(end_time) | end_time == "", NA_character_, end_time)) %>%
-    mutate(survey_start_datetime = case_when(
-      substr(start_time, 12, 13) == "00" ~ as.POSIXct(NA),
-      substr(start_time, 12, 13) != "00" ~ as.POSIXct(paste0(format(survey_dt), " ", start_time),
-                                                      tz = "America/Los_Angeles"))) %>%
-    mutate(survey_start_datetime = with_tz(survey_start_datetime, tzone = "UTC")) %>%
-    mutate(survey_end_datetime = case_when(
-      substr(end_time, 12, 13) == "00" ~ as.POSIXct(NA),
-      substr(end_time, 12, 13) != "00" ~ as.POSIXct(paste0(format(survey_dt), " ", end_time),
-                                                    tz = "America/Los_Angeles"))) %>%
-    mutate(survey_end_datetime = with_tz(survey_end_datetime, tzone = "UTC")) %>%
-    mutate(observer = if_else(is.na(observer) | observer == "", NA_character_, observer)) %>%
-    mutate(submitter = if_else(is.na(submitter) | submitter == "", NA_character_, submitter))
+  edit_survey_comment = edit_survey_comment %>%
+    mutate(comment_text = if_else(is.na(comment_text) | comment_text == "", NA_character_, comment_text))
   return(edit_survey)
 })
 
 # Generate values to show in modal
-output$survey_modal_update_vals = renderDT({
-  survey_modal_up_vals = survey_edit() %>%
-    select(survey_dt, survey_method, up_rm, lo_rm, start_time, end_time,
-           observer, submitter, data_source, data_review, completion)
+output$survey_comment_modal_update_vals = renderDT({
+  survey_comment_modal_up_vals = survey_comment_edit() %>%
+    select(area_surveyed, abundance_condition, stream_condition, stream_flow,
+           count_condition, survey_direction, survey_timing, visibility_condition,
+           visibility_type, weather_type, comment_text)
   # Generate table
-  datatable(survey_modal_up_vals,
+  datatable(survey_comment_modal_up_vals,
             rownames = FALSE,
             options = list(dom = 't',
                            scrollX = T,
@@ -521,7 +498,7 @@ output$survey_modal_update_vals = renderDT({
                              "}")))
 })
 
-observeEvent(input$survey_edit, {
+observeEvent(input$comment_edit, {
   old_vals = selected_survey_data() %>%
     mutate(start_time = format(start_time, "%H:%M")) %>%
     mutate(end_time = format(end_time, "%H:%M")) %>%
@@ -557,7 +534,7 @@ observeEvent(input$survey_edit, {
                    DT::DTOutput("survey_modal_update_vals"),
                    br(),
                    br(),
-                   actionButton("save_edits","Save changes")
+                   actionButton("save_comment_edits","Save changes")
                  ),
                  easyClose = TRUE,
                  footer = NULL
@@ -567,16 +544,16 @@ observeEvent(input$survey_edit, {
 })
 
 # Update DB and reload DT
-observeEvent(input$save_edits, {
-  survey_update(survey_edit())
+observeEvent(input$save_comment_edits, {
+  survey_comment_update(survey_comment_edit())
   removeModal()
-  post_edit_vals = get_surveys(pool, waterbody_id(), year_vals()) %>%
+  post_comment_edit_vals = get_survey_comment(pool, waterbody_id(), year_vals()) %>%
     mutate(start_time = start_time_dt, end_time = end_time_dt) %>%
     select(survey_dt = survey_date_dt, survey_method, up_rm,
            lo_rm, start_time, end_time, observer, submitter,
            data_source, data_review, completion, created_dt,
            created_by, modified_dt, modified_by)
-  replaceData(survey_dt_proxy, post_edit_vals)
+  replaceData(survey_comment_dt_proxy, post_comment_edit_vals)
 })
 
 #========================================================

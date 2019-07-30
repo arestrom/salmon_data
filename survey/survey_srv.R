@@ -40,7 +40,6 @@ output$surveys = renderDT({
   # Generate table
   datatable(survey_data,
             selection = list(mode = 'single'),
-            #rownames = FALSE, THIS CAUSED DT TO NOT RELOAD !!!!!!!!!!!!!
             extensions = 'Buttons',
             options = list(dom = 'Blftp',
                            pageLength = 5,
@@ -372,14 +371,14 @@ survey_edit = reactive({
     mutate(start_time = if_else(is.na(start_time) | start_time == "", NA_character_, start_time)) %>%
     mutate(end_time = if_else(is.na(end_time) | end_time == "", NA_character_, end_time)) %>%
     mutate(survey_start_datetime = case_when(
-      substr(start_time, 12, 13) == "00" ~ as.POSIXct(NA),
-      substr(start_time, 12, 13) != "00" ~ as.POSIXct(paste0(format(survey_dt), " ", start_time),
-                                                      tz = "America/Los_Angeles"))) %>%
+      start_time %in% c("00:00") ~ as.POSIXct(NA),
+      !start_time %in% c("00:00") ~ as.POSIXct(paste0(format(survey_dt), " ", start_time),
+                                               tz = "America/Los_Angeles"))) %>%
     mutate(survey_start_datetime = with_tz(survey_start_datetime, tzone = "UTC")) %>%
     mutate(survey_end_datetime = case_when(
-      substr(end_time, 12, 13) == "00" ~ as.POSIXct(NA),
-      substr(end_time, 12, 13) != "00" ~ as.POSIXct(paste0(format(survey_dt), " ", end_time),
-                                                    tz = "America/Los_Angeles"))) %>%
+      end_time %in% c("00:00") ~ as.POSIXct(NA),
+      !end_time %in% c("00:00") ~ as.POSIXct(paste0(format(survey_dt), " ", end_time),
+                                             tz = "America/Los_Angeles"))) %>%
     mutate(survey_end_datetime = with_tz(survey_end_datetime, tzone = "UTC")) %>%
     mutate(observer = if_else(is.na(observer) | observer == "", NA_character_, observer)) %>%
     mutate(submitter = if_else(is.na(submitter) | submitter == "", NA_character_, submitter))
@@ -407,6 +406,8 @@ observeEvent(input$survey_edit, {
   old_vals = selected_survey_data() %>%
     mutate(start_time = format(start_time, "%H:%M")) %>%
     mutate(end_time = format(end_time, "%H:%M")) %>%
+    mutate(start_time = if_else(is.na(start_time), "00:00", start_time)) %>%
+    mutate(end_time = if_else(is.na(end_time), "00:00", end_time)) %>%
     select(survey_dt = survey_date, survey_method, up_rm, lo_rm, start_time,
            end_time, observer, submitter, data_source, data_review,
            completion = completed)
@@ -489,6 +490,7 @@ output$survey_modal_delete_vals = renderDT({
 
 observeEvent(input$survey_delete, {
   survey_id = selected_survey_data()$survey_id
+  survey_dependencies = get_survey_dependencies(survey_id)
   showModal(
     tags$div(id = "survey_delete_modal",
              if ( length(survey_id) == 0 ) {

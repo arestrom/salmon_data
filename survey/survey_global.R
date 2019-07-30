@@ -134,6 +134,24 @@ survey_insert = function(new_values) {
   new_values = new_values %>%
     mutate(incomplete_survey_type_id = "cde5d9fb-bb33-47c6-9018-177cd65d15f5") %>%   # Not applicable
     mutate(data_source_unit_id = "e2d51ceb-398c-49cb-9aa5-d20a839e9ad9")             # Not applicable
+  # Pull out data
+  survey_datetime = new_values$survey_dt
+  data_source_id = new_values$data_source_id
+  data_source_unit_id = new_values$data_source_unit_id
+  survey_method_id = new_values$survey_method_id
+  data_review_status_id = new_values$data_review_status_id
+  upper_end_point_id = new_values$upper_end_point_id
+  lower_end_point_id = new_values$lower_end_point_id
+  survey_completion_status_id = new_values$survey_completion_status_id
+  incomplete_survey_type_id = new_values$incomplete_survey_type_id
+  survey_start_datetime = new_values$survey_start_datetime
+  survey_end_datetime = new_values$survey_end_datetime
+  observer_last_name = new_values$observer_last_name
+  if (is.na(observer_last_name)) { observer_last_name = NA }
+  data_submitter_last_name = new_values$data_submitter_last_name
+  if (is.na(data_submitter_last_name)) { data_submitter_last_name = NA }
+  created_by = new_values$created_by
+
   # Checkout a connection
   con = poolCheckout(pool)
   insert_result = dbSendStatement(
@@ -154,20 +172,12 @@ survey_insert = function(new_values) {
                   "created_by) ",
                   "VALUES (",
                   "?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)"))
-  dbBind(insert_result, list(new_values$survey_dt,
-                             new_values$data_source_id,
-                             new_values$data_source_unit_id,
-                             new_values$survey_method_id,
-                             new_values$data_review_status_id,
-                             new_values$upper_end_point_id,
-                             new_values$lower_end_point_id,
-                             new_values$survey_completion_status_id,
-                             new_values$incomplete_survey_type_id,
-                             new_values$survey_start_datetime,
-                             new_values$survey_end_datetime,
-                             new_values$observer_last_name,
-                             new_values$data_submitter_last_name,
-                             new_values$created_by))
+  dbBind(insert_result, list(survey_datetime, data_source_id, data_source_unit_id,
+                             survey_method_id, data_review_status_id, upper_end_point_id,
+                             lower_end_point_id, survey_completion_status_id,
+                             incomplete_survey_type_id, survey_start_datetime,
+                             survey_end_datetime, observer_last_name,
+                             data_submitter_last_name, created_by))
   dbGetRowsAffected(insert_result)
   dbClearResult(insert_result)
   poolReturn(con)
@@ -190,7 +200,9 @@ survey_update = function(edit_values) {
   survey_start_datetime = edit_values$survey_start_datetime
   survey_end_datetime = edit_values$survey_end_datetime
   observer_last_name = edit_values$observer
+  if (is.na(observer_last_name)) { observer_last_name = NA }
   data_submitter_last_name = edit_values$submitter
+  if (is.na(data_submitter_last_name)) { data_submitter_last_name = NA }
   mod_dt = lubridate::with_tz(Sys.time(), "UTC")
   mod_by = Sys.getenv("USERNAME")
   survey_id = edit_values$survey_id
@@ -222,6 +234,40 @@ survey_update = function(edit_values) {
   dbClearResult(update_result)
   poolReturn(con)
 }
+
+#========================================================
+# Delete callback
+#========================================================
+
+# Identify survey dependencies prior to delete....do the same for survey_event
+get_survey_dependencies = function(survey_id) {
+  qry = glue("select count(fb.fish_barrier_id) as fish_barrier, ",
+             "count(fc.fish_capture_id) as fish_capture, ",
+             "count(fs.fish_species_presence_id) as fish_species_presence, ",
+             "count(ms.mobile_survey_form_id) as mobile_survey_form, ",
+             "count(ob.other_observation_id) as other_observation, ",
+             "count(sc.survey_comment_id) as survey_comment, ",
+             "count(se.survey_event_id) as survey_event, ",
+             "count(si.survey_intent_id) as survey_intent, ",
+             "count(wm.waterbody_measurement_id) as waterbody_measurement ",
+             "from survey as s ",
+             "left join fish_barrier as fb on s.survey_id = fb.survey_id ",
+             "left join fish_capture as fc on s.survey_id = fc.survey_id ",
+             "left join fish_species_presence as fs on s.survey_id = fs.survey_id ",
+             "left join mobile_survey_form as ms on s.survey_id = ms.survey_id ",
+             "left join other_observation as ob on s.survey_id = ob.survey_id ",
+             "left join survey_comment as sc on s.survey_id = sc.survey_id ",
+             "left join survey_event as se on s.survey_id = se.survey_id ",
+             "left join survey_intent as si on s.survey_id = si.survey_id ",
+             "left join waterbody_measurement as wm on s.survey_id = si.survey_id ",
+             "where s.survey_id = '{survey_id}'")
+  con = poolCheckout(pool)
+  survey_dependents = DBI::dbGetQuery(pool, qry)
+  return(survey_dependents)
+}
+
+# survey_dependents = get_survey_dependencies(survey_id)
+
 
 #========================================================
 # Delete callback
