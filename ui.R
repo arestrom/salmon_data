@@ -42,16 +42,6 @@ ui = dashboardPagePlus(
         )
       ),
       boxPlus(
-        title = "Species event",
-        closable = FALSE,
-        collapsible = TRUE,
-        solidHeader = FALSE,
-        collapsed = TRUE,
-        #species_content,
-        width = 12,
-        "This is some text"
-      ),
-      boxPlus(
         title = "Fish encounter",
         closable = FALSE,
         collapsible = TRUE,
