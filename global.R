@@ -71,6 +71,7 @@ library(tibble)
 library(leaflet)
 library(sf)
 library(lubridate)
+library(remisc)
 
 # Keep connections pane from opening
 options("connectionObserver" = NULL)

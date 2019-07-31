@@ -1,5 +1,4 @@
 
-
 output$area_surveyed_select = renderUI({
   area_surveyed_list = get_area_surveyed(pool)$area_surveyed
   area_surveyed_list = c("", area_surveyed_list)
@@ -114,7 +113,7 @@ survey_comment_dt_proxy = dataTableProxy(outputId = "survey_comments")
 
 # Create reactive to collect input values for update and delete actions
 selected_survey_comment_data = reactive({
-  req(input$survey_comments_rows_selected)
+  #req(input$survey_comments_rows_selected)
   survey_comment_data = get_survey_comment(pool, selected_survey_data()$survey_id)
   survey_comment_row = input$survey_comments_rows_selected
   selected_survey_comment = tibble(survey_comment_id = survey_comment_data$survey_comment_id[survey_comment_row],
@@ -133,12 +132,6 @@ selected_survey_comment_data = reactive({
                                    created_by = survey_comment_data$created_by[survey_comment_row],
                                    modified_date = survey_comment_data$modified_date[survey_comment_row],
                                    modified_by = survey_comment_data$modified_by[survey_comment_row])
-  # print("selected survey_comment row")
-  # print(survey_comment_row)
-  # print("weather_type")
-  # print(selected_survey_comment$weather_type)
-  # print("survey_comment")
-  # print(selected_survey_comment$survey_comment_text)
   return(selected_survey_comment)
 })
 
@@ -148,7 +141,7 @@ selected_survey_comment_data = reactive({
 
 # Update all survey input values to values in selected row
 observeEvent(input$survey_comments_rows_selected, {
-  req(input$survey_comments_rows_selected)
+  #req(input$survey_comments_rows_selected)
   sscdat = selected_survey_comment_data()
   updateSelectizeInput(session, "area_surveyed_select", selected = sscdat$area_surveyed)
   updateSelectizeInput(session, "abundance_condition_select", selected = sscdat$abundance_condition)
@@ -524,10 +517,6 @@ survey_comment_edit = reactive({
                                modified_by = Sys.getenv("USERNAME"))
   edit_survey_comment = edit_survey_comment %>%
     mutate(comment_text = if_else(is.na(comment_text) | comment_text == "", NA_character_, comment_text))
-  # print("survey_comment_text, line 481")
-  # print(edit_survey_comment$comment_text)
-  # print("survey_comment_id input")
-  # print(edit_survey_comment$survey_comment_id)
   return(edit_survey_comment)
 })
 
@@ -554,10 +543,12 @@ observeEvent(input$comment_edit, {
     select(area_surveyed, abundance_condition, stream_condition, stream_flow,
            count_condition, survey_direction, survey_timing, visibility_condition,
            visibility_type, weather_type, comment_text = survey_comment_text)
+  old_comment_vals[] = lapply(old_comment_vals, remisc::set_empty)
   new_comment_vals = survey_comment_edit() %>%
     select(area_surveyed, abundance_condition, stream_condition, stream_flow,
            count_condition, survey_direction, survey_timing, visibility_condition,
            visibility_type, weather_type, comment_text)
+  new_comment_vals[] = lapply(new_comment_vals, remisc::set_empty)
   showModal(
     tags$div(id = "survey_comment_update_modal",
              if ( !length(input$survey_comments_rows_selected) == 1 ) {
