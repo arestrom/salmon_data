@@ -1,5 +1,5 @@
 #=========================================================
-# HTML content definition of header accordian
+# HTML content definition of survey_comment accordian
 #========================================================
 
 # Define the survey data content

@@ -90,6 +90,8 @@ source("survey/survey_ui.R")
 source("survey/survey_global.R")
 source("survey_comment/survey_comment_ui.R")
 source("survey_comment/survey_comment_global.R")
+source("survey_intent/survey_intent_ui.R")
+source("survey_intent/survey_intent_global.R")
 
 # Define globals ================================================================
 
