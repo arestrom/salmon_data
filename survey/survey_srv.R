@@ -309,7 +309,7 @@ observeEvent(input$insert_survey, {
 # Edit operations: reactives, observers and modals
 #========================================================
 
-# Create reactive to collect input values for insert actions
+# Create reactive to collect input values for edit actions
 survey_edit = reactive({
   # Data source
   data_source_vals = get_data_source(pool)

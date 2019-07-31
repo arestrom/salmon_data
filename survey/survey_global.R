@@ -147,9 +147,9 @@ survey_insert = function(new_values) {
   survey_start_datetime = new_values$survey_start_datetime
   survey_end_datetime = new_values$survey_end_datetime
   observer_last_name = new_values$observer_last_name
-  if (is.na(observer_last_name)) { observer_last_name = NA }
+  if (is.na(observer_last_name) | observer_last_name == "") { observer_last_name = NA }
   data_submitter_last_name = new_values$data_submitter_last_name
-  if (is.na(data_submitter_last_name)) { data_submitter_last_name = NA }
+  if (is.na(data_submitter_last_name) | data_submitter_last_name == "") { data_submitter_last_name = NA }
   created_by = new_values$created_by
 
   # Checkout a connection
@@ -200,9 +200,9 @@ survey_update = function(edit_values) {
   survey_start_datetime = edit_values$survey_start_datetime
   survey_end_datetime = edit_values$survey_end_datetime
   observer_last_name = edit_values$observer
-  if (is.na(observer_last_name)) { observer_last_name = NA }
+  if (is.na(observer_last_name) | observer_last_name == "") { observer_last_name = NA }
   data_submitter_last_name = edit_values$submitter
-  if (is.na(data_submitter_last_name)) { data_submitter_last_name = NA }
+  if (is.na(data_submitter_last_name) | data_submitter_last_name == "") { data_submitter_last_name = NA }
   mod_dt = lubridate::with_tz(Sys.time(), "UTC")
   mod_by = Sys.getenv("USERNAME")
   survey_id = edit_values$survey_id
@@ -236,7 +236,7 @@ survey_update = function(edit_values) {
 }
 
 #========================================================
-# Delete callback
+# Identify dependencies prior to delete
 #========================================================
 
 # Identify survey dependencies prior to delete....do the same for survey_event

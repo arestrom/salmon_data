@@ -179,6 +179,13 @@ survey_comment_insert = function(new_comment_values) {
   stream_flow_type_id = new_comment_values$stream_flow_type_id
   survey_count_condition_id = new_comment_values$survey_count_condition_id
   survey_direction_id = new_comment_values$survey_direction_id
+  survey_timing_id =new_comment_values$survey_timing_id
+  visibility_condition_id = new_comment_values$visibility_condition_id
+  visibility_type_id = new_comment_values$visibility_type_id
+  weather_type_id = new_comment_values$weather_type_id
+  comment_text = new_comment_values$comment_text
+  if (is.na(comment_text) | comment_text == "") { comment_text = NA }
+  created_by = new_comment_values$created_by
   # Checkout a connection
   con = poolCheckout(pool)
   insert_result = dbSendStatement(
@@ -200,14 +207,10 @@ survey_comment_insert = function(new_comment_values) {
                   "?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)"))
   dbBind(insert_result, list(survey_id, area_surveyed_id, fish_abundance_condition_id,
                              stream_condition_id, stream_flow_type_id,
-                             survey_count_condition_id,
-                             new_comment_values$survey_direction_id,
-                             new_comment_values$survey_timing_id,
-                             new_comment_values$visibility_condition_id,
-                             new_comment_values$visibility_type_id,
-                             new_comment_values$weather_type_id,
-                             new_comment_values$comment_text,
-                             new_comment_values$created_by))
+                             survey_count_condition_id, survey_direction_id,
+                             survey_timing_id, visibility_condition_id,
+                             visibility_type_id, weather_type_id, comment_text,
+                             created_by))
   dbGetRowsAffected(insert_result)
   dbClearResult(insert_result)
   poolReturn(con)
@@ -218,48 +221,48 @@ survey_comment_insert = function(new_comment_values) {
 #========================================================
 
 # Define update callback
-survey_update = function(edit_values) {
+survey_comment_update = function(comment_edit_values) {
+  edit_values = comment_edit_values
   # Pull out data
-  survey_datetime = edit_values$survey_datetime
-  data_source_id = edit_values$data_source_id
-  survey_method_id = edit_values$survey_method_id
-  data_review_status_id = edit_values$data_review_status_id
-  upper_end_point_id = edit_values$upper_end_point_id
-  lower_end_point_id = edit_values$lower_end_point_id
-  survey_completion_status_id = edit_values$survey_completion_status_id
-  survey_start_datetime = edit_values$survey_start_datetime
-  survey_end_datetime = edit_values$survey_end_datetime
-  observer_last_name = edit_values$observer
-  if (is.na(observer_last_name)) { observer_last_name = NA }
-  data_submitter_last_name = edit_values$submitter
-  if (is.na(data_submitter_last_name)) { data_submitter_last_name = NA }
+  survey_comment_id = edit_values$survey_comment_id
+  area_surveyed_id = edit_values$area_surveyed_id
+  fish_abundance_condition_id = edit_values$fish_abundance_condition_id
+  stream_condition_id = edit_values$stream_condition_id
+  stream_flow_type_id = edit_values$stream_flow_type_id
+  survey_count_condition_id = edit_values$survey_count_condition_id
+  survey_direction_id = edit_values$survey_direction_id
+  survey_timing_id = edit_values$survey_timing_id
+  visibility_condition_id = edit_values$visibility_condition_id
+  visibility_type_id = edit_values$visibility_type_id
+  weather_type_id = edit_values$weather_type_id
+  comment_text = edit_values$comment_text
+  if (is.na(comment_text) | comment_text == "") { comment_text = NA }
   mod_dt = lubridate::with_tz(Sys.time(), "UTC")
   mod_by = Sys.getenv("USERNAME")
-  survey_id = edit_values$survey_id
   # Checkout a connection
   con = poolCheckout(pool)
   update_result = dbSendStatement(
-    con, glue_sql("UPDATE survey SET ",
-                  "survey_datetime = ?, ",
-                  "data_source_id = ?, ",
-                  "survey_method_id = ?, ",
-                  "data_review_status_id = ?, ",
-                  "upper_end_point_id = ?, ",
-                  "lower_end_point_id = ?, ",
-                  "survey_completion_status_id = ?, ",
-                  "survey_start_datetime = ?, ",
-                  "survey_end_datetime = ?, ",
-                  "observer_last_name = ?, ",
-                  "data_submitter_last_name = ?, ",
+    con, glue_sql("UPDATE survey_comment SET ",
+                  "area_surveyed_id = ?, ",
+                  "fish_abundance_condition_id = ?, ",
+                  "stream_condition_id = ?, ",
+                  "stream_flow_type_id = ?, ",
+                  "survey_count_condition_id = ?, ",
+                  "survey_direction_id = ?, ",
+                  "survey_timing_id = ?, ",
+                  "visibility_condition_id = ?, ",
+                  "visibility_type_id = ?, ",
+                  "weather_type_id = ?, ",
+                  "comment_text = ?, ",
                   "modified_datetime = ?, ",
                   "modified_by = ? ",
-                  "where survey_id = ?"))
-  dbBind(update_result, list(survey_datetime, data_source_id, survey_method_id,
-                             data_review_status_id, upper_end_point_id,
-                             lower_end_point_id, survey_completion_status_id,
-                             survey_start_datetime, survey_end_datetime,
-                             observer_last_name, data_submitter_last_name,
-                             mod_dt, mod_by, survey_id))
+                  "where survey_comment_id = ?"))
+  dbBind(update_result, list(area_surveyed_id, fish_abundance_condition_id,
+                             stream_condition_id, stream_flow_type_id,
+                             survey_count_condition_id, survey_direction_id,
+                             survey_timing_id, visibility_condition_id,
+                             visibility_type_id, weather_type_id, comment_text,
+                             mod_dt, mod_by, survey_comment_id))
   dbGetRowsAffected(update_result)
   dbClearResult(update_result)
   poolReturn(con)
