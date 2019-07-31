@@ -499,18 +499,17 @@ output$survey_comment_modal_update_vals = renderDT({
 })
 
 observeEvent(input$comment_edit, {
-  old_vals = selected_survey_data() %>%
-    mutate(start_time = format(start_time, "%H:%M")) %>%
-    mutate(end_time = format(end_time, "%H:%M")) %>%
-    select(survey_dt = survey_date, survey_method, up_rm, lo_rm, start_time,
-           end_time, observer, submitter, data_source, data_review,
-           completion = completed)
-  new_vals = survey_edit() %>%
-    select(survey_dt, survey_method, up_rm, lo_rm, start_time, end_time,
-           observer, submitter, data_source, data_review, completion)
+  old_vals = selected_survey_comment_data() %>%
+    select(area_surveyed, abundance_condition, stream_condition, stream_flow,
+           count_condition, survey_direction, survey_timing, visibility_condition,
+           visibility_type, weather_type, comment_text)
+  new_vals = survey_comment_edit() %>%
+    select(area_surveyed, abundance_condition, stream_condition, stream_flow,
+           count_condition, survey_direction, survey_timing, visibility_condition,
+           visibility_type, weather_type, comment_text)
   showModal(
-    tags$div(id = "survey_update_modal",
-             if ( !length(input$surveys_rows_selected) == 1 ) {
+    tags$div(id = "survey_comment_update_modal",
+             if ( !length(input$survey_comments_rows_selected) == 1 ) {
                modalDialog (
                  size = "m",
                  title = "Warning",
@@ -531,7 +530,7 @@ observeEvent(input$comment_edit, {
                  size = 'l',
                  title = "Update data for survey to these new values?",
                  fluidPage (
-                   DT::DTOutput("survey_modal_update_vals"),
+                   DT::DTOutput("survey_comment_modal_update_vals"),
                    br(),
                    br(),
                    actionButton("save_comment_edits","Save changes")
@@ -547,12 +546,11 @@ observeEvent(input$comment_edit, {
 observeEvent(input$save_comment_edits, {
   survey_comment_update(survey_comment_edit())
   removeModal()
-  post_comment_edit_vals = get_survey_comment(pool, waterbody_id(), year_vals()) %>%
-    mutate(start_time = start_time_dt, end_time = end_time_dt) %>%
-    select(survey_dt = survey_date_dt, survey_method, up_rm,
-           lo_rm, start_time, end_time, observer, submitter,
-           data_source, data_review, completion, created_dt,
-           created_by, modified_dt, modified_by)
+  post_comment_edit_vals = get_survey_comment(pool, selected_survey_data()$survey_id) %>%
+    select(area_surveyed, abundance_condition, stream_condition,
+           stream_flow, count_condition, survey_direction, survey_timing,
+           visibility_condition, visibility_type, weather_type, survey_comment,
+           created_dt, created_by, modified_dt, modified_by)
   replaceData(survey_comment_dt_proxy, post_comment_edit_vals)
 })
 

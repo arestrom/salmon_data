@@ -491,6 +491,7 @@ output$survey_modal_delete_vals = renderDT({
 observeEvent(input$survey_delete, {
   survey_id = selected_survey_data()$survey_id
   survey_dependencies = get_survey_dependencies(survey_id)
+  table_names = paste0(names(survey_dependencies), collapse = ", ")
   showModal(
     tags$div(id = "survey_delete_modal",
              if ( length(survey_id) == 0 ) {
@@ -498,6 +499,14 @@ observeEvent(input$survey_delete, {
                  size = "m",
                  title = "Warning",
                  paste("Please select a row to delete!" ),
+                 easyClose = TRUE,
+                 footer = NULL
+               )
+             } else if ( ncol(survey_dependencies) > 0L ) {
+               modalDialog (
+                 size = "m",
+                 title = "Warning",
+                 glue("Please delete associated survey data from the following tables first: {table_names}"),
                  easyClose = TRUE,
                  footer = NULL
                )
