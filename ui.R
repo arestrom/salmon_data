@@ -30,7 +30,7 @@ ui = dashboardPagePlus(
             title = "Survey intent",
             color = "purple",
             collapsed = TRUE,
-            "This is some text!"
+            survey_intent_ui
           ),
           accordionItem(
             id = 3,
