@@ -79,7 +79,7 @@ output$weather_type_select = renderUI({
                  width = "150px")
 })
 
-# Primary DT datatable for database
+# Primary DT datatable for comments
 output$survey_comments = renderDT({
   survey_comment_title = glue("Survey comments for {input$stream_select} on ",
                               "{selected_survey_data()$survey_date} from river mile {selected_survey_data()$up_rm} ",
