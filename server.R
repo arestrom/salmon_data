@@ -1,5 +1,5 @@
 #=========================================================
-# bsplus ui elements
+# dashboardplus ui elements
 #=========================================================
 
 # Create the Shiny server
