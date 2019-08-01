@@ -240,11 +240,13 @@ output$survey_intent_modal_update_vals = renderDT({
 })
 
 observeEvent(input$intent_edit, {
-  old_intent_vals = selected_survey_intent_data() %>%
-    select(species, count_type)
   new_intent_vals = survey_intent_edit() %>%
     select(species, count_type)
-  dup_intent_flag = dup_survey_intent(new_intent_vals, old_intent_vals)
+  old_intent_vals = selected_survey_intent_data() %>%
+    select(species, count_type)
+  all_intent_vals = get_survey_intent(pool, selected_survey_data()$survey_id) %>%
+    select(species, count_type)
+  dup_intent_flag = dup_survey_intent(new_intent_vals, all_intent_vals)
   showModal(
     tags$div(id = "survey_intent_update_modal",
              if ( !length(input$survey_intents_rows_selected) == 1 ) {
