@@ -72,9 +72,12 @@ library(leaflet)
 library(sf)
 library(lubridate)
 library(remisc)
+#library(reactlog)
 
 # Keep connections pane from opening
 options("connectionObserver" = NULL)
+#options(shiny.reactlog = TRUE)
+#reactlogShow()
 
 # Read .rds data
 wria_list = readRDS("www/wria_list.rds")

@@ -48,6 +48,25 @@ get_count_type = function(pool) {
   return(count_type_list)
 }
 
+#==========================================================================
+# Validate survey_intent create operations
+#==========================================================================
+
+# Check for existing surveys prior to survey insert operation
+dup_survey_intent = function(new_survey_intent_vals, existing_survey_intent_vals) {
+  new_survey_intent_vals = new_survey_intent_vals %>%
+    select(species, count_type)
+  matching_rows = new_survey_intent_vals %>%
+    inner_join(existing_survey_intent_vals,
+               by = c("species", "count_type"))
+  if (nrow(matching_rows) > 0 ) {
+    dup_flag = TRUE
+  } else {
+    dup_flag = FALSE
+  }
+  return(dup_flag)
+}
+
 #========================================================
 # Insert callback
 #========================================================
@@ -59,14 +78,14 @@ survey_intent_insert = function(new_intent_values) {
   survey_id = new_intent_values$survey_id
   species_id = new_intent_values$species_id
   count_type_id =  new_intent_values$count_type_id
-  created_by = new_comment_values$created_by
+  created_by = new_intent_values$created_by
   # Checkout a connection
   con = poolCheckout(pool)
   insert_result = dbSendStatement(
     con, glue_sql("INSERT INTO survey_intent (",
                   "survey_id, ",
                   "species_id, ",
-                  "fish_count_type_id, ",
+                  "count_type_id, ",
                   "created_by) ",
                   "VALUES (",
                   "?, ?, ?, ?)"))

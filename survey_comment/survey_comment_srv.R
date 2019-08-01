@@ -108,7 +108,7 @@ output$survey_comments = renderDT({
 survey_comment_dt_proxy = dataTableProxy(outputId = "survey_comments")
 
 #========================================================
-# Collect survey values from selected row for later use
+# Collect comment values from selected row for later use
 #========================================================
 
 # Create reactive to collect input values for update and delete actions
@@ -136,7 +136,7 @@ selected_survey_comment_data = reactive({
 })
 
 #========================================================
-# Update survey select inputs to values in selected row
+# Update comment select inputs to values in selected row
 #========================================================
 
 # Update all survey input values to values in selected row
