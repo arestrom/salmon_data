@@ -17,6 +17,9 @@ server = function(input, output, session) {
   # Survey intent
   source("survey_intent/survey_intent_srv.R", local = TRUE)
 
+  # Waterbody_measurements
+  source("waterbody_meas/waterbody_meas_srv.R", local = TRUE)
+
   # # close the R session when Chrome closes
   # session$onSessionEnded(function() {
   #   stopApp()

@@ -37,7 +37,7 @@ ui = dashboardPagePlus(
             title = "Waterbody measurements",
             color = "purple",
             collapsed = TRUE,
-            "This is some text!"
+            waterbody_meas_ui
           )
         )
       ),

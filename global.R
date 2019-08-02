@@ -95,6 +95,8 @@ source("survey_comment/survey_comment_ui.R")
 source("survey_comment/survey_comment_global.R")
 source("survey_intent/survey_intent_ui.R")
 source("survey_intent/survey_intent_global.R")
+source("waterbody_meas/waterbody_meas_ui.R")
+source("waterbody_meas/waterbody_meas_global.R")
 
 # Define globals ================================================================
 
