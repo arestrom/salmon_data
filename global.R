@@ -42,13 +42,8 @@
 #  8. Need to use just one function to get survey data....but
 #     also add and include the other fields needed for display
 #     in time and date slots of DT. DONE !!
-#  9. Add info icons to inform only one line of survey comments
-#     per survey. Otherwise add verbose comment to comment_text.
-#     Use shinyjs to disable "New" button if one line has already
-#     been entered.
-# 10. Clean-up survey_comment DT. No need for search etc...
-# 11. Need cascade code to delete survey now. Check in query
-#     planner first to see what happens.
+#  9. Add modal screen to validate clarity type is chosen along
+#     with clarity_meter
 #
 # AS 2019-07-15
 #==============================================================

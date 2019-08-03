@@ -52,7 +52,7 @@ get_count_type = function(pool) {
 # Validate survey_intent create operations
 #==========================================================================
 
-# Check for existing surveys prior to survey insert operation
+# Check for existing duplicate survey_intent prior to survey_intent insert operation
 dup_survey_intent = function(new_survey_intent_vals, existing_survey_intent_vals) {
   new_survey_intent_vals = new_survey_intent_vals %>%
     select(species, count_type)

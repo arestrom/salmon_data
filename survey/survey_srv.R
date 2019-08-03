@@ -4,7 +4,7 @@ output$survey_method_select = renderUI({
   survey_method_list = get_survey_method(pool)$survey_method
   selectizeInput("survey_method_select", label = "survey_method",
                  choices = survey_method_list, selected = "Foot",
-                 width = "100px")
+                 width = "115px")
 })
 
 output$data_source_select = renderUI({
@@ -163,6 +163,13 @@ survey_create = reactive({
       filter(rm_label == lo_rm_input) %>%
       pull(location_id)
   }
+  # Time values
+  start_time = format(input$start_time_select)
+  if (nchar(start_time) < 16) { start_time = NA_character_ }
+  start_time = as.POSIXct(start_time)
+  end_time = format(input$end_time_select)
+  if (nchar(end_time) < 16) { end_time = NA_character_ }
+  end_time = as.POSIXct(end_time)
   # Survey completion
   completion_input = input$completion_select
   if (completion_input == "" ) {
@@ -184,8 +191,8 @@ survey_create = reactive({
                       upper_end_point_id = upper_end_point_id,
                       lo_rm = lo_rm_input,
                       lower_end_point_id = lower_end_point_id,
-                      start_time = format(input$start_time_select, "%H:%M"),
-                      end_time = format(input$end_time_select, "%H:%M"),
+                      start_time = start_time,
+                      end_time = end_time,
                       observer = input$observer_input,
                       submitter = input$submitter_input,
                       completion = completion_input,
@@ -193,8 +200,6 @@ survey_create = reactive({
                       created_dt = lubridate::with_tz(Sys.time(), "UTC"),
                       created_by = Sys.getenv("USERNAME"))
   new_survey = new_survey %>%
-    mutate(start_time = if_else(is.na(start_time) | start_time == "", NA_character_, start_time)) %>%
-    mutate(end_time = if_else(is.na(end_time) | end_time == "", NA_character_, end_time)) %>%
     mutate(observer = if_else(is.na(observer) | observer == "", NA_character_, observer)) %>%
     mutate(submitter = if_else(is.na(submitter) | submitter == "", NA_character_, submitter))
   return(new_survey)
@@ -203,6 +208,8 @@ survey_create = reactive({
 # Generate values to show in modal
 output$survey_modal_insert_vals = renderDT({
   survey_modal_in_vals = survey_create() %>%
+    mutate(start_time = format(start_time, "%H:%M")) %>%
+    mutate(end_time = format(end_time, "%H:%M")) %>%
     select(survey_dt, survey_method, up_rm, lo_rm, start_time, end_time,
            observer, submitter, data_source, data_review, completion)
   # Generate table
@@ -270,18 +277,18 @@ observeEvent(input$survey_add, {
     ))
 })
 
-# Reactive to hold values actually inserted
+# Reactive to hold values that will actually be inserted
 survey_insert_vals = reactive({
   new_values = survey_create() %>%
     mutate(survey_start_datetime = case_when(
-      substr(start_time, 12, 13) == "00" ~ as.POSIXct(NA),
-      substr(start_time, 12, 13) != "00" ~ as.POSIXct(paste0(format(survey_dt), " ", start_time),
+      is.na(start_time) ~ as.POSIXct(NA),
+      !is.na(start_time) ~ as.POSIXct(paste0(format(survey_dt), " ", format(start_time, "%H:%M")),
                                                       tz = "America/Los_Angeles"))) %>%
     mutate(survey_start_datetime = with_tz(survey_start_datetime, tzone = "UTC")) %>%
     mutate(survey_end_datetime = case_when(
-      substr(end_time, 12, 13) == "00" ~ as.POSIXct(NA),
-      substr(end_time, 12, 13) != "00" ~ as.POSIXct(paste0(format(survey_dt), " ", end_time),
-                                                    tz = "America/Los_Angeles"))) %>%
+      is.na(end_time) ~ as.POSIXct(NA),
+      !is.na(end_time) ~ as.POSIXct(paste0(format(survey_dt), " ", format(end_time, "%H:%M")),
+                                      tz = "America/Los_Angeles"))) %>%
     mutate(survey_end_datetime = with_tz(survey_end_datetime, tzone = "UTC")) %>%
     mutate(survey_dt = as.POSIXct(format(survey_dt), tz = "America/Los_Angeles")) %>%
     mutate(survey_dt = with_tz(survey_dt, tzone = "UTC")) %>%
@@ -371,14 +378,14 @@ survey_edit = reactive({
     mutate(start_time = if_else(is.na(start_time) | start_time == "", NA_character_, start_time)) %>%
     mutate(end_time = if_else(is.na(end_time) | end_time == "", NA_character_, end_time)) %>%
     mutate(survey_start_datetime = case_when(
-      start_time %in% c("00:00") ~ as.POSIXct(NA),
-      !start_time %in% c("00:00") ~ as.POSIXct(paste0(format(survey_dt), " ", start_time),
-                                               tz = "America/Los_Angeles"))) %>%
+      start_time %in% c("00:00", "") ~ as.POSIXct(NA),
+      !start_time %in% c("00:00", "") ~ as.POSIXct(paste0(format(survey_dt), " ", start_time),
+                                                   tz = "America/Los_Angeles"))) %>%
     mutate(survey_start_datetime = with_tz(survey_start_datetime, tzone = "UTC")) %>%
     mutate(survey_end_datetime = case_when(
-      end_time %in% c("00:00") ~ as.POSIXct(NA),
-      !end_time %in% c("00:00") ~ as.POSIXct(paste0(format(survey_dt), " ", end_time),
-                                             tz = "America/Los_Angeles"))) %>%
+      end_time %in% c("00:00", "") ~ as.POSIXct(NA),
+      !end_time %in% c("00:00", "") ~ as.POSIXct(paste0(format(survey_dt), " ", end_time),
+                                                 tz = "America/Los_Angeles"))) %>%
     mutate(survey_end_datetime = with_tz(survey_end_datetime, tzone = "UTC")) %>%
     mutate(observer = if_else(is.na(observer) | observer == "", NA_character_, observer)) %>%
     mutate(submitter = if_else(is.na(submitter) | submitter == "", NA_character_, submitter))

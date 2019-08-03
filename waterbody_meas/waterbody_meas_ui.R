@@ -25,5 +25,5 @@ waterbody_meas_ui = tags$div(
   br(),
   br(),
   br(),
-  DT::DTOutput("waterbody_meas")
+  DT::DTOutput("waterbody_measure")
 )
