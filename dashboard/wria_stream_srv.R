@@ -55,22 +55,22 @@ output$stream_map <- renderLeaflet({
   m
 })
 
-# Display the map modal to select stream
-observeEvent(input$show_map_stream, {
-  showModal(
-    tags$div(id = "map_modal",
-             modalDialog (
-               size = 'l',
-               title = NULL,
-               fluidPage (
-                 leafletOutput("stream_map", height = "700px")
-               ),
-               easyClose = TRUE,
-               footer = NULL
-             )
-    )
-  )
-})
+# # Display the map modal to select stream
+# observeEvent(input$show_map_stream, {
+#   showModal(
+#     tags$div(id = "map_modal",
+#              modalDialog (
+#                size = 'l',
+#                title = NULL,
+#                fluidPage (
+#                  leafletOutput("stream_map", height = "700px")
+#                ),
+#                easyClose = TRUE,
+#                footer = NULL
+#              )
+#     )
+#   )
+# })
 
 # selected stream reactive value
 selected_stream <- reactiveValues(map_stream = NULL)
