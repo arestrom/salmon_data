@@ -20,7 +20,6 @@ dash_rightsidebar = rightSidebar(
                  choices = NULL,
                  selected = NULL,
                  width = "100%"),
-  #div(id = "map_text", p("or use map")),
   div(id = "map_modal_button",
       bs_button(label = "or use map", button_type = "primary") %>%
         bs_attach_modal(id_modal = "map_modal")),
@@ -32,6 +31,7 @@ dash_rightsidebar = rightSidebar(
                  label = NULL,
                  multiple = TRUE,
                  choices = seq(as.integer(format(Sys.Date(), "%Y")) + 1, 1930L),
-                 selected = as.integer(format(Sys.Date(), "%Y")),
+                 #selected = as.integer(format(Sys.Date(), "%Y")),
+                 selected = 2017,
                  width = "100%")
 )

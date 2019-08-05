@@ -92,13 +92,49 @@ waterbody_meas_insert = function(new_wbm_values) {
   poolReturn(con)
 }
 
+#========================================================
+# Edit update callback
+#========================================================
 
-
-
-# STOPPED HERE....START BACK IN ON EDIT CODE !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-
-
-
+# Define update callback
+waterbody_meas_update = function(waterbody_meas_edit_values) {
+  edit_values = waterbody_meas_edit_values
+  # Pull out data
+  waterbody_measurement_id = edit_values$waterbody_measurement_id
+  water_clarity_type_id = edit_values$water_clarity_type_id
+  water_clarity_meter = edit_values$clarity_meter
+  stream_flow_measurement_cfs = edit_values$flow_cfs
+  start_water_temperature_datetime = edit_values$start_temperature_time
+  start_water_temperature_celsius = edit_values$start_temperature
+  end_water_temperature_datetime = edit_values$end_temperature_time
+  end_water_temperature_celsius = edit_values$end_temperature
+  waterbody_ph = edit_values$water_ph
+  mod_dt = lubridate::with_tz(Sys.time(), "UTC")
+  mod_by = Sys.getenv("USERNAME")
+  # Checkout a connection
+  con = poolCheckout(pool)
+  update_result = dbSendStatement(
+    con, glue_sql("UPDATE waterbody_measurement SET ",
+                  "water_clarity_type_id = ?, ",
+                  "water_clarity_meter = ?, ",
+                  "stream_flow_measurement_cfs = ?, ",
+                  "start_water_temperature_datetime = ?, ",
+                  "start_water_temperature_celsius = ?, ",
+                  "end_water_temperature_datetime = ?, ",
+                  "end_water_temperature_celsius = ?, ",
+                  "waterbody_ph = ?, ",
+                  "modified_datetime = ?, ",
+                  "modified_by = ? ",
+                  "where waterbody_measurement_id = ?"))
+  dbBind(update_result, list(water_clarity_type_id, water_clarity_meter,
+                             stream_flow_measurement_cfs, start_water_temperature_datetime,
+                             start_water_temperature_celsius, end_water_temperature_datetime,
+                             end_water_temperature_celsius, waterbody_ph,
+                             mod_dt, mod_by, waterbody_measurement_id))
+  dbGetRowsAffected(update_result)
+  dbClearResult(update_result)
+  poolReturn(con)
+}
 
 #========================================================
 # Delete callback

@@ -44,6 +44,11 @@
 #     in time and date slots of DT. DONE !!
 #  9. Add modal screen to validate clarity type is chosen along
 #     with clarity_meter
+# 10. For survey, survey intent and waterbody meas, the modal for
+#     no row selected does not fire. Only survey comment works.
+#     Adding req to selected_survey_comment_data reactive kills
+#     the modal response. But removing req from others causes
+#     errors to occur in reactives below.
 #
 # AS 2019-07-15
 #==============================================================

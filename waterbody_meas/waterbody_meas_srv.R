@@ -222,6 +222,141 @@ observeEvent(input$insert_waterbody_meas, {
 })
 
 #========================================================
+# Edit operations: reactives, observers and modals
+#========================================================
+
+# Create reactive to collect input values for insert actions
+waterbody_meas_edit = reactive({
+  # Survey_id
+  survey_id_input = selected_survey_data()$survey_id
+  # Survey date
+  survey_date = selected_survey_data()$survey_date
+  # Clarity type
+  clarity_type_input = input$clarity_type_select
+  if ( clarity_type_input == "" ) {
+    water_clarity_type_id = NA_character_
+  } else {
+    clarity_type_vals = get_clarity_type(pool)
+    water_clarity_type_id = clarity_type_vals %>%
+      filter(clarity_type == clarity_type_input) %>%
+      pull(water_clarity_type_id)
+  }
+  # Time values
+  start_tmp_dt = format(input$start_temperature_time_select)
+  if (nchar(start_tmp_dt) < 16) { start_tmp_dt = NA_character_ }
+  start_tmp_dt = as.POSIXct(start_tmp_dt)
+  end_tmp_dt = format(input$end_temperature_time_select)
+  if (nchar(end_tmp_dt) < 16) { end_tmp_dt = NA_character_ }
+  end_tmp_dt = as.POSIXct(end_tmp_dt)
+  edit_waterbody_meas = tibble(waterbody_measurement_id = selected_waterbody_meas_data()$waterbody_measurement_id,
+                               clarity_type = clarity_type_input,
+                               water_clarity_type_id = water_clarity_type_id,
+                               clarity_meter = input$clarity_input,
+                               flow_cfs = input$flow_cfs_input,
+                               survey_date = survey_date,
+                               start_temperature = input$start_temperature_input,
+                               start_tmp_dt = start_tmp_dt,
+                               end_temperature = input$end_temperature_input,
+                               end_tmp_dt = end_tmp_dt,
+                               water_ph = input$water_ph_input,
+                               modified_dt = lubridate::with_tz(Sys.time(), "UTC"),
+                               modified_by = Sys.getenv("USERNAME"))
+  edit_waterbody_meas = edit_waterbody_meas %>%
+    mutate(clarity_type = if_else(is.na(clarity_type) | clarity_type == "", NA_character_, clarity_type)) %>%
+    mutate(start_temperature_time = case_when(
+      is.na(start_tmp_dt) ~ as.POSIXct(NA),
+      !is.na(start_tmp_dt) ~ as.POSIXct(paste0(format(survey_date), " ", format(start_tmp_dt, "%H:%M")),
+                                        tz = "America/Los_Angeles"))) %>%
+    mutate(start_temperature_time = with_tz(start_temperature_time, tzone = "UTC")) %>%
+    mutate(end_temperature_time = case_when(
+      is.na(end_tmp_dt) ~ as.POSIXct(NA),
+      !is.na(end_tmp_dt) ~ as.POSIXct(paste0(format(survey_date), " ", format(end_tmp_dt, "%H:%M")),
+                                      tz = "America/Los_Angeles"))) %>%
+    mutate(end_temperature_time = with_tz(end_temperature_time, tzone = "UTC"))
+  return(edit_waterbody_meas)
+})
+
+# Generate values to show in modal
+output$waterbody_meas_modal_update_vals = renderDT({
+  waterbody_meas_modal_up_vals = waterbody_meas_edit() %>%
+    mutate(start_tmp_dt = format(start_tmp_dt, "%H:%M")) %>%
+    mutate(end_tmp_dt = format(end_tmp_dt, "%H:%M")) %>%
+    select(clarity_type, clarity_meter, flow_cfs, start_temperature, start_tmp_dt,
+           end_temperature, end_tmp_dt, water_ph)
+  # Generate table
+  datatable(waterbody_meas_modal_up_vals,
+            rownames = FALSE,
+            options = list(dom = 't',
+                           scrollX = T,
+                           ordering = FALSE,
+                           initComplete = JS(
+                             "function(settings, json) {",
+                             "$(this.api().table().header()).css({'background-color': '#9eb3d6'});",
+                             "}")))
+})
+
+observeEvent(input$wbm_edit, {
+  old_wbm_vals = selected_waterbody_meas_data() %>%
+    select(clarity_type, clarity_meter, flow_cfs, start_temperature, start_tmp_dt,
+           end_temperature, end_tmp_dt, water_ph)
+  #old_wbm_vals[] = lapply(old_wbm_vals, remisc::set_na_type)
+  new_wbm_vals = waterbody_meas_edit() %>%
+    mutate(clarity_meter = as.numeric(clarity_meter)) %>%
+    mutate(water_ph = as.numeric(water_ph)) %>%
+    mutate(start_tmp_dt = format(start_tmp_dt, "%H:%M")) %>%
+    mutate(start_temperature = as.numeric(start_temperature)) %>%
+    mutate(end_temperature = as.numeric(end_temperature)) %>%
+    mutate(end_tmp_dt = format(end_tmp_dt, "%H:%M")) %>%
+    select(clarity_type, clarity_meter, flow_cfs, start_temperature, start_tmp_dt,
+           end_temperature, end_tmp_dt, water_ph)
+  #new_wbm_vals[] = lapply(new_wbm_vals, remisc::set_na_type)
+  showModal(
+    tags$div(id = "waterbody_meas_update_modal",
+             if ( !length(input$waterbody_measure_rows_selected) == 1 ) {
+               modalDialog (
+                 size = "m",
+                 title = "Warning",
+                 paste("Please select a row to edit!"),
+                 easyClose = TRUE,
+                 footer = NULL
+               )
+             } else if ( isTRUE(all_equal(old_wbm_vals, new_wbm_vals)) ) {
+               modalDialog (
+                 size = "m",
+                 title = "Warning",
+                 paste("Please change at least one value!"),
+                 easyClose = TRUE,
+                 footer = NULL
+               )
+             } else {
+               modalDialog (
+                 size = 'l',
+                 title = "Update waterbody measurements to these new values?",
+                 fluidPage (
+                   DT::DTOutput("waterbody_meas_modal_update_vals"),
+                   br(),
+                   br(),
+                   actionButton("save_wbm_edits","Save changes")
+                 ),
+                 easyClose = TRUE,
+                 footer = NULL
+               )
+             }
+    ))
+})
+
+# Update DB and reload DT
+observeEvent(input$save_wbm_edits, {
+  waterbody_meas_update(waterbody_meas_edit())
+  removeModal()
+  post_wbm_edit_vals = get_waterbody_meas(pool, selected_survey_data()$survey_id) %>%
+    select(clarity_type, clarity_meter, flow_cfs, start_temperature, start_tmp_dt,
+           end_temperature, end_tmp_dt, water_ph, created_dt, created_by, modified_dt,
+           modified_by)
+  replaceData(waterbody_measure_dt_proxy, post_wbm_edit_vals)
+})
+
+#========================================================
 # Delete operations: reactives, observers and modals
 #========================================================
 
