@@ -359,20 +359,6 @@ observeEvent(input$delete_survey_intent, {
   replaceData(survey_intent_dt_proxy, survey_intents_after_delete)
 })
 
-# # Update DB
-# observeEvent(input$delete_survey_intent, {
-#   survey_intent_delete(selected_survey_intent_data())
-#   removeModal()
-# }, priority = 100)
-#
-# # Reload DT
-# observeEvent(input$delete_survey_intent, {
-#   survey_intents_after_delete = get_survey_intent(pool, selected_survey_data()$survey_id) %>%
-#     select(species, count_type, created_dt, created_by, modified_dt, modified_by)
-#   replaceData(survey_intent_dt_proxy, survey_intents_after_delete)
-# }, priority = 1)
-
-
 
 
 

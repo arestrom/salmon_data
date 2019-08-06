@@ -49,6 +49,9 @@
 #     Adding req to selected_survey_comment_data reactive kills
 #     the modal response. But removing req from others causes
 #     errors to occur in reactives below.
+# 11. For fish_location...wait till I figure out redd_location
+#     first, then go back and add fish_location screen. Maybe
+#     use map_edit module.
 #
 # AS 2019-07-15
 #==============================================================
@@ -97,6 +100,8 @@ source("survey_intent/survey_intent_ui.R")
 source("survey_intent/survey_intent_global.R")
 source("waterbody_meas/waterbody_meas_ui.R")
 source("waterbody_meas/waterbody_meas_global.R")
+source("survey_event/survey_event_ui.R")
+source("survey_event/survey_event_global.R")
 
 # Define globals ================================================================
 

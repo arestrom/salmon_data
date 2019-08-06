@@ -20,6 +20,9 @@ server = function(input, output, session) {
   # Waterbody_measurements
   source("waterbody_meas/waterbody_meas_srv.R", local = TRUE)
 
+  # Survey event
+  source("survey_event/survey_event_srv.R", local = TRUE)
+
   # # close the R session when Chrome closes
   # session$onSessionEnded(function() {
   #   stopApp()

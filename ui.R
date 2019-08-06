@@ -42,6 +42,15 @@ ui = dashboardPagePlus(
         )
       ),
       boxPlus(
+        title = "Species data",
+        closable = FALSE,
+        collapsible = TRUE,
+        solidHeader = FALSE,
+        collapsed = TRUE,
+        survey_event_ui,
+        width = 12
+      ),
+      boxPlus(
         title = "Fish encounter",
         closable = FALSE,
         collapsible = TRUE,
@@ -49,7 +58,33 @@ ui = dashboardPagePlus(
         collapsed = TRUE,
         #fish_encounter_content,
         width = 12,
-        "This is some text"
+        "This is some text",
+        accordion(
+          accordionItem(
+            id = 4,
+            title = "Individual fish",
+            color = "purple",
+            collapsed = TRUE,
+            "This is some text"
+            #individual_fish_ui
+          ),
+          accordionItem(
+            id = 5,
+            title = "Fish location",
+            color = "purple",
+            collapsed = TRUE,
+            "This is some text"
+            #fish_location_ui
+          ),
+          accordionItem(
+            id = 6,
+            title = "Fish measurement",
+            color = "purple",
+            collapsed = TRUE,
+            "This is some text"
+            #fish_measurement_ui
+          )
+        )
       ),
       boxPlus(
         title = "Redd encounter",
@@ -59,7 +94,33 @@ ui = dashboardPagePlus(
         collapsed = TRUE,
         #redd_encounter_content,
         width = 12,
-        "This is some text"
+        "This is some text",
+        accordion(
+          accordionItem(
+            id = 7,
+            title = "Individual redd",
+            color = "purple",
+            collapsed = TRUE,
+            "This is some text"
+            #individual_redd_ui
+          ),
+          accordionItem(
+            id = 8,
+            title = "Redd location",
+            color = "purple",
+            collapsed = TRUE,
+            "This is some text"
+            #redd_location_ui
+          ),
+          accordionItem(
+            id = 9,
+            title = "Redd substrate",
+            color = "purple",
+            collapsed = TRUE,
+            "This is some text"
+            #redd_substrate_ui
+          )
+        )
       )
     )
   ),
