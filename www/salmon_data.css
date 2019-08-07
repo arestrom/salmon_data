@@ -188,6 +188,30 @@
   line-height: 1.3;
 }
 
+#fish_encounter_add {
+  color: #e6ebef;
+  background-color:#231651;
+  font-size: 11px;
+  font-weight: 300;
+  line-height: 1.3;
+}
+
+#fish_encounter_edit {
+  color: #e6ebef;
+  background-color:#4d1566;
+  font-size: 11px;
+  font-weight: 300;
+  line-height: 1.3;
+}
+
+#fish_encounter_delete {
+  color: #e6ebef;
+  background-color:#590b25;
+  font-size: 11px;
+  font-weight: 300;
+  line-height: 1.3;
+}
+
 .shiny-input-container {
   display: inline-block;
   vertical-align:top;
@@ -842,6 +866,15 @@
   font-size: 11px;
   font-weight: 300;
   line-height: 1.3;
+}
+
+#fish_encounter_time_select {
+  display: inline-block;
+  vertical-align:top;
+  min-height: 28px;
+  height: 28px;
+  font-size: 11px;
+  line-height: 1.0;
 }
 
 #rmd_about {

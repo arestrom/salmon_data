@@ -23,6 +23,9 @@ server = function(input, output, session) {
   # Survey event
   source("survey_event/survey_event_srv.R", local = TRUE)
 
+  # Fish encounter
+  source("fish_encounter/fish_encounter_srv.R", local = TRUE)
+
   # # close the R session when Chrome closes
   # session$onSessionEnded(function() {
   #   stopApp()

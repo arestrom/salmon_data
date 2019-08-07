@@ -24,6 +24,5 @@ survey_event_ui = tags$div(
   br(),
   br(),
   br(),
-  DT::DTOutput("survey_events"),
-  verbatimTextOutput("chk_vals")
+  DT::DTOutput("survey_events")
 )

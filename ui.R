@@ -56,13 +56,12 @@ ui = dashboardPagePlus(
         collapsible = TRUE,
         solidHeader = FALSE,
         collapsed = TRUE,
-        #fish_encounter_content,
+        fish_encounter_ui,
         width = 12,
-        "This is some text",
         accordion(
           accordionItem(
             id = 4,
-            title = "Individual fish",
+            title = "Fish location",
             color = "purple",
             collapsed = TRUE,
             "This is some text"
@@ -70,7 +69,7 @@ ui = dashboardPagePlus(
           ),
           accordionItem(
             id = 5,
-            title = "Fish location",
+            title = "Individual fish",
             color = "purple",
             collapsed = TRUE,
             "This is some text"
@@ -98,7 +97,7 @@ ui = dashboardPagePlus(
         accordion(
           accordionItem(
             id = 7,
-            title = "Individual redd",
+            title = "Redd location",
             color = "purple",
             collapsed = TRUE,
             "This is some text"
@@ -106,7 +105,7 @@ ui = dashboardPagePlus(
           ),
           accordionItem(
             id = 8,
-            title = "Redd location",
+            title = "Individual redd",
             color = "purple",
             collapsed = TRUE,
             "This is some text"

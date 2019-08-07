@@ -104,6 +104,8 @@ source("waterbody_meas/waterbody_meas_ui.R")
 source("waterbody_meas/waterbody_meas_global.R")
 source("survey_event/survey_event_ui.R")
 source("survey_event/survey_event_global.R")
+source("fish_encounter/fish_encounter_ui.R")
+source("fish_encounter/fish_encounter_global.R")
 
 # Define globals ================================================================
 
