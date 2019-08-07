@@ -25,7 +25,7 @@ get_survey_intent = function(pool, survey_id) {
 #==========================================================================
 
 # Area surveyed
-get_species = function(pool) {
+get_intent_species = function(pool) {
   qry = glue("select species_id, common_name as species ",
              "from species_lut ",
              "where obsolete_datetime is null")

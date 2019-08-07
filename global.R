@@ -52,6 +52,8 @@
 # 11. For fish_location...wait till I figure out redd_location
 #     first, then go back and add fish_location screen. Maybe
 #     use map_edit module.
+# 12. Next steps....survey_event_update()...create reactive
+#     to inspect comparison values for update module
 #
 # AS 2019-07-15
 #==============================================================

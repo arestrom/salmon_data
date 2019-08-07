@@ -1,6 +1,6 @@
 
 output$intent_species_select = renderUI({
-  species_list = get_species(pool)$species
+  species_list = get_intent_species(pool)$species
   species_list = c("", species_list)
   selectizeInput("intent_species_select", label = "species",
                  choices = species_list, selected = NULL,
@@ -86,7 +86,7 @@ survey_intent_create = reactive({
   if (intent_species_input == "" ) {
     species_id = NA_character_
   } else {
-    intent_species_vals = get_species(pool)
+    intent_species_vals = get_intent_species(pool)
     species_id = intent_species_vals %>%
       filter(species == intent_species_input) %>%
       pull(species_id)
@@ -198,7 +198,7 @@ survey_intent_edit = reactive({
   if (intent_species_input == "" ) {
     species_id = NA_character_
   } else {
-    intent_species_vals = get_species(pool)
+    intent_species_vals = get_intent_species(pool)
     species_id = intent_species_vals %>%
       filter(species == intent_species_input) %>%
       pull(species_id)
