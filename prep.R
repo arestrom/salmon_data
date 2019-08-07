@@ -23,6 +23,32 @@ library(lubridate)
 options("connectionObserver" = NULL)
 
 #=============================================================================
+# Check code template for modals
+#=============================================================================
+
+# chk_dat = reactive({
+#   new_survey_event_vals = survey_event_edit() %>%
+#     select(species, survey_design, cwt_detect_method, run, run_year,
+#            pct_fish_seen, species_comment)
+#   old_survey_event_vals = selected_survey_event_data() %>%
+#     select(species, survey_design, cwt_detect_method, run, run_year,
+#            pct_fish_seen, species_comment)
+#   all_survey_event_vals = get_survey_event(pool, selected_survey_data()$survey_id) %>%
+#     select(species, survey_design, cwt_detect_method, run, run_year,
+#            pct_fish_seen, species_comment)
+#   print("new_vals")
+#   print(new_survey_event_vals)
+#   print("old_vals")
+#   print(old_survey_event_vals)
+#   print("all_vals")
+#   print(all_survey_event_vals)
+# })
+#
+# observeEvent(input$survey_event_edit, {
+#   output$chk_vals = renderText(unlist(names(chk_dat()$new_survey_event_vals)))
+# })
+
+#=============================================================================
 # Get wria data..including geometry (for map)
 #=============================================================================
 
