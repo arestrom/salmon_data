@@ -65,8 +65,8 @@ output$fish_behavior_select = renderUI({
 # Primary DT datatable for survey_intent
 output$fish_encounters = renderDT({
   fish_encounter_title = glue("{selected_survey_event_data()$species} data for {input$stream_select} on ",
-                             "{selected_survey_data()$survey_date} from river mile {selected_survey_data()$up_rm} ",
-                             "to {selected_survey_data()$lo_rm}")
+                              "{selected_survey_data()$survey_date} from river mile {selected_survey_data()$up_rm} ",
+                              "to {selected_survey_data()$lo_rm}")
   fish_encounter_data = get_fish_encounter(pool, selected_survey_event_data()$survey_event_id) %>%
     select(fish_encounter_time, fish_count, fish_status, sex, maturity, origin, cwt_status,
            clip_status, fish_behavior, prev_counted, created_dt, created_by, modified_dt,
@@ -91,199 +91,205 @@ output$fish_encounters = renderDT({
 # Create surveys DT proxy object
 fish_encounter_dt_proxy = dataTableProxy(outputId = "fish_encounters")
 
-# #========================================================
-# # Collect event values from selected row for later use
-# #========================================================
-#
-# # Create reactive to collect input values for update and delete actions
-# selected_survey_event_data = reactive({
-#   req(input$survey_events_rows_selected)
-#   survey_event_data = get_survey_event(pool, selected_survey_data()$survey_id)
-#   survey_event_row = input$survey_events_rows_selected
-#   selected_survey_event = tibble(survey_event_id = survey_event_data$survey_event_id[survey_event_row],
-#                                  species = survey_event_data$species[survey_event_row],
-#                                  survey_design = survey_event_data$survey_design[survey_event_row],
-#                                  cwt_detect_method = survey_event_data$cwt_detect_method[survey_event_row],
-#                                  run = survey_event_data$run[survey_event_row],
-#                                  run_year = survey_event_data$run_year[survey_event_row],
-#                                  pct_fish_seen = survey_event_data$pct_fish_seen[survey_event_row],
-#                                  species_comment = survey_event_data$species_comment[survey_event_row],
-#                                  created_date = survey_event_data$created_date[survey_event_row],
-#                                  created_by = survey_event_data$created_by[survey_event_row],
-#                                  modified_date = survey_event_data$modified_date[survey_event_row],
-#                                  modified_by = survey_event_data$modified_by[survey_event_row])
-#   return(selected_survey_event)
-# })
-#
-# #========================================================
-# # Update event select inputs to values in selected row
-# #========================================================
-#
-# # Update all survey input values to values in selected row
-# observeEvent(input$survey_events_rows_selected, {
-#   ssedat = selected_survey_event_data()
-#   updateSelectizeInput(session, "event_species_select", selected = ssedat$species)
-#   updateSelectizeInput(session, "survey_design_select", selected = ssedat$survey_design)
-#   updateSelectizeInput(session, "cwt_detect_method_select", selected = ssedat$cwt_detect_method)
-#   updateSelectizeInput(session, "run_select", selected = ssedat$run)
-#   updateSelectizeInput(session, "run_year_select", selected = ssedat$run_year)
-#   updateNumericInput(session, "pct_fish_seen_input", value = ssedat$pct_fish_seen)
-#   updateTextAreaInput(session, "se_comment_input", value = ssedat$species_comment)
-# })
-#
-# #========================================================
-# # Insert operations: reactives, observers and modals
-# #========================================================
-#
-# # Create reactive to collect input values for insert actions
-# survey_event_create = reactive({
-#   # Survey_id
-#   survey_id_input = selected_survey_data()$survey_id
-#   # Species
-#   event_species_input = input$event_species_select
-#   if (event_species_input == "" ) {
-#     species_id = NA_character_
-#   } else {
-#     event_species_vals = get_event_species(pool)
-#     species_id = event_species_vals %>%
-#       filter(species == event_species_input) %>%
-#       pull(species_id)
-#   }
-#   # Survey design
-#   survey_design_input = input$survey_design_select
-#   if ( survey_design_input == "" ) {
-#     survey_design_type_id = NA
-#   } else {
-#     survey_design_vals = get_survey_design(pool)
-#     survey_design_type_id = survey_design_vals %>%
-#       filter(survey_design == survey_design_input) %>%
-#       pull(survey_design_type_id)
-#   }
-#   # CWT detect method
-#   cwt_detect_method_input = input$cwt_detect_method_select
-#   if ( cwt_detect_method_input == "" ) {
-#     cwt_detection_method_id = NA
-#   } else {
-#     cwt_detect_method_vals = get_cwt_detect_method(pool)
-#     cwt_detection_method_id = cwt_detect_method_vals %>%
-#       filter(cwt_detect_method == cwt_detect_method_input) %>%
-#       pull(cwt_detection_method_id)
-#   }
-#   # Run
-#   run_input = input$run_select
-#   if ( run_input == "" ) {
-#     run_id = NA
-#   } else {
-#     run_vals = get_run(pool)
-#     run_id = run_vals %>%
-#       filter(run == run_input) %>%
-#       pull(run_id)
-#   }
-#   new_survey_event = tibble(survey_id = survey_id_input,
-#                             species = event_species_input,
-#                             species_id = species_id,
-#                             survey_design = survey_design_input,
-#                             survey_design_type_id = survey_design_type_id,
-#                             cwt_detect_method = cwt_detect_method_input,
-#                             cwt_detection_method_id = cwt_detection_method_id,
-#                             run = run_input,
-#                             run_id = run_id,
-#                             run_year = input$run_year_select,
-#                             pct_fish_seen = input$pct_fish_seen_input,
-#                             species_comment = input$se_comment_input,
-#                             created_dt = lubridate::with_tz(Sys.time(), "UTC"),
-#                             created_by = Sys.getenv("USERNAME"))
-#   new_survey_event = new_survey_event %>%
-#     mutate(run_year = if_else(is.na(run_year) | run_year == "", NA_character_, run_year)) %>%
-#     mutate(run_year = as.integer(run_year)) %>%
-#     mutate(pct_fish_seen = as.integer(pct_fish_seen)) %>%
-#     mutate(species_comment = if_else(is.na(species_comment) | species_comment == "", NA_character_, species_comment))
-#   return(new_survey_event)
-# })
-#
-# # Generate values to show in modal
-# output$survey_event_modal_insert_vals = renderDT({
-#   survey_event_modal_in_vals = survey_event_create() %>%
-#     select(species, survey_design, cwt_detect_method, run, run_year,
-#            pct_fish_seen, species_comment)
-#   # Generate table
-#   datatable(survey_event_modal_in_vals,
-#             rownames = FALSE,
-#             options = list(dom = 't',
-#                            scrollX = T,
-#                            ordering = FALSE,
-#                            initComplete = JS(
-#                              "function(settings, json) {",
-#                              "$(this.api().table().header()).css({'background-color': '#9eb3d6'});",
-#                              "}")))
-# })
-#
-# # Modal for new intents. Need a dup flag, multiple rows possible
-# observeEvent(input$survey_event_add, {
-#   new_survey_event_vals = survey_event_create()
-#   existing_survey_event_vals = get_survey_event(pool, selected_survey_data()$survey_id) %>%
-#     select(species, survey_design, run, run_year)
-#   dup_event_flag = dup_survey_event(new_survey_event_vals, existing_survey_event_vals)
-#   showModal(
-#     # Verify all fields have data...none can be blank
-#     tags$div(id = "survey_event_insert_modal",
-#              if ( is.na(new_survey_event_vals$species_id) |
-#                   is.na(new_survey_event_vals$survey_design_type_id) |
-#                   is.na(new_survey_event_vals$cwt_detection_method_id) |
-#                   is.na(new_survey_event_vals$run_id) |
-#                   is.na(new_survey_event_vals$run_year) ) {
-#                modalDialog (
-#                  size = "m",
-#                  title = "Warning",
-#                  paste0("Values are required in all fields from species, through run_year"),
-#                  easyClose = TRUE,
-#                  footer = NULL
-#                )
-#              } else if ( dup_event_flag == TRUE ) {
-#                modalDialog (
-#                  size = "m",
-#                  title = "Warning",
-#                  paste0("Species data already exists. Please edit either species, survey_design, run, or run_year before proceeding."),
-#                  easyClose = TRUE,
-#                  footer = NULL
-#                )
-#                # Write to DB
-#              } else {
-#                modalDialog (
-#                  size = 'l',
-#                  title = glue("Insert new species data to the database?"),
-#                  fluidPage (
-#                    DT::DTOutput("survey_event_modal_insert_vals"),
-#                    br(),
-#                    br(),
-#                    actionButton("insert_survey_event", "Insert species data")
-#                  ),
-#                  easyClose = TRUE,
-#                  footer = NULL
-#                )
-#              }
-#     ))
-# })
-#
-# # Reactive to hold values actually inserted
-# survey_event_insert_vals = reactive({
-#   new_event_values = survey_event_create() %>%
-#     select(survey_id, species_id, survey_design_type_id,
-#            cwt_detection_method_id, run_id, run_year,
-#            pct_fish_seen, species_comment, created_by)
-#   return(new_event_values)
-# })
-#
-# # Update DB and reload DT
-# observeEvent(input$insert_survey_event, {
-#   survey_event_insert(survey_event_insert_vals())
-#   removeModal()
-#   post_event_insert_vals = get_survey_event(pool, selected_survey_data()$survey_id) %>%
-#     select(species, survey_design, cwt_detect_method, run, run_year, pct_fish_seen,
-#            species_comment, created_dt, created_by, modified_dt, modified_by)
-#   replaceData(survey_event_dt_proxy, post_event_insert_vals)
-# })
-#
+#========================================================
+# Collect encounter values from selected row for later use
+#========================================================
+
+# Create reactive to collect input values for update and delete actions
+selected_fish_encounter_data = reactive({
+  req(input$fish_encounters_rows_selected)
+  fish_encounter_data = get_fish_encounter(pool, selected_survey_event_data()$survey_event_id)
+  fish_encounter_row = input$fish_encounters_rows_selected
+  selected_fish_encounter = tibble(fish_encounter_id = fish_encounter_data$fish_encounter_id[fish_encounter_row],
+                                   fish_encounter_time = fish_encounter_data$fish_encounter_time[fish_encounter_row],
+                                   fish_count = fish_encounter_data$fish_count[fish_encounter_row],
+                                   fish_status = fish_encounter_data$fish_status[fish_encounter_row],
+                                   sex = fish_encounter_data$sex[fish_encounter_row],
+                                   maturity = fish_encounter_data$maturity[fish_encounter_row],
+                                   origin = fish_encounter_data$origin[fish_encounter_row],
+                                   cwt_status = fish_encounter_data$cwt_status[fish_encounter_row],
+                                   clip_status = fish_encounter_data$clip_status[fish_encounter_row],
+                                   fish_behavior = fish_encounter_data$fish_behavior[fish_encounter_row],
+                                   prev_counted = fish_encounter_data$prev_counted[fish_encounter_row],
+                                   created_date = fish_encounter_data$created_date[fish_encounter_row],
+                                   created_by = fish_encounter_data$created_by[fish_encounter_row],
+                                   modified_date = fish_encounter_data$modified_date[fish_encounter_row],
+                                   modified_by = fish_encounter_data$modified_by[fish_encounter_row])
+  return(selected_fish_encounter)
+})
+
+#========================================================
+# Update event select inputs to values in selected row
+#========================================================
+
+# Update all survey input values to values in selected row
+observeEvent(input$fish_encounters_rows_selected, {
+  sfedat = selected_fish_encounter_data()
+  updateTimeInput(session, "fish_encounter_time_select", value = sfedat$fish_encounter_time)
+  updateNumericInput(session, "fish_count_input", value = sfedat$fish_count)
+  updateSelectizeInput(session, "fish_status_select", selected = sfedat$fish_status)
+  updateSelectizeInput(session, "sex_select", selected = sfedat$sex)
+  updateSelectizeInput(session, "maturity_select", selected = sfedat$maturity)
+  updateSelectizeInput(session, "origin_select", selected = sfedat$origin)
+  updateSelectizeInput(session, "cwt_status_select", selected = sfedat$cwt_status)
+  updateSelectizeInput(session, "clip_status_select", selected = sfedat$clip_status)
+  updateSelectizeInput(session, "fish_behavior_select", selected = sfedat$fish_behavior)
+  updateSelectizeInput(session, "prev_counted_select", selected = sfedat$prev_counted)
+})
+
+#========================================================
+# Insert operations: reactives, observers and modals
+#========================================================
+
+# Create reactive to collect input values for insert actions
+survey_event_create = reactive({
+  # Survey_id
+  survey_id_input = selected_survey_data()$survey_id
+  # Species
+  event_species_input = input$event_species_select
+  if (event_species_input == "" ) {
+    species_id = NA_character_
+  } else {
+    event_species_vals = get_event_species(pool)
+    species_id = event_species_vals %>%
+      filter(species == event_species_input) %>%
+      pull(species_id)
+  }
+  # Survey design
+  survey_design_input = input$survey_design_select
+  if ( survey_design_input == "" ) {
+    survey_design_type_id = NA
+  } else {
+    survey_design_vals = get_survey_design(pool)
+    survey_design_type_id = survey_design_vals %>%
+      filter(survey_design == survey_design_input) %>%
+      pull(survey_design_type_id)
+  }
+  # CWT detect method
+  cwt_detect_method_input = input$cwt_detect_method_select
+  if ( cwt_detect_method_input == "" ) {
+    cwt_detection_method_id = NA
+  } else {
+    cwt_detect_method_vals = get_cwt_detect_method(pool)
+    cwt_detection_method_id = cwt_detect_method_vals %>%
+      filter(cwt_detect_method == cwt_detect_method_input) %>%
+      pull(cwt_detection_method_id)
+  }
+  # Run
+  run_input = input$run_select
+  if ( run_input == "" ) {
+    run_id = NA
+  } else {
+    run_vals = get_run(pool)
+    run_id = run_vals %>%
+      filter(run == run_input) %>%
+      pull(run_id)
+  }
+  new_survey_event = tibble(survey_id = survey_id_input,
+                            species = event_species_input,
+                            species_id = species_id,
+                            survey_design = survey_design_input,
+                            survey_design_type_id = survey_design_type_id,
+                            cwt_detect_method = cwt_detect_method_input,
+                            cwt_detection_method_id = cwt_detection_method_id,
+                            run = run_input,
+                            run_id = run_id,
+                            run_year = input$run_year_select,
+                            pct_fish_seen = input$pct_fish_seen_input,
+                            species_comment = input$se_comment_input,
+                            created_dt = lubridate::with_tz(Sys.time(), "UTC"),
+                            created_by = Sys.getenv("USERNAME"))
+  new_survey_event = new_survey_event %>%
+    mutate(run_year = if_else(is.na(run_year) | run_year == "", NA_character_, run_year)) %>%
+    mutate(run_year = as.integer(run_year)) %>%
+    mutate(pct_fish_seen = as.integer(pct_fish_seen)) %>%
+    mutate(species_comment = if_else(is.na(species_comment) | species_comment == "", NA_character_, species_comment))
+  return(new_survey_event)
+})
+
+# Generate values to show in modal
+output$survey_event_modal_insert_vals = renderDT({
+  survey_event_modal_in_vals = survey_event_create() %>%
+    select(species, survey_design, cwt_detect_method, run, run_year,
+           pct_fish_seen, species_comment)
+  # Generate table
+  datatable(survey_event_modal_in_vals,
+            rownames = FALSE,
+            options = list(dom = 't',
+                           scrollX = T,
+                           ordering = FALSE,
+                           initComplete = JS(
+                             "function(settings, json) {",
+                             "$(this.api().table().header()).css({'background-color': '#9eb3d6'});",
+                             "}")))
+})
+
+# Modal for new intents. Need a dup flag, multiple rows possible
+observeEvent(input$survey_event_add, {
+  new_survey_event_vals = survey_event_create()
+  existing_survey_event_vals = get_survey_event(pool, selected_survey_data()$survey_id) %>%
+    select(species, survey_design, run, run_year)
+  dup_event_flag = dup_survey_event(new_survey_event_vals, existing_survey_event_vals)
+  showModal(
+    # Verify all fields have data...none can be blank
+    tags$div(id = "survey_event_insert_modal",
+             if ( is.na(new_survey_event_vals$species_id) |
+                  is.na(new_survey_event_vals$survey_design_type_id) |
+                  is.na(new_survey_event_vals$cwt_detection_method_id) |
+                  is.na(new_survey_event_vals$run_id) |
+                  is.na(new_survey_event_vals$run_year) ) {
+               modalDialog (
+                 size = "m",
+                 title = "Warning",
+                 paste0("Values are required in all fields from species, through run_year"),
+                 easyClose = TRUE,
+                 footer = NULL
+               )
+             } else if ( dup_event_flag == TRUE ) {
+               modalDialog (
+                 size = "m",
+                 title = "Warning",
+                 paste0("Species data already exists. Please edit either species, survey_design, run, or run_year before proceeding."),
+                 easyClose = TRUE,
+                 footer = NULL
+               )
+               # Write to DB
+             } else {
+               modalDialog (
+                 size = 'l',
+                 title = glue("Insert new species data to the database?"),
+                 fluidPage (
+                   DT::DTOutput("survey_event_modal_insert_vals"),
+                   br(),
+                   br(),
+                   actionButton("insert_survey_event", "Insert species data")
+                 ),
+                 easyClose = TRUE,
+                 footer = NULL
+               )
+             }
+    ))
+})
+
+# Reactive to hold values actually inserted
+survey_event_insert_vals = reactive({
+  new_event_values = survey_event_create() %>%
+    select(survey_id, species_id, survey_design_type_id,
+           cwt_detection_method_id, run_id, run_year,
+           pct_fish_seen, species_comment, created_by)
+  return(new_event_values)
+})
+
+# Update DB and reload DT
+observeEvent(input$insert_survey_event, {
+  survey_event_insert(survey_event_insert_vals())
+  removeModal()
+  post_event_insert_vals = get_survey_event(pool, selected_survey_data()$survey_id) %>%
+    select(species, survey_design, cwt_detect_method, run, run_year, pct_fish_seen,
+           species_comment, created_dt, created_by, modified_dt, modified_by)
+  replaceData(survey_event_dt_proxy, post_event_insert_vals)
+})
+
 # #========================================================
 # # Edit operations: reactives, observers and modals
 # #========================================================

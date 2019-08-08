@@ -24,7 +24,7 @@ get_fish_encounter = function(pool, survey_event_id) {
     mutate(fish_encounter_id = tolower(fish_encounter_id)) %>%
     mutate(fish_encounter_time = with_tz(fish_encounter_time, tzone = "America/Los_Angeles")) %>%
     mutate(fish_encounter_dt = format(fish_encounter_time, "%H:%M")) %>%
-    mutate(prev_counted = if_else(prev_counted == "No", FALSE, TRUE)) %>%
+    mutate(prev_counted = if_else(prev_counted == "0", "No", "Yes")) %>%
     mutate(created_date = with_tz(created_date, tzone = "America/Los_Angeles")) %>%
     mutate(created_dt = format(created_date, "%m/%d/%Y %H:%M")) %>%
     mutate(modified_date = with_tz(modified_date, tzone = "America/Los_Angeles")) %>%
