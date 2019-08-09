@@ -124,6 +124,7 @@ waterbody_meas_create = reactive({
                               flow_cfs = input$flow_cfs_input,
                               survey_date = survey_date,
                               start_temperature = input$start_temperature_input,
+                              # Need to create full datetime values below modal
                               start_tmp_dt = start_tmp_dt,
                               end_temperature = input$end_temperature_input,
                               end_tmp_dt = end_tmp_dt,

@@ -128,67 +128,56 @@ get_fish_behavior = function(pool) {
   return(fish_behavior_list)
 }
 
-# #==========================================================================
-# # Validate survey_intent create operations
-# #==========================================================================
-#
-# # Check for existing duplicate survey_intent prior to survey_intent insert operation
-# dup_survey_event = function(new_survey_event_vals, existing_survey_event_vals) {
-#   new_survey_event_vals = new_survey_event_vals %>%
-#     select(species, survey_design, run, run_year)
-#   matching_rows = new_survey_event_vals %>%
-#     inner_join(existing_survey_event_vals,
-#                by = c("species", "survey_design", "run", "run_year"))
-#   if (nrow(matching_rows) > 0 ) {
-#     dup_flag = TRUE
-#   } else {
-#     dup_flag = FALSE
-#   }
-#   return(dup_flag)
-# }
-#
-# #========================================================
-# # Insert callback
-# #========================================================
-#
-# # Define the insert callback
-# survey_event_insert = function(new_event_values) {
-#   new_event_values = new_event_values
-#   # Pull out data
-#   survey_id = new_event_values$survey_id
-#   species_id = new_event_values$species_id
-#   survey_design_type_id =  new_event_values$survey_design_type_id
-#   cwt_detection_method_id = new_event_values$cwt_detection_method_id
-#   run_id = new_event_values$run_id
-#   run_year = new_event_values$run_year
-#   estimated_percent_fish_seen = new_event_values$pct_fish_seen
-#   comment_text = new_event_values$species_comment
-#   if (is.na(comment_text) | comment_text == "") { comment_text = NA }
-#   created_by = new_event_values$created_by
-#   # Checkout a connection
-#   con = poolCheckout(pool)
-#   insert_result = dbSendStatement(
-#     con, glue_sql("INSERT INTO survey_event (",
-#                   "survey_id, ",
-#                   "species_id, ",
-#                   "survey_design_type_id, ",
-#                   "cwt_detection_method_id, ",
-#                   "run_id, ",
-#                   "run_year, ",
-#                   "estimated_percent_fish_seen, ",
-#                   "comment_text, ",
-#                   "created_by) ",
-#                   "VALUES (",
-#                   "?, ?, ?, ?, ?, ?, ?, ?, ?)"))
-#   dbBind(insert_result, list(survey_id, species_id, survey_design_type_id,
-#                              cwt_detection_method_id, run_id, run_year,
-#                              estimated_percent_fish_seen, comment_text,
-#                              created_by))
-#   dbGetRowsAffected(insert_result)
-#   dbClearResult(insert_result)
-#   poolReturn(con)
-# }
-#
+#========================================================
+# Insert callback
+#========================================================
+
+# Define the insert callback
+fish_encounter_insert = function(new_fish_encounter_values) {
+  new_insert_values = new_fish_encounter_values
+  # Pull out data
+  survey_event_id = new_insert_values$survey_event_id
+  fish_status_id = new_insert_values$fish_status_id
+  sex_id =  new_insert_values$sex_id
+  maturity_id = new_insert_values$maturity_id
+  origin_id = new_insert_values$origin_id
+  cwt_detection_status_id = new_insert_values$cwt_detection_status_id
+  adipose_clip_status_id = new_insert_values$adipose_clip_status_id
+  fish_behavior_type_id = new_insert_values$fish_behavior_type_id
+  mortality_type_id = "149aefd0-0369-4f2c-b85f-4ec6c5e8679c"          # Not applicable....only use from trap interface
+  fish_encounter_datetime = new_insert_values$fish_encounter_datetime
+  fish_count = new_insert_values$fish_count
+  previously_counted_indicator = new_insert_values$previously_counted_indicator
+  created_by = new_insert_values$created_by
+  # Checkout a connection
+  con = poolCheckout(pool)
+  insert_result = dbSendStatement(
+    con, glue_sql("INSERT INTO fish_encounter (",
+                  "survey_event_id, ",
+                  "fish_status_id, ",
+                  "sex_id, ",
+                  "maturity_id, ",
+                  "origin_id, ",
+                  "cwt_detection_status_id, ",
+                  "adipose_clip_status_id, ",
+                  "fish_behavior_type_id, ",
+                  "mortality_type_id, ",
+                  "fish_encounter_datetime, ",
+                  "fish_count, ",
+                  "previously_counted_indicator, ",
+                  "created_by) ",
+                  "VALUES (",
+                  "?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)"))
+  dbBind(insert_result, list(survey_event_id, fish_status_id, sex_id,
+                             maturity_id, origin_id, cwt_detection_status_id,
+                             adipose_clip_status_id, fish_behavior_type_id,
+                             mortality_type_id, fish_encounter_datetime, fish_count,
+                             previously_counted_indicator, created_by))
+  dbGetRowsAffected(insert_result)
+  dbClearResult(insert_result)
+  poolReturn(con)
+}
+
 # #========================================================
 # # Edit update callback
 # #========================================================
