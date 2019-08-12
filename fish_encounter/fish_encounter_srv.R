@@ -333,215 +333,253 @@ observeEvent(input$insert_fish_encounter, {
   replaceData(fish_encounter_dt_proxy, post_fish_encounter_insert_vals)
 })
 
-# #========================================================
-# # Edit operations: reactives, observers and modals
-# #========================================================
-#
-# # Create reactive to collect input values for insert actions
-# survey_event_edit = reactive({
-#   # Species
-#   event_species_input = input$event_species_select
-#   if (event_species_input == "" ) {
-#     species_id = NA_character_
-#   } else {
-#     event_species_vals = get_event_species(pool)
-#     species_id = event_species_vals %>%
-#       filter(species == event_species_input) %>%
-#       pull(species_id)
-#   }
-#   # Survey design
-#   survey_design_input = input$survey_design_select
-#   if ( survey_design_input == "" ) {
-#     survey_design_type_id = NA
-#   } else {
-#     survey_design_vals = get_survey_design(pool)
-#     survey_design_type_id = survey_design_vals %>%
-#       filter(survey_design == survey_design_input) %>%
-#       pull(survey_design_type_id)
-#   }
-#   # CWT detect method
-#   cwt_detect_method_input = input$cwt_detect_method_select
-#   if ( cwt_detect_method_input == "" ) {
-#     cwt_detection_method_id = NA
-#   } else {
-#     cwt_detect_method_vals = get_cwt_detect_method(pool)
-#     cwt_detection_method_id = cwt_detect_method_vals %>%
-#       filter(cwt_detect_method == cwt_detect_method_input) %>%
-#       pull(cwt_detection_method_id)
-#   }
-#   # Run
-#   run_input = input$run_select
-#   if ( run_input == "" ) {
-#     run_id = NA
-#   } else {
-#     run_vals = get_run(pool)
-#     run_id = run_vals %>%
-#       filter(run == run_input) %>%
-#       pull(run_id)
-#   }
-#   edit_survey_event = tibble(survey_event_id = selected_survey_event_data()$survey_event_id,
-#                              species = event_species_input,
-#                              species_id = species_id,
-#                              survey_design = survey_design_input,
-#                              survey_design_type_id = survey_design_type_id,
-#                              cwt_detect_method = cwt_detect_method_input,
-#                              cwt_detection_method_id = cwt_detection_method_id,
-#                              run = run_input,
-#                              run_id = run_id,
-#                              run_year = input$run_year_select,
-#                              pct_fish_seen = input$pct_fish_seen_input,
-#                              species_comment = input$se_comment_input,
-#                              modified_dt = lubridate::with_tz(Sys.time(), "UTC"),
-#                              modified_by = Sys.getenv("USERNAME"))
-#   edit_survey_event = edit_survey_event %>%
-#     mutate(run_year = if_else(is.na(run_year) | run_year == "", NA_character_, run_year)) %>%
-#     mutate(run_year = as.integer(run_year)) %>%
-#     mutate(pct_fish_seen = as.integer(pct_fish_seen)) %>%
-#     mutate(species_comment = if_else(is.na(species_comment) | species_comment == "", NA_character_, species_comment))
-#   return(edit_survey_event)
-# })
-#
-# # Generate values to show in modal
-# output$survey_event_modal_update_vals = renderDT({
-#   survey_event_modal_up_vals = survey_event_edit() %>%
-#     select(species, survey_design, cwt_detect_method, run, run_year,
-#            pct_fish_seen, species_comment)
-#   # Generate table
-#   datatable(survey_event_modal_up_vals,
-#             rownames = FALSE,
-#             options = list(dom = 't',
-#                            scrollX = T,
-#                            ordering = FALSE,
-#                            initComplete = JS(
-#                              "function(settings, json) {",
-#                              "$(this.api().table().header()).css({'background-color': '#9eb3d6'});",
-#                              "}")))
-# })
-#
-# observeEvent(input$survey_event_edit, {
-#   new_survey_event_vals = survey_event_edit() %>%
-#     select(species, survey_design, cwt_detect_method, run, run_year,
-#            pct_fish_seen, species_comment)
-#   old_survey_event_vals = selected_survey_event_data() %>%
-#     select(species, survey_design, cwt_detect_method, run, run_year,
-#            pct_fish_seen, species_comment)
-#   all_survey_event_vals = get_survey_event(pool, selected_survey_data()$survey_id) %>%
-#     select(species, survey_design, cwt_detect_method, run, run_year,
-#            pct_fish_seen, species_comment)
-#   dup_event_flag = dup_survey_event(new_survey_event_vals, all_survey_event_vals)
-#   showModal(
-#     tags$div(id = "survey_event_update_modal",
-#              if ( !length(input$survey_events_rows_selected) == 1 ) {
-#                modalDialog (
-#                  size = "m",
-#                  title = "Warning",
-#                  paste("Please select a row to edit!"),
-#                  easyClose = TRUE,
-#                  footer = NULL
-#                )
-#              } else if ( isTRUE(all_equal(old_survey_event_vals, new_survey_event_vals)) ) {
-#                modalDialog (
-#                  size = "m",
-#                  title = "Warning",
-#                  paste("Please change at least one value!"),
-#                  easyClose = TRUE,
-#                  footer = NULL
-#                )
-#              } else if ( dup_event_flag == TRUE ) {
-#                modalDialog (
-#                  size = "m",
-#                  title = "Warning",
-#                  paste0("Species data already exists. Please edit either species, survey_design, run, or run_year before proceeding." ),
-#                  easyClose = TRUE,
-#                  footer = NULL
-#                )
-#              } else {
-#                modalDialog (
-#                  size = 'l',
-#                  title = "Update species data to these new values?",
-#                  fluidPage (
-#                    DT::DTOutput("survey_event_modal_update_vals"),
-#                    br(),
-#                    br(),
-#                    actionButton("save_survey_event_edits","Save changes")
-#                  ),
-#                  easyClose = TRUE,
-#                  footer = NULL
-#                )
-#              }
-#     ))
-# })
-#
-# # Update DB and reload DT
-# observeEvent(input$save_survey_event_edits, {
-#   survey_event_update(survey_event_edit())
-#   removeModal()
-#   post_survey_event_edit_vals = get_survey_event(pool, selected_survey_data()$survey_id) %>%
-#     select(species, survey_design, cwt_detect_method, run, run_year, pct_fish_seen,
-#            species_comment, created_dt, created_by, modified_dt, modified_by)
-#   replaceData(survey_event_dt_proxy, post_survey_event_edit_vals)
-# })
-#
-# #========================================================
-# # Delete operations: reactives, observers and modals
-# #========================================================
-#
-# # Generate values to show in modal
-# output$survey_event_modal_delete_vals = renderDT({
-#   survey_event_modal_del_id = selected_survey_event_data()$survey_event_id
-#   survey_event_modal_del_vals = get_survey_event(pool, selected_survey_data()$survey_id) %>%
-#     filter(survey_event_id == survey_event_modal_del_id) %>%
-#     select(species, survey_design, cwt_detect_method, run, run_year,
-#            pct_fish_seen, species_comment)
-#   # Generate table
-#   datatable(survey_event_modal_del_vals,
-#             rownames = FALSE,
-#             options = list(dom = 't',
-#                            scrollX = T,
-#                            ordering = FALSE,
-#                            initComplete = JS(
-#                              "function(settings, json) {",
-#                              "$(this.api().table().header()).css({'background-color': '#9eb3d6'});",
-#                              "}")))
-# })
-#
-# observeEvent(input$survey_event_delete, {
-#   survey_event_id = selected_survey_event_data()$survey_event_id
-#   survey_event_dependencies = get_survey_event_dependencies(survey_event_id)
-#   table_names = paste0(names(survey_event_dependencies), collapse = ", ")
-#   showModal(
-#     tags$div(id = "survey_event_delete_modal",
-#              if ( ncol(survey_event_dependencies) > 0L ) {
-#                modalDialog (
-#                  size = "m",
-#                  title = "Warning",
-#                  glue("Please delete associated species data from the following tables first: {table_names}"),
-#                  easyClose = TRUE,
-#                  footer = NULL
-#                )
-#              } else {
-#                modalDialog (
-#                  size = 'l',
-#                  title = "Are you sure you want to delete this species data from the database?",
-#                  fluidPage (
-#                    DT::DTOutput("survey_event_modal_delete_vals"),
-#                    br(),
-#                    br(),
-#                    actionButton("delete_survey_event", "Delete species")
-#                  ),
-#                  easyClose = TRUE,
-#                  footer = NULL
-#                )
-#              }
-#     ))
-# })
-#
-# # Update DB and reload DT
-# observeEvent(input$delete_survey_event, {
-#   survey_event_delete(selected_survey_event_data())
-#   removeModal()
-#   survey_events_after_delete = get_survey_event(pool, selected_survey_data()$survey_id) %>%
-#     select(species, survey_design, cwt_detect_method, run, run_year, pct_fish_seen,
-#            species_comment, created_dt, created_by, modified_dt, modified_by)
-#   replaceData(survey_event_dt_proxy, survey_events_after_delete)
-# })
+#========================================================
+# Edit operations: reactives, observers and modals
+#========================================================
+
+# Create reactive to collect input values for insert actions
+fish_encounter_edit = reactive({
+  # # Location....NA for now
+  # fish_location_input = NA
+  # Fish encounter time
+  fish_encounter_dt = format(input$fish_encounter_time_select)
+  if (nchar(fish_encounter_dt) < 16) { fish_encounter_dt = NA_character_ }
+  fish_encounter_dt = as.POSIXct(fish_encounter_dt)
+  # Fish status
+  fish_status_input = input$fish_status_select
+  if ( fish_status_input == "" ) {
+    fish_status_id = NA
+  } else {
+    fish_status_vals = get_fish_status(pool)
+    fish_status_id = fish_status_vals %>%
+      filter(fish_status == fish_status_input) %>%
+      pull(fish_status_id)
+  }
+  # Sex
+  sex_input = input$sex_select
+  if ( sex_input == "" ) {
+    sex_id = NA
+  } else {
+    sex_vals = get_sex(pool)
+    sex_id = sex_vals %>%
+      filter(sex == sex_input) %>%
+      pull(sex_id)
+  }
+  # Maturity
+  maturity_input = input$maturity_select
+  if ( maturity_input == "" ) {
+    maturity_id = NA
+  } else {
+    maturity_vals = get_maturity(pool)
+    maturity_id = maturity_vals %>%
+      filter(maturity == maturity_input) %>%
+      pull(maturity_id)
+  }
+  # Origin
+  origin_input = input$origin_select
+  if ( origin_input == "" ) {
+    origin_id = NA
+  } else {
+    origin_vals = get_origin(pool)
+    origin_id = origin_vals %>%
+      filter(origin == origin_input) %>%
+      pull(origin_id)
+  }
+  # CWT status
+  cwt_status_input = input$cwt_status_select
+  if ( cwt_status_input == "" ) {
+    cwt_status_id = NA
+  } else {
+    cwt_status_vals = get_cwt_status(pool)
+    cwt_detection_status_id = cwt_status_vals %>%
+      filter(cwt_status == cwt_status_input) %>%
+      pull(cwt_detection_status_id)
+  }
+  # Clip status
+  clip_status_input = input$clip_status_select
+  if ( clip_status_input == "" ) {
+    clip_status_id = NA
+  } else {
+    clip_status_vals = get_clip_status(pool)
+    adipose_clip_status_id = clip_status_vals %>%
+      filter(clip_status == clip_status_input) %>%
+      pull(adipose_clip_status_id)
+  }
+  # Fish behavior
+  fish_behavior_input = input$fish_behavior_select
+  if ( fish_behavior_input == "" ) {
+    fish_behavior_id = NA
+  } else {
+    fish_behavior_vals = get_fish_behavior(pool)
+    fish_behavior_type_id = fish_behavior_vals %>%
+      filter(fish_behavior == fish_behavior_input) %>%
+      pull(fish_behavior_type_id)
+  }
+  edit_fish_encounter = tibble(fish_encounter_id = selected_fish_encounter_data()$fish_encounter_id,
+                               species = event_species_input,
+                               species_id = species_id,
+                               survey_design = survey_design_input,
+                               survey_design_type_id = survey_design_type_id,
+                               cwt_detect_method = cwt_detect_method_input,
+                               cwt_detection_method_id = cwt_detection_method_id,
+                               run = run_input,
+                               run_id = run_id,
+                               run_year = input$run_year_select,
+                               pct_fish_seen = input$pct_fish_seen_input,
+                               species_comment = input$se_comment_input,
+                               modified_dt = lubridate::with_tz(Sys.time(), "UTC"),
+                               modified_by = Sys.getenv("USERNAME"))
+  edit_fish_encounter = edit_fish_encounter %>%
+    mutate(run_year = if_else(is.na(run_year) | run_year == "", NA_character_, run_year)) %>%
+    mutate(run_year = as.integer(run_year)) %>%
+    mutate(pct_fish_seen = as.integer(pct_fish_seen)) %>%
+    mutate(species_comment = if_else(is.na(species_comment) | species_comment == "", NA_character_, species_comment))
+  return(edit_fish_encounter)
+})
+
+# Generate values to show in modal
+output$fish_encounter_modal_update_vals = renderDT({
+  fish_encounter_modal_up_vals = fish_encounter_edit() %>%
+    select(species, survey_design, cwt_detect_method, run, run_year,
+           pct_fish_seen, species_comment)
+  # Generate table
+  datatable(fish_encounter_modal_up_vals,
+            rownames = FALSE,
+            options = list(dom = 't',
+                           scrollX = T,
+                           ordering = FALSE,
+                           initComplete = JS(
+                             "function(settings, json) {",
+                             "$(this.api().table().header()).css({'background-color': '#9eb3d6'});",
+                             "}")))
+})
+
+observeEvent(input$fish_encounter_edit, {
+  new_fish_encounter_vals = fish_encounter_edit() %>%
+    select(species, survey_design, cwt_detect_method, run, run_year,
+           pct_fish_seen, species_comment)
+  old_fish_encounter_vals = selected_fish_encounter_data() %>%
+    select(species, survey_design, cwt_detect_method, run, run_year,
+           pct_fish_seen, species_comment)
+  all_fish_encounter_vals = get_fish_encounter(pool, selected_survey_data()$survey_id) %>%
+    select(species, survey_design, cwt_detect_method, run, run_year,
+           pct_fish_seen, species_comment)
+  dup_event_flag = dup_fish_encounter(new_fish_encounter_vals, all_fish_encounter_vals)
+  showModal(
+    tags$div(id = "fish_encounter_update_modal",
+             if ( !length(input$fish_encounters_rows_selected) == 1 ) {
+               modalDialog (
+                 size = "m",
+                 title = "Warning",
+                 paste("Please select a row to edit!"),
+                 easyClose = TRUE,
+                 footer = NULL
+               )
+             } else if ( isTRUE(all_equal(old_fish_encounter_vals, new_fish_encounter_vals)) ) {
+               modalDialog (
+                 size = "m",
+                 title = "Warning",
+                 paste("Please change at least one value!"),
+                 easyClose = TRUE,
+                 footer = NULL
+               )
+             } else if ( dup_event_flag == TRUE ) {
+               modalDialog (
+                 size = "m",
+                 title = "Warning",
+                 paste0("Species data already exists. Please edit either species, survey_design, run, or run_year before proceeding." ),
+                 easyClose = TRUE,
+                 footer = NULL
+               )
+             } else {
+               modalDialog (
+                 size = 'l',
+                 title = "Update species data to these new values?",
+                 fluidPage (
+                   DT::DTOutput("fish_encounter_modal_update_vals"),
+                   br(),
+                   br(),
+                   actionButton("save_fish_encounter_edits","Save changes")
+                 ),
+                 easyClose = TRUE,
+                 footer = NULL
+               )
+             }
+    ))
+})
+
+# Update DB and reload DT
+observeEvent(input$save_fish_encounter_edits, {
+  fish_encounter_update(fish_encounter_edit())
+  removeModal()
+  post_fish_encounter_edit_vals = get_fish_encounter(pool, selected_survey_event_data()$survey_event_id) %>%
+    select(fish_encounter_time, fish_count, fish_status, sex, maturity, origin,
+           cwt_status, clip_status, fish_behavior, prev_counted, created_dt,
+           created_by, modified_dt, modified_by)
+  replaceData(fish_encounter_dt_proxy, post_fish_encounter_edit_vals)
+})
+
+#========================================================
+# Delete operations: reactives, observers and modals
+#========================================================
+
+# Generate values to show in modal
+output$fish_encounter_modal_delete_vals = renderDT({
+  fish_encounter_modal_del_id = selected_fish_encounter_data()$fish_encounter_id
+  fish_encounter_modal_del_vals = get_fish_encounter(pool, selected_survey_event_data()$survey_event_id) %>%
+    filter(fish_encounter_id == fish_encounter_modal_del_id) %>%
+    select(fish_encounter_dt, fish_count, fish_status, sex, maturity, origin, cwt_status,
+           clip_status, fish_behavior, prev_counted)
+  # Generate table
+  datatable(fish_encounter_modal_del_vals,
+            rownames = FALSE,
+            options = list(dom = 't',
+                           scrollX = T,
+                           ordering = FALSE,
+                           initComplete = JS(
+                             "function(settings, json) {",
+                             "$(this.api().table().header()).css({'background-color': '#9eb3d6'});",
+                             "}")))
+})
+
+observeEvent(input$fish_encounter_delete, {
+  fish_encounter_id = selected_fish_encounter_data()$fish_encounter_id
+  fish_encounter_dependencies = get_fish_encounter_dependencies(fish_encounter_id)
+  table_names = paste0(names(fish_encounter_dependencies), collapse = ", ")
+  showModal(
+    tags$div(id = "fish_encounter_delete_modal",
+             if ( ncol(fish_encounter_dependencies) > 0L ) {
+               modalDialog (
+                 size = "m",
+                 title = "Warning",
+                 glue("Please delete associated fish data from the following tables first: {table_names}"),
+                 easyClose = TRUE,
+                 footer = NULL
+               )
+             } else {
+               modalDialog (
+                 size = 'l',
+                 title = "Are you sure you want to delete this fish data from the database?",
+                 fluidPage (
+                   DT::DTOutput("fish_encounter_modal_delete_vals"),
+                   br(),
+                   br(),
+                   actionButton("delete_fish_encounter", "Delete fish data")
+                 ),
+                 easyClose = TRUE,
+                 footer = NULL
+               )
+             }
+    ))
+})
+
+# Update DB and reload DT
+observeEvent(input$delete_fish_encounter, {
+  fish_encounter_delete(selected_fish_encounter_data())
+  removeModal()
+  fish_encounters_after_delete = get_fish_encounter(pool, selected_survey_event_data()$survey_event_id) %>%
+    select(fish_encounter_time, fish_count, fish_status, sex, maturity, origin,
+           cwt_status, clip_status, fish_behavior, prev_counted, created_dt,
+           created_by, modified_dt, modified_by)
+  replaceData(fish_encounter_dt_proxy, fish_encounters_after_delete)
+})

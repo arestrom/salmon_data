@@ -219,44 +219,46 @@ fish_encounter_insert = function(new_fish_encounter_values) {
 #   dbClearResult(update_result)
 #   poolReturn(con)
 # }
-#
-# #========================================================
-# # Identify species dependencies prior to delete
-# #========================================================
-#
-# # Identify survey dependencies prior to delete....do the same for survey_event
-# get_survey_event_dependencies = function(survey_event_id) {
-#   qry = glue("select ",
-#              "count(fe.fish_encounter_id) as fish_encounter, ",
-#              "count(rd.redd_encounter_id) as redd_encounter ",
-#              "from survey_event as se ",
-#              "left join fish_encounter as fe on se.survey_event_id = fe.survey_event_id ",
-#              "left join redd_encounter as rd on se.survey_event_id = rd.survey_event_id ",
-#              "where se.survey_event_id = '{survey_event_id}'")
-#   con = poolCheckout(pool)
-#   survey_event_dependents = DBI::dbGetQuery(pool, qry)
-#   has_entries = function(x) any(x > 0L)
-#   survey_event_dependents = survey_event_dependents %>%
-#     select_if(has_entries)
-#   return(survey_event_dependents)
-# }
-#
-# #========================================================
-# # Delete callback
-# #========================================================
-#
-# # Define delete callback
-# survey_event_delete = function(delete_values) {
-#   survey_event_id = delete_values$survey_event_id
-#   con = poolCheckout(pool)
-#   delete_result = dbSendStatement(
-#     con, glue_sql("DELETE FROM survey_event WHERE survey_event_id = ?"))
-#   dbBind(delete_result, list(survey_event_id))
-#   dbGetRowsAffected(delete_result)
-#   dbClearResult(delete_result)
-#   poolReturn(con)
-# }
-#
+
+#========================================================
+# Identify species dependencies prior to delete
+#========================================================
+
+# Identify fish_encounter dependencies prior to delete
+get_fish_encounter_dependencies = function(fish_encounter_id) {
+  qry = glue("select ",
+             "count(ind.individual_fish_id) as individual_fish, ",
+             "count(fc.fish_capture_event_id) as fish_capture_event, ",
+             "count(fm.fish_mark_id) as fish_mark ",
+             "from fish_encounter as fe ",
+             "left join individual_fish as ind on fe.fish_encounter_id = ind.fish_encounter_id ",
+             "left join fish_capture_event as fc on fe.fish_encounter_id = fc.fish_encounter_id ",
+             "left join fish_mark as fm on fe.fish_encounter_id = fm.fish_encounter_id ",
+             "where fe.fish_encounter_id = '{fish_encounter_id}'")
+  con = poolCheckout(pool)
+  fish_encounter_dependents = DBI::dbGetQuery(pool, qry)
+  has_entries = function(x) any(x > 0L)
+  fish_encounter_dependents = fish_encounter_dependents %>%
+    select_if(has_entries)
+  return(fish_encounter_dependents)
+}
+
+#========================================================
+# Delete callback
+#========================================================
+
+# Define delete callback
+fish_encounter_delete = function(delete_values) {
+  fish_encounter_id = delete_values$fish_encounter_id
+  con = poolCheckout(pool)
+  delete_result = dbSendStatement(
+    con, glue_sql("DELETE FROM fish_encounter WHERE fish_encounter_id = ?"))
+  dbBind(delete_result, list(fish_encounter_id))
+  dbGetRowsAffected(delete_result)
+  dbClearResult(delete_result)
+  poolReturn(con)
+}
+
 
 
 
