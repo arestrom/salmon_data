@@ -468,6 +468,21 @@ output$fish_encounter_modal_update_vals = renderDT({
                              "}")))
 })
 
+# output$chk_edit = renderText({
+#   old_fish_encounter_vals = selected_fish_encounter_data() %>%
+#     mutate(fish_encounter_dt = format(fish_encounter_dt, "%H:%M")) %>%
+#     select(fish_encounter_dt = fish_encounter_time, fish_count, fish_status, sex, maturity, origin, cwt_status,
+#            clip_status, fish_behavior, prev_counted)
+#   new_fish_encounter_vals = fish_encounter_edit() %>%
+#     mutate(fish_count = as.integer(fish_count)) %>%
+#     mutate(fish_encounter_dt = format(fish_encounter_dt, "%H:%M")) %>%
+#     select(fish_encounter_dt, fish_count, fish_status, sex, maturity, origin, cwt_status,
+#            clip_status, fish_behavior, prev_counted)
+#   print(old_fish_encounter_vals)
+#   print(new_fish_encounter_vals)
+#   return(unlist(old_fish_encounter_vals))
+# })
+
 observeEvent(input$fish_enc_edit, {
   old_fish_encounter_vals = selected_fish_encounter_data() %>%
     mutate(fish_encounter_dt = format(fish_encounter_time, "%H:%M")) %>%

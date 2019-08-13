@@ -25,4 +25,5 @@ fish_encounter_ui = tags$div(
   br(),
   br(),
   DT::DTOutput("fish_encounters")
+  #verbatimTextOutput("chk_edit")
 )

@@ -452,7 +452,72 @@ get_waterbody_meas = function(pool, survey_id) {
 
 chk_meas = get_waterbody_meas(pool, survey_id = 'a046d04d-aad0-48a5-b9d9-fc86dd241ece')
 
+#=================================================================================================
+# Write fish_encounter
+#=================================================================================================
 
+#bab197b6-796f-4012-b7fc-a8aa3a4e280e NA 3 Dead b185dc5d-6b15-4b5b-a54e-3301aec0270f Female 1511973c-cbe1-4101-9481-458130041ee7 Adult 68347504-ee22-4632-9856-a4f4366b2bd8 Hatchery 5251f030-ddb8-4029-8115-c3b998ae8a46 Coded-wire tag not detected ba4209af-3839-46a7-bd5d-57bc8516f7af Adipose fin clipped 92d81f24-b5cb-49fd-87d8-b3422ce717fb Holding 40ae4bc9-b6db-456a-8b3f-2484183469fe No 1565649540.59937 stromas NA FALSE
 
+fish_encounter_edit_values = tibble(fish_encounter_id = "bab197b6-796f-4012-b7fc-a8aa3a4e280e",
+                                    fish_status_id = "b185dc5d-6b15-4b5b-a54e-3301aec0270f",
+                                    sex_id = "1511973c-cbe1-4101-9481-458130041ee7",
+                                    maturity_id = "68347504-ee22-4632-9856-a4f4366b2bd8",
+                                    origin_id = "5251f030-ddb8-4029-8115-c3b998ae8a46",
+                                    cwt_detection_status_id = "ba4209af-3839-46a7-bd5d-57bc8516f7af",
+                                    adipose_clip_status_id = "92d81f24-b5cb-49fd-87d8-b3422ce717fb",
+                                    fish_behavior_type_id = "40ae4bc9-b6db-456a-8b3f-2484183469fe",
+                                    fish_encounter_time = as.POSIXct(NA),
+                                    fish_count = 4L,
+                                    previously_counted_indicator = FALSE,
+                                    modified_datetime = lubridate::with_tz(Sys.time(), "UTC"),
+                                    modified_by = Sys.getenv("USERNAME"))
 
+fish_encounter_edit_values
+
+# Define update callback
+fish_encounter_update = function(fish_encounter_edit_values) {
+  edit_values = fish_encounter_edit_values
+  # Pull out data
+  fish_encounter_id = edit_values$fish_encounter_id
+  fish_status_id = edit_values$fish_status_id
+  sex_id =  edit_values$sex_id
+  maturity_id = edit_values$maturity_id
+  origin_id = edit_values$origin_id
+  cwt_detection_status_id = edit_values$cwt_detection_status_id
+  adipose_clip_status_id = edit_values$adipose_clip_status_id
+  fish_behavior_type_id = edit_values$fish_behavior_type_id
+  fish_encounter_datetime = edit_values$fish_encounter_time
+  fish_count = edit_values$fish_count
+  previously_counted_indicator = edit_values$previously_counted_indicator
+  if ( is.na(previously_counted_indicator) ) { previously_counted_indicator = FALSE }
+  mod_dt = lubridate::with_tz(Sys.time(), "UTC")
+  mod_by = Sys.getenv("USERNAME")
+  # Checkout a connection
+  con = poolCheckout(pool)
+  update_result = dbSendStatement(
+    con, glue_sql("UPDATE fish_encounter SET ",
+                  "fish_status_id = ?, ",
+                  "sex_id = ?, ",
+                  "maturity_id = ?, ",
+                  "origin_id = ?, ",
+                  "cwt_detection_status_id = ?, ",
+                  "adipose_clip_status_id = ?, ",
+                  "fish_behavior_type_id = ?, ",
+                  "fish_encounter_datetime = ?, ",
+                  "fish_count = ?, ",
+                  "previously_counted_indicator = ?, ",
+                  "modified_datetime = ?, ",
+                  "modified_by = ? ",
+                  "where fish_encounter_id = ?"))
+  dbBind(update_result, list(fish_status_id, sex_id, maturity_id, origin_id,
+                             cwt_detection_status_id, adipose_clip_status_id,
+                             fish_behavior_type_id, fish_encounter_datetime,
+                             fish_count, previously_counted_indicator,
+                             mod_dt, mod_by, fish_encounter_id))
+  dbGetRowsAffected(update_result)
+  dbClearResult(update_result)
+  poolReturn(con)
+}
+
+fish_encounter_update(fish_encounter_edit_values)
 
