@@ -107,6 +107,7 @@ source("survey_event/survey_event_global.R")
 source("fish_encounter/fish_encounter_ui.R")
 source("fish_encounter/fish_encounter_global.R")
 source("individual_fish/individual_fish_ui.R")
+source("individual_fish/individual_fish_global.R")
 
 # Define globals ================================================================
 

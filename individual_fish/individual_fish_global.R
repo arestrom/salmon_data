@@ -36,86 +36,84 @@
 #   return(fish_encounters)
 # }
 #
-# #==========================================================================
-# # Get generic lut input values
-# #==========================================================================
-#
-# # Fish status
-# get_fish_status = function(pool) {
-#   qry = glue("select fish_status_id, fish_status_description as fish_status ",
-#              "from fish_status_lut ",
-#              "where obsolete_datetime is null")
-#   fish_status_list = DBI::dbGetQuery(pool, qry) %>%
-#     mutate(fish_status_id = tolower(fish_status_id)) %>%
-#     arrange(fish_status) %>%
-#     select(fish_status_id, fish_status)
-#   return(fish_status_list)
-# }
-#
-# # Sex
-# get_sex = function(pool) {
-#   qry = glue("select sex_id, sex_description as sex ",
-#              "from sex_lut ",
-#              "where obsolete_datetime is null")
-#   sex_list = DBI::dbGetQuery(pool, qry) %>%
-#     mutate(sex_id = tolower(sex_id)) %>%
-#     arrange(sex) %>%
-#     select(sex_id, sex)
-#   return(sex_list)
-# }
-#
-# # Maturity
-# get_maturity = function(pool) {
-#   qry = glue("select maturity_id, maturity_short_description as maturity ",
-#              "from maturity_lut ",
-#              "where obsolete_datetime is null")
-#   maturity_list = DBI::dbGetQuery(pool, qry) %>%
-#     mutate(maturity_id = tolower(maturity_id)) %>%
-#     arrange(maturity) %>%
-#     select(maturity_id, maturity)
-#   return(maturity_list)
-# }
-#
-# # Origin
-# get_origin = function(pool) {
-#   qry = glue("select origin_id, origin_description as origin ",
-#              "from origin_lut ",
-#              "where obsolete_datetime is null")
-#   origin_list = DBI::dbGetQuery(pool, qry) %>%
-#     mutate(origin_id = tolower(origin_id)) %>%
-#     arrange(origin) %>%
-#     select(origin_id, origin)
-#   return(origin_list)
-# }
-#
-# # CWT status
-# get_cwt_status = function(pool) {
-#   qry = glue("select cwt_detection_status_id, detection_status_description as cwt_status ",
-#              "from cwt_detection_status_lut ",
-#              "where obsolete_datetime is null")
-#   cwt_status_list = DBI::dbGetQuery(pool, qry) %>%
-#     mutate(cwt_detection_status_id = tolower(cwt_detection_status_id)) %>%
-#     mutate(cwt_status = if_else(cwt_status == "Coded-wire tag undetermined, e.g., no head",
-#                                 "Tag undetermined, e.g., no head", cwt_status)) %>%
-#     arrange(cwt_status) %>%
-#     select(cwt_detection_status_id, cwt_status)
-#   return(cwt_status_list)
-# }
-#
-# # Clip status
-# get_clip_status = function(pool) {
-#   qry = glue("select adipose_clip_status_id, adipose_clip_status_description as clip_status ",
-#              "from adipose_clip_status_lut ",
-#              "where obsolete_datetime is null")
-#   clip_status_list = DBI::dbGetQuery(pool, qry) %>%
-#     mutate(adipose_clip_status_id = tolower(adipose_clip_status_id)) %>%
-#     mutate(clip_status = if_else(clip_status == "Adipose fin checked but undetermined, e.g., too deteriorated",
-#                                  "Checked but UD, e.g., decayed", clip_status)) %>%
-#     arrange(clip_status) %>%
-#     select(adipose_clip_status_id, clip_status)
-#   return(clip_status_list)
-# }
-#
+#==========================================================================
+# Get generic lut input values
+#==========================================================================
+
+# Fish condition
+get_fish_condition = function(pool) {
+  qry = glue("select fish_condition_type_id, fish_condition_short_description as fish_condition ",
+             "from fish_condition_type_lut ",
+             "where obsolete_datetime is null")
+  fish_condition_list = DBI::dbGetQuery(pool, qry) %>%
+    mutate(fish_condition_type_id = tolower(fish_condition_type_id)) %>%
+    arrange(fish_condition) %>%
+    select(fish_condition_type_id, fish_condition)
+  return(fish_condition_list)
+}
+
+# Fish trauma
+get_fish_trauma = function(pool) {
+  qry = glue("select fish_trauma_type_id, trauma_type_short_description as fish_trauma ",
+             "from fish_trauma_type_lut ",
+             "where obsolete_datetime is null")
+  fish_trauma_list = DBI::dbGetQuery(pool, qry) %>%
+    mutate(fish_trauma_type_id = tolower(fish_trauma_type_id)) %>%
+    arrange(fish_trauma) %>%
+    select(fish_trauma_type_id, fish_trauma)
+  return(fish_trauma_list)
+}
+
+# Gill conditon
+get_gill_condition = function(pool) {
+  qry = glue("select gill_condition_type_id, gill_condition_type_description as gill_condition ",
+             "from gill_condition_type_lut ",
+             "where obsolete_datetime is null")
+  gill_condition_list = DBI::dbGetQuery(pool, qry) %>%
+    mutate(gill_condition_type_id = tolower(gill_condition_type_id)) %>%
+    arrange(gill_condition) %>%
+    select(gill_condition_type_id, gill_condition)
+  return(gill_condition_list)
+}
+
+# Spawn conditon
+get_spawn_condition = function(pool) {
+  qry = glue("select spawn_condition_type_id, spawn_condition_short_description as spawn_condition ",
+             "from spawn_condition_type_lut ",
+             "where obsolete_datetime is null")
+  spawn_condition_list = DBI::dbGetQuery(pool, qry) %>%
+    mutate(spawn_condition_type_id = tolower(spawn_condition_type_id)) %>%
+    arrange(spawn_condition) %>%
+    select(spawn_condition_type_id, spawn_condition)
+  return(spawn_condition_list)
+}
+
+# Age code
+get_age_code = function(pool) {
+  qry = glue("select age_code_id, european_age_code as age_code, gilbert_rich_age_code as gr ",
+             "from age_code_lut ",
+             "where obsolete_datetime is null")
+  age_code_list = DBI::dbGetQuery(pool, qry) %>%
+    mutate(age_code_id = tolower(age_code_id)) %>%
+    mutate(age_code = paste0("eu: ", age_code)) %>%
+    mutate(age_code = if_else(!is.na(gr), paste0(age_code, "; gr: ", gr), age_code)) %>%
+    arrange(age_code) %>%
+    select(age_code_id, age_code)
+  return(age_code_list)
+}
+
+# CWT result
+get_cwt_result = function(pool) {
+  qry = glue("select cwt_result_type_id, cwt_result_type_short_description as cwt_result ",
+             "from cwt_result_type_lut ",
+             "where obsolete_datetime is null")
+  cwt_result_list = DBI::dbGetQuery(pool, qry) %>%
+    mutate(cwt_result_type_id = tolower(cwt_result_type_id)) %>%
+    arrange(cwt_result) %>%
+    select(cwt_result_type_id, cwt_result)
+  return(cwt_result_list)
+}
+
 # # Fish behavior
 # get_fish_behavior = function(pool) {
 #   qry = glue("select fish_behavior_type_id, behavior_short_description as fish_behavior ",
@@ -127,7 +125,7 @@
 #     select(fish_behavior_type_id, fish_behavior)
 #   return(fish_behavior_list)
 # }
-#
+
 # #========================================================
 # # Insert callback
 # #========================================================

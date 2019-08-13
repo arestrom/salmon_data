@@ -1,55 +1,55 @@
-# #========================================================
-# # Generate lut select ui's
-# #========================================================
-#
-# output$fish_status_select = renderUI({
-#   fish_status_list = get_fish_status(pool)$fish_status
-#   fish_status_list = c("", fish_status_list)
-#   selectizeInput("fish_status_select", label = "fish_status",
-#                  choices = fish_status_list, selected = NULL,
-#                  width = "75px")
-# })
-#
-# output$sex_select = renderUI({
-#   sex_list = get_sex(pool)$sex
-#   sex_list = c("", sex_list)
-#   selectizeInput("sex_select", label = "fish_sex",
-#                  choices = sex_list, selected = NULL,
-#                  width = "115px")
-# })
-#
-# output$maturity_select = renderUI({
-#   maturity_list = get_maturity(pool)$maturity
-#   maturity_list = c("", maturity_list)
-#   selectizeInput("maturity_select", label = "maturity",
-#                  choices = maturity_list, selected = NULL,
-#                  width = "115px")
-# })
-#
-# output$origin_select = renderUI({
-#   origin_list = get_origin(pool)$origin
-#   origin_list = c("", origin_list)
-#   selectizeInput("origin_select", label = "origin",
-#                  choices = origin_list, selected = NULL,
-#                  width = "100px")
-# })
-#
-# output$cwt_status_select = renderUI({
-#   cwt_status_list = get_cwt_status(pool)$cwt_status
-#   cwt_status_list = c("", cwt_status_list)
-#   selectizeInput("cwt_status_select", label = "cwt_status",
-#                  choices = cwt_status_list, selected = NULL,
-#                  width = "210px")
-# })
-#
-# output$clip_status_select = renderUI({
-#   clip_status_list = get_clip_status(pool)$clip_status
-#   clip_status_list = c("", clip_status_list)
-#   selectizeInput("clip_status_select", label = "clip_status",
-#                  choices = clip_status_list, selected = NULL,
-#                  width = "210px")
-# })
-#
+#========================================================
+# Generate lut select ui's
+#========================================================
+
+output$fish_condition_select = renderUI({
+  fish_condition_list = get_fish_condition(pool)$fish_condition
+  fish_condition_list = c("", fish_condition_list)
+  selectizeInput("fish_condition_select", label = "fish_condition",
+                 choices = fish_condition_list, selected = "No data",
+                 width = "150px")
+})
+
+output$fish_trauma_select = renderUI({
+  fish_trauma_list = get_fish_trauma(pool)$fish_trauma
+  fish_trauma_list = c("", fish_trauma_list)
+  selectizeInput("fish_trauma_select", label = "fish_trauma",
+                 choices = fish_trauma_list, selected = "No data",
+                 width = "150px")
+})
+
+output$gill_condition_select = renderUI({
+  gill_condition_list = get_gill_condition(pool)$gill_condition
+  gill_condition_list = c("", gill_condition_list)
+  selectizeInput("gill_condition_select", label = "gill_condition",
+                 choices = gill_condition_list, selected = "No data",
+                 width = "200px")
+})
+
+output$spawn_condition_select = renderUI({
+  spawn_condition_list = get_spawn_condition(pool)$spawn_condition
+  spawn_condition_list = c("", spawn_condition_list)
+  selectizeInput("spawn_condition_select", label = "spawn_condition",
+                 choices = spawn_condition_list, selected = "No data",
+                 width = "200px")
+})
+
+output$age_code_select = renderUI({
+  age_code_list = get_age_code(pool)$age_code
+  age_code_list = c("", age_code_list)
+  selectizeInput("age_code_select", label = "age_code",
+                 choices = age_code_list, selected = "No data",
+                 width = "150px")
+})
+
+output$cwt_result_select = renderUI({
+  cwt_result_list = get_cwt_result(pool)$cwt_result
+  cwt_result_list = c("", cwt_result_list)
+  selectizeInput("cwt_result_select", label = "cwt_result",
+                 choices = cwt_result_list, selected = "Not applicable",
+                 width = "130px")
+})
+
 # output$fish_behavior_select = renderUI({
 #   fish_behavior_list = get_fish_behavior(pool)$fish_behavior
 #   fish_behavior_list = c("", fish_behavior_list)
@@ -57,7 +57,7 @@
 #                  choices = fish_behavior_list, selected = NULL,
 #                  width = "115px")
 # })
-#
+
 # #========================================================
 # # Primary datatable for fish_encounters
 # #========================================================
