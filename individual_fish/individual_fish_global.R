@@ -125,7 +125,7 @@ get_cwt_result = function(pool) {
 }
 
 #========================================================
-# Insert callback
+# Insert callback.....NEED TO ADD eggs stuff....currently missing !!!!!!!!!!!!!!!!!!
 #========================================================
 
 # Define the insert callback
