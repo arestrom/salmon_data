@@ -1,41 +1,51 @@
 
-# # Main fish_encounter query
-# get_fish_encounter = function(pool, survey_event_id) {
-#   qry = glue("select fe.fish_encounter_id, fe.fish_encounter_datetime as fish_encounter_time, ",
-#              "fe.fish_count, fs.fish_status_description as fish_status, ",
-#              "sx.sex_description as sex, ma.maturity_short_description as maturity, ",
-#              "ori.origin_description as origin, cw.detection_status_description as cwt_status, ",
-#              "ad.adipose_clip_status_description as clip_status, ",
-#              "fb.behavior_short_description as fish_behavior, ",
-#              "fe.previously_counted_indicator as prev_counted, ",
-#              "fe.created_datetime as created_date, fe.created_by, ",
-#              "fe.modified_datetime as modified_date, fe.modified_by ",
-#              "from fish_encounter as fe ",
-#              "left join fish_status_lut as fs on fe.fish_status_id = fs.fish_status_id ",
-#              "left join sex_lut as sx on fe.sex_id = sx.sex_id ",
-#              "left join maturity_lut as ma on fe.maturity_id = ma.maturity_id ",
-#              "left join origin_lut as ori on fe.origin_id = ori.origin_id ",
-#              "left join cwt_detection_status_lut as cw on fe.cwt_detection_status_id = cw.cwt_detection_status_id ",
-#              "left join adipose_clip_status_lut as ad on fe.adipose_clip_status_id = ad.adipose_clip_status_id ",
-#              "left join fish_behavior_type_lut as fb on fe.fish_behavior_type_id = fb.fish_behavior_type_id ",
-#              "where fe.survey_event_id = '{survey_event_id}'")
-#   fish_encounters = DBI::dbGetQuery(pool, qry)
-#   fish_encounters = fish_encounters %>%
-#     mutate(fish_encounter_id = tolower(fish_encounter_id)) %>%
-#     mutate(fish_encounter_time = with_tz(fish_encounter_time, tzone = "America/Los_Angeles")) %>%
-#     mutate(fish_encounter_dt = format(fish_encounter_time, "%H:%M")) %>%
-#     mutate(prev_counted = if_else(prev_counted == "0", "No", "Yes")) %>%
-#     mutate(created_date = with_tz(created_date, tzone = "America/Los_Angeles")) %>%
-#     mutate(created_dt = format(created_date, "%m/%d/%Y %H:%M")) %>%
-#     mutate(modified_date = with_tz(modified_date, tzone = "America/Los_Angeles")) %>%
-#     mutate(modified_dt = format(modified_date, "%m/%d/%Y %H:%M")) %>%
-#     select(fish_encounter_id, fish_encounter_time, fish_encounter_dt, fish_count, fish_status,
-#            sex, maturity, origin, cwt_status, clip_status, fish_behavior, prev_counted, created_date,
-#            created_dt, created_by, modified_date, modified_dt, modified_by) %>%
-#     arrange(created_date)
-#   return(fish_encounters)
-# }
-#
+# Main fish_encounter query
+get_individual_fish = function(pool, fish_encounter_id) {
+  qry = glue("select ind.individual_fish_id, ",
+             "fc.fish_condition_short_description as fish_condition, ",
+             "ft.trauma_type_short_description as fish_trauma, ",
+             "gcn.gill_condition_type_description as gill_condition, ",
+             "sc.spawn_condition_short_description as spawn_condition, ",
+             "cr.cwt_result_type_short_description as cwt_result, ",
+             "ac.european_age_code as age_code, gilbert_rich_age_code as gr, ",
+             "ind.percent_eggs_retained as pct_eggs, ",
+             "ind.eggs_retained_gram as eggs_gram, ",
+             "ind.eggs_retained_number as eggs_number, ",
+             "ind.fish_sample_number as fish_sample_num, ",
+             "ind.scale_sample_card_number as scale_card_num, ",
+             "ind.scale_sample_position_number as scale_position_num, ",
+             "ind.cwt_snout_sample_number as snout_sample_num, ",
+             "ind.cwt_tag_code, ind.genetic_sample_number as genetic_sample_num, ",
+             "ind.otolith_sample_number as otolith_sample_num, ",
+             "ind.comment_text as fish_comment, ",
+             "ind.created_datetime as created_date, ind.created_by, ",
+             "ind.modified_datetime as modified_date, ind.modified_by ",
+             "from individual_fish as ind ",
+             "left join fish_condition_type_lut as fc on ind.fish_condition_type_id = fc.fish_condition_type_id ",
+             "left join fish_trauma_type_lut as ft on ind.fish_trauma_type_id = ft.fish_trauma_type_id ",
+             "left join gill_condition_type_lut as gcn on ind.gill_condition_type_id = gcn.gill_condition_type_id ",
+             "left join spawn_condition_type_lut as sc on ind.spawn_condition_type_id = sc.spawn_condition_type_id ",
+             "left join cwt_result_type_lut as cr on ind.cwt_result_type_id = cr.cwt_result_type_id ",
+             "left join age_code_lut as ac on ind.age_code_id = ac.age_code_id ",
+             "where ind.fish_encounter_id = '{fish_encounter_id}'")
+  individual_fish = DBI::dbGetQuery(pool, qry)
+  individual_fish = individual_fish %>%
+    mutate(individual_fish_id = tolower(individual_fish_id)) %>%
+    mutate(age_code = if_else(!is.na(age_code), paste0("eu: ", age_code), age_code)) %>%
+    mutate(age_code = if_else(!is.na(age_code) & !is.na(gr), paste0(age_code, "; gr: ", gr), age_code)) %>%
+    mutate(created_date = with_tz(created_date, tzone = "America/Los_Angeles")) %>%
+    mutate(created_dt = format(created_date, "%m/%d/%Y %H:%M")) %>%
+    mutate(modified_date = with_tz(modified_date, tzone = "America/Los_Angeles")) %>%
+    mutate(modified_dt = format(modified_date, "%m/%d/%Y %H:%M")) %>%
+    select(individual_fish_id, fish_condition, fish_trauma, gill_condition, spawn_condition,
+           fish_sample_num, scale_card_num, scale_position_num, age_code, snout_sample_num,
+           cwt_tag_code, cwt_result, genetic_sample_num, otolith_sample_num, pct_eggs,
+           eggs_gram, eggs_number, fish_comment, created_date, created_dt, created_by,
+           modified_date, modified_dt, modified_by) %>%
+    arrange(created_date)
+  return(individual_fish)
+}
+
 #==========================================================================
 # Get generic lut input values
 #==========================================================================
@@ -114,68 +124,62 @@ get_cwt_result = function(pool) {
   return(cwt_result_list)
 }
 
-# # Fish behavior
-# get_fish_behavior = function(pool) {
-#   qry = glue("select fish_behavior_type_id, behavior_short_description as fish_behavior ",
-#              "from fish_behavior_type_lut ",
-#              "where obsolete_datetime is null")
-#   fish_behavior_list = DBI::dbGetQuery(pool, qry) %>%
-#     mutate(fish_behavior_type_id = tolower(fish_behavior_type_id)) %>%
-#     arrange(fish_behavior) %>%
-#     select(fish_behavior_type_id, fish_behavior)
-#   return(fish_behavior_list)
-# }
+#========================================================
+# Insert callback
+#========================================================
 
-# #========================================================
-# # Insert callback
-# #========================================================
-#
-# # Define the insert callback
-# fish_encounter_insert = function(new_fish_encounter_values) {
-#   new_insert_values = new_fish_encounter_values
-#   # Pull out data
-#   survey_event_id = new_insert_values$survey_event_id
-#   fish_status_id = new_insert_values$fish_status_id
-#   sex_id =  new_insert_values$sex_id
-#   maturity_id = new_insert_values$maturity_id
-#   origin_id = new_insert_values$origin_id
-#   cwt_detection_status_id = new_insert_values$cwt_detection_status_id
-#   adipose_clip_status_id = new_insert_values$adipose_clip_status_id
-#   fish_behavior_type_id = new_insert_values$fish_behavior_type_id
-#   mortality_type_id = "149aefd0-0369-4f2c-b85f-4ec6c5e8679c"          # Not applicable....only use from trap interface
-#   fish_encounter_datetime = new_insert_values$fish_encounter_datetime
-#   fish_count = new_insert_values$fish_count
-#   previously_counted_indicator = new_insert_values$previously_counted_indicator
-#   created_by = new_insert_values$created_by
-#   # Checkout a connection
-#   con = poolCheckout(pool)
-#   insert_result = dbSendStatement(
-#     con, glue_sql("INSERT INTO fish_encounter (",
-#                   "survey_event_id, ",
-#                   "fish_status_id, ",
-#                   "sex_id, ",
-#                   "maturity_id, ",
-#                   "origin_id, ",
-#                   "cwt_detection_status_id, ",
-#                   "adipose_clip_status_id, ",
-#                   "fish_behavior_type_id, ",
-#                   "mortality_type_id, ",
-#                   "fish_encounter_datetime, ",
-#                   "fish_count, ",
-#                   "previously_counted_indicator, ",
-#                   "created_by) ",
-#                   "VALUES (",
-#                   "?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)"))
-#   dbBind(insert_result, list(survey_event_id, fish_status_id, sex_id,
-#                              maturity_id, origin_id, cwt_detection_status_id,
-#                              adipose_clip_status_id, fish_behavior_type_id,
-#                              mortality_type_id, fish_encounter_datetime, fish_count,
-#                              previously_counted_indicator, created_by))
-#   dbGetRowsAffected(insert_result)
-#   dbClearResult(insert_result)
-#   poolReturn(con)
-# }
-#
+# Define the insert callback
+individual_fish_insert = function(new_individual_fish_values) {
+  new_insert_values = new_individual_fish_values
+  # Pull out data
+  fish_encounter_id = new_insert_values$fish_encounter_id
+  fish_condition_type_id = new_insert_values$fish_condition_type_id
+  fish_trauma_type_id =  new_insert_values$fish_trauma_type_id
+  gill_condition_type_id = new_insert_values$gill_condition_type_id
+  spawn_condition_type_id = new_insert_values$spawn_condition_type_id
+  cwt_result_type_id = new_insert_values$cwt_result_type_id
+  age_code_id = new_insert_values$age_code_id
+  fish_sample_number = new_insert_values$fish_sample_num
+  scale_sample_card_number = new_insert_values$scale_card_num
+  scale_sample_position_number = new_insert_values$scale_position_num
+  cwt_snout_sample_number = new_insert_values$snout_sample_num
+  cwt_tag_code = new_insert_values$cwt_tag_code
+  genetic_sample_number = new_insert_values$genetic_sample_num
+  otolith_sample_number = new_insert_values$otolith_sample_num
+  comment_text = new_insert_values$fish_comment
+  created_by = new_insert_values$created_by
+  # Checkout a connection
+  con = poolCheckout(pool)
+  insert_result = dbSendStatement(
+    con, glue_sql("INSERT INTO individual_fish (",
+                  "fish_encounter_id, ",
+                  "fish_condition_type_id, ",
+                  "fish_trauma_type_id, ",
+                  "gill_condition_type_id, ",
+                  "spawn_condition_type_id, ",
+                  "cwt_result_type_id, ",
+                  "age_code_id, ",
+                  "fish_sample_number, ",
+                  "scale_sample_card_number, ",
+                  "scale_sample_position_number, ",
+                  "cwt_snout_sample_number, ",
+                  "cwt_tag_code, ",
+                  "genetic_sample_number, ",
+                  "otolith_sample_number, ",
+                  "comment_text, ",
+                  "created_by) ",
+                  "VALUES (",
+                  "?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)"))
+  dbBind(insert_result, list(fish_encounter_id, fish_condition_type_id, fish_trauma_type_id,
+                             gill_condition_type_id, spawn_condition_type_id, cwt_result_type_id,
+                             age_code_id, fish_sample_number, scale_sample_card_number,
+                             scale_sample_position_number, cwt_snout_sample_number, cwt_tag_code,
+                             genetic_sample_number, otolith_sample_number, comment_text, created_by))
+  dbGetRowsAffected(insert_result)
+  dbClearResult(insert_result)
+  poolReturn(con)
+}
+
 # #========================================================
 # # Edit update callback
 # #========================================================

@@ -456,8 +456,6 @@ chk_meas = get_waterbody_meas(pool, survey_id = 'a046d04d-aad0-48a5-b9d9-fc86dd2
 # Write fish_encounter
 #=================================================================================================
 
-#bab197b6-796f-4012-b7fc-a8aa3a4e280e NA 3 Dead b185dc5d-6b15-4b5b-a54e-3301aec0270f Female 1511973c-cbe1-4101-9481-458130041ee7 Adult 68347504-ee22-4632-9856-a4f4366b2bd8 Hatchery 5251f030-ddb8-4029-8115-c3b998ae8a46 Coded-wire tag not detected ba4209af-3839-46a7-bd5d-57bc8516f7af Adipose fin clipped 92d81f24-b5cb-49fd-87d8-b3422ce717fb Holding 40ae4bc9-b6db-456a-8b3f-2484183469fe No 1565649540.59937 stromas NA FALSE
-
 fish_encounter_edit_values = tibble(fish_encounter_id = "bab197b6-796f-4012-b7fc-a8aa3a4e280e",
                                     fish_status_id = "b185dc5d-6b15-4b5b-a54e-3301aec0270f",
                                     sex_id = "1511973c-cbe1-4101-9481-458130041ee7",
@@ -520,4 +518,66 @@ fish_encounter_update = function(fish_encounter_edit_values) {
 }
 
 fish_encounter_update(fish_encounter_edit_values)
+
+#=================================================================================================
+# Read individual_fish
+#=================================================================================================
+
+# Main fish_encounter query
+get_individual_fish = function(pool, fish_encounter_id) {
+  qry = glue("select ind.individual_fish_id, ",
+             "fc.fish_condition_short_description as fish_condition, ",
+             "ft.trauma_type_short_description as fish_trauma, ",
+             "gcn.gill_condition_type_description as gill_condition, ",
+             "sc.spawn_condition_short_description as spawn_condition, ",
+             "cr.cwt_result_type_short_description as cwt_result, ",
+             "ac.european_age_code as age_code, gilbert_rich_age_code as gr, ",
+             "ind.percent_eggs_retained as pct_eggs, ",
+             "ind.eggs_retained_gram as eggs_gram, ",
+             "ind.eggs_retained_number as eggs_number, ",
+             "ind.fish_sample_number as fish_sample_num, ",
+             "ind.scale_sample_card_number as scale_card_num, ",
+             "ind.scale_sample_position_number as scale_position_num, ",
+             "ind.cwt_snout_sample_number as snout_sample_num, ",
+             "ind.cwt_tag_code, ind.genetic_sample_number as genetic_sample_num, ",
+             "ind.otolith_sample_number as otolith_sample_num, ",
+             "ind.comment_text as ind_fish_comment, ",
+             "ind.created_datetime as created_date, ind.created_by, ",
+             "ind.modified_datetime as modified_date, ind.modified_by ",
+             "from individual_fish as ind ",
+             "left join fish_condition_type_lut as fc on ind.fish_condition_type_id = fc.fish_condition_type_id ",
+             "left join fish_trauma_type_lut as ft on ind.fish_trauma_type_id = ft.fish_trauma_type_id ",
+             "left join gill_condition_type_lut as gcn on ind.gill_condition_type_id = gcn.gill_condition_type_id ",
+             "left join spawn_condition_type_lut as sc on ind.spawn_condition_type_id = sc.spawn_condition_type_id ",
+             "left join cwt_result_type_lut as cr on ind.cwt_result_type_id = cr.cwt_result_type_id ",
+             "left join age_code_lut as ac on ind.age_code_id = ac.age_code_id ",
+             "where ind.fish_encounter_id = '{fish_encounter_id}'")
+  individual_fish = DBI::dbGetQuery(pool, qry)
+  individual_fish = individual_fish %>%
+    mutate(individual_fish_id = tolower(individual_fish_id)) %>%
+    mutate(age_code = if_else(!is.na(age_code), paste0("eu: ", age_code), age_code)) %>%
+    mutate(age_code = if_else(!is.na(age_code) & !is.na(gr), paste0(age_code, "; gr: ", gr), age_code)) %>%
+    mutate(created_date = with_tz(created_date, tzone = "America/Los_Angeles")) %>%
+    mutate(created_dt = format(created_date, "%m/%d/%Y %H:%M")) %>%
+    mutate(modified_date = with_tz(modified_date, tzone = "America/Los_Angeles")) %>%
+    mutate(modified_dt = format(modified_date, "%m/%d/%Y %H:%M")) %>%
+    select(individual_fish_id, fish_condition, fish_trauma, gill_condition, spawn_condition,
+           cwt_result, age_code, pct_eggs, eggs_gram, eggs_number, fish_sample_num, scale_card_num,
+           scale_position_num, snout_sample_num, cwt_tag_code, genetic_sample_num, otolith_sample_num,
+           ind_fish_comment, created_date, created_dt, created_by, modified_date, modified_dt,
+           modified_by) %>%
+    arrange(created_date)
+  return(individual_fish)
+}
+
+# Test
+fish_encounter_id = "60b6252f-c6ee-49cd-ac29-be7a80aaaaef"
+ind_fish = get_individual_fish(pool, fish_encounter_id)
+
+
+
+
+
+
+
 
