@@ -432,6 +432,15 @@ individual_fish_edit = reactive({
                                 fish_comment = input$ind_fish_comment_input,
                                 created_dt = lubridate::with_tz(Sys.time(), "UTC"),
                                 created_by = Sys.getenv("USERNAME"))
+  edit_individual_fish = edit_individual_fish %>%
+    mutate(fish_sample_num = if_else(is.na(fish_sample_num) | fish_sample_num == "", NA_character_, fish_sample_num)) %>%
+    mutate(scale_card_num = if_else(is.na(scale_card_num) | scale_card_num == "", NA_character_, scale_card_num)) %>%
+    mutate(scale_position_num = if_else(is.na(scale_position_num) | scale_position_num == "", NA_character_, scale_position_num)) %>%
+    mutate(snout_sample_num = if_else(is.na(snout_sample_num) | snout_sample_num == "", NA_character_, snout_sample_num)) %>%
+    mutate(cwt_tag_code = if_else(is.na(cwt_tag_code) | cwt_tag_code == "", NA_character_, cwt_tag_code)) %>%
+    mutate(genetic_sample_num = if_else(is.na(genetic_sample_num) | genetic_sample_num == "", NA_character_, genetic_sample_num)) %>%
+    mutate(otolith_sample_num = if_else(is.na(otolith_sample_num) | otolith_sample_num == "", NA_character_, otolith_sample_num)) %>%
+    mutate(fish_comment = if_else(is.na(fish_comment) | fish_comment == "", NA_character_, fish_comment))
   return(edit_individual_fish)
 })
 
@@ -453,31 +462,49 @@ output$individual_fish_modal_update_vals = renderDT({
                              "}")))
 })
 
-output$chk_edit = renderText({
-  old_individual_fish_vals = selected_individual_fish_data() %>%
-    select(fish_condition, fish_trauma, gill_condition, spawn_condition, fish_sample_num, scale_card_num,
-           scale_position_num, age_code, snout_sample_num, cwt_tag_code, cwt_result, genetic_sample_num,
-           otolith_sample_num, pct_eggs, eggs_gram, eggs_number, fish_comment)
-  new_individual_fish_vals = individual_fish_edit() %>%
-    #mutate(fish_count = as.integer(fish_count)) %>%
-    select(fish_condition, fish_trauma, gill_condition, spawn_condition, fish_sample_num, scale_card_num,
-           scale_position_num, age_code, snout_sample_num, cwt_tag_code, cwt_result, genetic_sample_num,
-           otolith_sample_num, pct_eggs, eggs_gram, eggs_number, fish_comment)
-  print(old_individual_fish_vals)
-  print(new_individual_fish_vals)
-  return(unlist(old_individual_fish_vals))
-})
+# output$chk_edit = renderText({
+#   old_individual_fish_vals = selected_individual_fish_data() %>%
+#     select(fish_condition, fish_trauma, gill_condition, spawn_condition, fish_sample_num, scale_card_num,
+#            scale_position_num, age_code, snout_sample_num, cwt_tag_code, cwt_result, genetic_sample_num,
+#            otolith_sample_num, pct_eggs, eggs_gram, eggs_number, fish_comment)
+#   old_individual_fish_vals[] = lapply(old_individual_fish_vals, remisc::set_empty)
+#   old_individual_fish_vals = old_individual_fish_vals %>%
+#     mutate(pct_eggs = as.integer(pct_eggs)) %>%
+#     mutate(eggs_gram = as.numeric(eggs_gram)) %>%
+#     mutate(eggs_number = as.integer(eggs_number))
+#   new_individual_fish_vals = individual_fish_edit() %>%
+#     select(fish_condition, fish_trauma, gill_condition, spawn_condition, fish_sample_num, scale_card_num,
+#            scale_position_num, age_code, snout_sample_num, cwt_tag_code, cwt_result, genetic_sample_num,
+#            otolith_sample_num, pct_eggs, eggs_gram, eggs_number, fish_comment)
+#   new_individual_fish_vals[] = lapply(new_individual_fish_vals, remisc::set_empty)
+#   new_individual_fish_vals = new_individual_fish_vals %>%
+#     mutate(pct_eggs = as.integer(pct_eggs)) %>%
+#     mutate(eggs_gram = as.numeric(eggs_gram)) %>%
+#     mutate(eggs_number = as.integer(eggs_number))
+#   print(old_individual_fish_vals)
+#   print(new_individual_fish_vals)
+#   return(unlist(old_individual_fish_vals))
+# })
 
 observeEvent(input$ind_fish_edit, {
   old_individual_fish_vals = selected_individual_fish_data() %>%
     select(fish_condition, fish_trauma, gill_condition, spawn_condition, fish_sample_num, scale_card_num,
            scale_position_num, age_code, snout_sample_num, cwt_tag_code, cwt_result, genetic_sample_num,
            otolith_sample_num, pct_eggs, eggs_gram, eggs_number, fish_comment)
+  old_individual_fish_vals[] = lapply(old_individual_fish_vals, remisc::set_empty)
+  old_individual_fish_vals = old_individual_fish_vals %>%
+    mutate(pct_eggs = as.integer(pct_eggs)) %>%
+    mutate(eggs_gram = as.numeric(eggs_gram)) %>%
+    mutate(eggs_number = as.integer(eggs_number))
   new_individual_fish_vals = individual_fish_edit() %>%
-    #mutate(fish_count = as.integer(fish_count)) %>%
     select(fish_condition, fish_trauma, gill_condition, spawn_condition, fish_sample_num, scale_card_num,
            scale_position_num, age_code, snout_sample_num, cwt_tag_code, cwt_result, genetic_sample_num,
            otolith_sample_num, pct_eggs, eggs_gram, eggs_number, fish_comment)
+  new_individual_fish_vals[] = lapply(new_individual_fish_vals, remisc::set_empty)
+  new_individual_fish_vals = new_individual_fish_vals %>%
+    mutate(pct_eggs = as.integer(pct_eggs)) %>%
+    mutate(eggs_gram = as.numeric(eggs_gram)) %>%
+    mutate(eggs_number = as.integer(eggs_number))
   showModal(
     tags$div(id = "fish_encounter_update_modal",
              if ( !length(input$fish_encounters_rows_selected) == 1 ) {

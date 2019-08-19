@@ -52,8 +52,11 @@
 # 11. For fish_location...wait till I figure out redd_location
 #     first, then go back and add fish_location screen. Maybe
 #     use map_edit module.
-# 12. Next steps....survey_event_update()...create reactive
-#     to inspect comparison values for update module
+# 12. Getting crash when accordians down to ind_fish are open
+#     and I select a field above that does not contain data
+#     in fields below. May need some req statements in lower
+#     accordian fields. May also just have been some weird
+#     data...now deleted. Cannot recreate crash....
 #
 # AS 2019-07-15
 #==============================================================

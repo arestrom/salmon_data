@@ -122,7 +122,7 @@ selected_fish_encounter_data = reactive({
 # Update event select inputs to values in selected row
 #========================================================
 
-# Update all survey input values to values in selected row
+# Update all input values to values in selected row
 observeEvent(input$fish_encounters_rows_selected, {
   sfedat = selected_fish_encounter_data()
   updateTimeInput(session, "fish_encounter_time_select", value = sfedat$fish_encounter_time)

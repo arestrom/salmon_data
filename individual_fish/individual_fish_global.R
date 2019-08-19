@@ -150,6 +150,14 @@ individual_fish_insert = function(new_individual_fish_values) {
   genetic_sample_number = new_insert_values$genetic_sample_num
   otolith_sample_number = new_insert_values$otolith_sample_num
   comment_text = new_insert_values$fish_comment
+  if (is.na(fish_sample_number) | fish_sample_number == "") { fish_sample_number = NA }
+  if (is.na(scale_sample_card_number) | scale_sample_card_number == "") { scale_sample_card_number = NA }
+  if (is.na(scale_sample_position_number) | scale_sample_position_number == "") { scale_sample_position_number = NA }
+  if (is.na(cwt_snout_sample_number) | cwt_snout_sample_number == "") { cwt_snout_sample_number = NA }
+  if (is.na(cwt_tag_code) | cwt_tag_code == "") { cwt_tag_code = NA }
+  if (is.na(genetic_sample_number) | genetic_sample_number == "") { genetic_sample_number = NA }
+  if (is.na(otolith_sample_number) | otolith_sample_number == "") { otolith_sample_number = NA }
+  if (is.na(comment_text) | comment_text == "") { comment_text = NA }
   created_by = new_insert_values$created_by
   # Checkout a connection
   con = poolCheckout(pool)
@@ -213,29 +221,48 @@ individual_fish_update = function(individual_fish_edit_values) {
   genetic_sample_number = edit_values$genetic_sample_num
   otolith_sample_number = edit_values$otolith_sample_num
   comment_text = edit_values$fish_comment
+  if (is.na(fish_sample_number) | fish_sample_number == "") { fish_sample_number = NA }
+  if (is.na(scale_sample_card_number) | scale_sample_card_number == "") { scale_sample_card_number = NA }
+  if (is.na(scale_sample_position_number) | scale_sample_position_number == "") { scale_sample_position_number = NA }
+  if (is.na(cwt_snout_sample_number) | cwt_snout_sample_number == "") { cwt_snout_sample_number = NA }
+  if (is.na(cwt_tag_code) | cwt_tag_code == "") { cwt_tag_code = NA }
+  if (is.na(genetic_sample_number) | genetic_sample_number == "") { genetic_sample_number = NA }
+  if (is.na(otolith_sample_number) | otolith_sample_number == "") { otolith_sample_number = NA }
+  if (is.na(comment_text) | comment_text == "") { comment_text = NA }
   mod_dt = lubridate::with_tz(Sys.time(), "UTC")
   mod_by = Sys.getenv("USERNAME")
   # Checkout a connection
   con = poolCheckout(pool)
   update_result = dbSendStatement(
-    con, glue_sql("UPDATE individual_fish SET ",    STOPPED HERE !!!!!!!!!!!!!!!!!!!!!!
-                  "fish_status_id = ?, ",
-                  "sex_id = ?, ",
-                  "maturity_id = ?, ",
-                  "origin_id = ?, ",
-                  "cwt_detection_status_id = ?, ",
-                  "adipose_clip_status_id = ?, ",
-                  "fish_behavior_type_id = ?, ",
-                  "fish_encounter_datetime = ?, ",
-                  "fish_count = ?, ",
-                  "previously_counted_indicator = ?, ",
+    con, glue_sql("UPDATE individual_fish SET ",
+                  "fish_condition_type_id = ?, ",
+                  "fish_trauma_type_id = ?, ",
+                  "gill_condition_type_id = ?, ",
+                  "spawn_condition_type_id = ?, ",
+                  "cwt_result_type_id = ?, ",
+                  "age_code_id = ?, ",
+                  "percent_eggs_retained = ?, ",
+                  "eggs_retained_gram = ?, ",
+                  "eggs_retained_number = ?, ",
+                  "fish_sample_number = ?, ",
+                  "scale_sample_card_number = ?, ",
+                  "scale_sample_position_number = ?, ",
+                  "cwt_snout_sample_number = ?, ",
+                  "cwt_tag_code = ?, ",
+                  "genetic_sample_number = ?, ",
+                  "otolith_sample_number = ?, ",
+                  "comment_text = ?, ",
                   "modified_datetime = ?, ",
                   "modified_by = ? ",
                   "where individual_fish_id = ?"))
-  dbBind(update_result, list(fish_status_id, sex_id, maturity_id, origin_id,
-                             cwt_detection_status_id, adipose_clip_status_id,
-                             fish_behavior_type_id, fish_encounter_datetime,
-                             fish_count, previously_counted_indicator,
+  dbBind(update_result, list(fish_condition_type_id, fish_trauma_type_id,
+                             gill_condition_type_id, spawn_condition_type_id,
+                             cwt_result_type_id, age_code_id, percent_eggs_retained,
+                             eggs_retained_gram, eggs_retained_number,
+                             fish_sample_number, scale_sample_card_number,
+                             scale_sample_position_number, cwt_snout_sample_number,
+                             cwt_tag_code, genetic_sample_number,
+                             otolith_sample_number, comment_text,
                              mod_dt, mod_by, individual_fish_id))
   dbGetRowsAffected(update_result)
   dbClearResult(update_result)
