@@ -33,6 +33,6 @@ individual_fish_ui = tags$div(
   br(),
   br(),
   br(),
-  DT::DTOutput("individual_fishes")
-  #verbatimTextOutput("chk_edit")
+  DT::DTOutput("individual_fishes"),
+  verbatimTextOutput("chk_edit")
 )

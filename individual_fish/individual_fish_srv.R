@@ -148,10 +148,23 @@ observeEvent(input$individual_fishes_rows_selected, {
 # Insert operations: reactives, observers and modals
 #========================================================
 
+# Disable "New" button if a row of comments already exists
+observe({
+  input$insert_individual_fish
+  ind_fish_data = get_individual_fish(pool, selected_fish_encounter_data()$fish_encounter_id)
+  if (nrow(ind_fish_data) >= 1L) {
+    shinyjs::disable("ind_fish_add")
+  } else {
+    shinyjs::enable("ind_fish_add")
+  }
+})
+
 # Create reactive to collect input values for insert actions
 individual_fish_create = reactive({
   # fish_encounter_id
   fish_encounter_id_input = selected_fish_encounter_data()$fish_encounter_id
+  # Fish count
+  fish_count_input = selected_fish_encounter_data()$fish_count
   # Fish condition
   fish_condition_input = input$fish_condition_select
   if ( fish_condition_input == "" ) {
@@ -213,6 +226,7 @@ individual_fish_create = reactive({
       pull(cwt_result_type_id)
   }
   new_individual_fish = tibble(fish_encounter_id = fish_encounter_id_input,
+                               fish_count = fish_count_input,
                                fish_condition = fish_condition_input,
                                fish_condition_type_id = fish_condition_type_id,
                                fish_trauma = fish_trauma_input,
@@ -278,6 +292,15 @@ observeEvent(input$ind_fish_add, {
                  footer = NULL
                )
                # Write to DB
+             } else if (!individual_fish_create()$fish_count == 1 ) {
+               modalDialog (
+                 size = "m",
+                 title = "Warning",
+                 paste0("Individual fish data can only be entered if the fish_count value above equals 1"),
+                 easyClose = TRUE,
+                 footer = NULL
+               )
+               # Write to DB
              } else {
                modalDialog (
                  size = 'l',
@@ -317,273 +340,254 @@ observeEvent(input$insert_individual_fish, {
   replaceData(individual_fish_dt_proxy, post_individual_fish_insert_vals)
 })
 
-# #========================================================
-# # Edit operations: reactives, observers and modals
-# #========================================================
-#
-# # Create reactive to collect input values for insert actions
-# fish_encounter_edit = reactive({
-#   # Survey date
-#   survey_date = selected_survey_data()$survey_date
-#   # # Location....NA for now
-#   # fish_location_input = NA
-#   # Fish encounter time
-#   fish_encounter_dt = format(input$fish_encounter_time_select)
-#   if (nchar(fish_encounter_dt) < 16) { fish_encounter_dt = NA_character_ }
-#   fish_encounter_dt = as.POSIXct(fish_encounter_dt)
-#   # Fish status
-#   fish_status_input = input$fish_status_select
-#   if ( fish_status_input == "" ) {
-#     fish_status_id = NA
-#   } else {
-#     fish_status_vals = get_fish_status(pool)
-#     fish_status_id = fish_status_vals %>%
-#       filter(fish_status == fish_status_input) %>%
-#       pull(fish_status_id)
-#   }
-#   # Sex
-#   sex_input = input$sex_select
-#   if ( sex_input == "" ) {
-#     sex_id = NA
-#   } else {
-#     sex_vals = get_sex(pool)
-#     sex_id = sex_vals %>%
-#       filter(sex == sex_input) %>%
-#       pull(sex_id)
-#   }
-#   # Maturity
-#   maturity_input = input$maturity_select
-#   if ( maturity_input == "" ) {
-#     maturity_id = NA
-#   } else {
-#     maturity_vals = get_maturity(pool)
-#     maturity_id = maturity_vals %>%
-#       filter(maturity == maturity_input) %>%
-#       pull(maturity_id)
-#   }
-#   # Origin
-#   origin_input = input$origin_select
-#   if ( origin_input == "" ) {
-#     origin_id = NA
-#   } else {
-#     origin_vals = get_origin(pool)
-#     origin_id = origin_vals %>%
-#       filter(origin == origin_input) %>%
-#       pull(origin_id)
-#   }
-#   # CWT status
-#   cwt_status_input = input$cwt_status_select
-#   if ( cwt_status_input == "" ) {
-#     cwt_status_id = NA
-#   } else {
-#     cwt_status_vals = get_cwt_status(pool)
-#     cwt_detection_status_id = cwt_status_vals %>%
-#       filter(cwt_status == cwt_status_input) %>%
-#       pull(cwt_detection_status_id)
-#   }
-#   # Clip status
-#   clip_status_input = input$clip_status_select
-#   if ( clip_status_input == "" ) {
-#     clip_status_id = NA
-#   } else {
-#     clip_status_vals = get_clip_status(pool)
-#     adipose_clip_status_id = clip_status_vals %>%
-#       filter(clip_status == clip_status_input) %>%
-#       pull(adipose_clip_status_id)
-#   }
-#   # Fish behavior
-#   fish_behavior_input = input$fish_behavior_select
-#   if ( fish_behavior_input == "" ) {
-#     fish_behavior_id = NA
-#   } else {
-#     fish_behavior_vals = get_fish_behavior(pool)
-#     fish_behavior_type_id = fish_behavior_vals %>%
-#       filter(fish_behavior == fish_behavior_input) %>%
-#       pull(fish_behavior_type_id)
-#   }
-#   edit_fish_encounter = tibble(fish_encounter_id = selected_fish_encounter_data()$fish_encounter_id,
-#                                #fish_location_id = fish_location_input,
-#                                # Need to create full datetime values below modal
-#                                fish_encounter_dt = fish_encounter_dt,
-#                                fish_count = input$fish_count_input,
-#                                fish_status = fish_status_input,
-#                                fish_status_id = fish_status_id,
-#                                sex = sex_input,
-#                                sex_id = sex_id,
-#                                maturity = maturity_input,
-#                                maturity_id = maturity_id,
-#                                origin = origin_input,
-#                                origin_id = origin_id,
-#                                cwt_status = cwt_status_input,
-#                                cwt_detection_status_id = cwt_detection_status_id,
-#                                clip_status = clip_status_input,
-#                                adipose_clip_status_id = adipose_clip_status_id,
-#                                fish_behavior = fish_behavior_input,
-#                                fish_behavior_type_id = fish_behavior_type_id,
-#                                # Need to create prev_counted boolean below
-#                                prev_counted = input$prev_counted_select,
-#                                modified_dt = lubridate::with_tz(Sys.time(), "UTC"),
-#                                modified_by = Sys.getenv("USERNAME"))
-#   edit_fish_encounter = edit_fish_encounter %>%
-#     mutate(fish_encounter_time = case_when(
-#       is.na(fish_encounter_dt) ~ as.POSIXct(NA),
-#       !is.na(fish_encounter_dt) ~ as.POSIXct(paste0(format(survey_date), " ", format(fish_encounter_dt, "%H:%M")),
-#                                         tz = "America/Los_Angeles"))) %>%
-#     mutate(fish_encounter_time = with_tz(fish_encounter_time, tzone = "UTC")) %>%
-#     mutate(previously_counted_indicator = if_else(prev_counted == "No", FALSE, TRUE))
-#   return(edit_fish_encounter)
-# })
-#
-# # Generate values to show in modal
-# output$fish_encounter_modal_update_vals = renderDT({
-#   fish_encounter_modal_up_vals = fish_encounter_edit() %>%
-#     mutate(fish_encounter_dt = format(fish_encounter_dt, "%H:%M")) %>%
-#     select(fish_encounter_dt, fish_count, fish_status, sex, maturity, origin, cwt_status,
-#            clip_status, fish_behavior, prev_counted)
-#   # Generate table
-#   datatable(fish_encounter_modal_up_vals,
-#             rownames = FALSE,
-#             options = list(dom = 't',
-#                            scrollX = T,
-#                            ordering = FALSE,
-#                            initComplete = JS(
-#                              "function(settings, json) {",
-#                              "$(this.api().table().header()).css({'background-color': '#9eb3d6'});",
-#                              "}")))
-# })
-#
-# # output$chk_edit = renderText({
-# #   old_fish_encounter_vals = selected_fish_encounter_data() %>%
-# #     mutate(fish_encounter_dt = format(fish_encounter_dt, "%H:%M")) %>%
-# #     select(fish_encounter_dt = fish_encounter_time, fish_count, fish_status, sex, maturity, origin, cwt_status,
-# #            clip_status, fish_behavior, prev_counted)
-# #   new_fish_encounter_vals = fish_encounter_edit() %>%
-# #     mutate(fish_count = as.integer(fish_count)) %>%
-# #     mutate(fish_encounter_dt = format(fish_encounter_dt, "%H:%M")) %>%
-# #     select(fish_encounter_dt, fish_count, fish_status, sex, maturity, origin, cwt_status,
-# #            clip_status, fish_behavior, prev_counted)
-# #   print(old_fish_encounter_vals)
-# #   print(new_fish_encounter_vals)
-# #   return(unlist(old_fish_encounter_vals))
-# # })
-#
-# observeEvent(input$fish_enc_edit, {
-#   old_fish_encounter_vals = selected_fish_encounter_data() %>%
-#     mutate(fish_encounter_dt = format(fish_encounter_time, "%H:%M")) %>%
-#     select(fish_encounter_dt, fish_count, fish_status, sex, maturity, origin, cwt_status,
-#            clip_status, fish_behavior, prev_counted)
-#   new_fish_encounter_vals = fish_encounter_edit() %>%
-#     mutate(fish_count = as.integer(fish_count)) %>%
-#     mutate(fish_encounter_dt = format(fish_encounter_dt, "%H:%M")) %>%
-#     select(fish_encounter_dt, fish_count, fish_status, sex, maturity, origin, cwt_status,
-#            clip_status, fish_behavior, prev_counted)
-#   showModal(
-#     tags$div(id = "fish_encounter_update_modal",
-#              if ( !length(input$fish_encounters_rows_selected) == 1 ) {
-#                modalDialog (
-#                  size = "m",
-#                  title = "Warning",
-#                  paste("Please select a row to edit!"),
-#                  easyClose = TRUE,
-#                  footer = NULL
-#                )
-#              } else if ( isTRUE(all_equal(old_fish_encounter_vals, new_fish_encounter_vals)) ) {
-#                modalDialog (
-#                  size = "m",
-#                  title = "Warning",
-#                  paste("Please change at least one value!"),
-#                  easyClose = TRUE,
-#                  footer = NULL
-#                )
-#              } else {
-#                modalDialog (
-#                  size = 'l',
-#                  title = "Update fish data to these new values?",
-#                  fluidPage (
-#                    DT::DTOutput("fish_encounter_modal_update_vals"),
-#                    br(),
-#                    br(),
-#                    actionButton("save_fish_enc_edits","Save changes")
-#                  ),
-#                  easyClose = TRUE,
-#                  footer = NULL
-#                )
-#              }
-#     ))
-# })
-#
-# # Update DB and reload DT
-# observeEvent(input$save_fish_enc_edits, {
-#   fish_encounter_update(fish_encounter_edit())
-#   removeModal()
-#   post_fish_encounter_edit_vals = get_fish_encounter(pool, selected_survey_event_data()$survey_event_id) %>%
-#     select(fish_encounter_dt, fish_count, fish_status, sex, maturity, origin,
-#            cwt_status, clip_status, fish_behavior, prev_counted, created_dt,
-#            created_by, modified_dt, modified_by)
-#   replaceData(fish_encounter_dt_proxy, post_fish_encounter_edit_vals)
-# })
-#
-# #========================================================
-# # Delete operations: reactives, observers and modals
-# #========================================================
-#
-# # Generate values to show in modal
-# output$fish_encounter_modal_delete_vals = renderDT({
-#   fish_encounter_modal_del_id = selected_fish_encounter_data()$fish_encounter_id
-#   fish_encounter_modal_del_vals = get_fish_encounter(pool, selected_survey_event_data()$survey_event_id) %>%
-#     filter(fish_encounter_id == fish_encounter_modal_del_id) %>%
-#     select(fish_encounter_dt, fish_count, fish_status, sex, maturity, origin, cwt_status,
-#            clip_status, fish_behavior, prev_counted)
-#   # Generate table
-#   datatable(fish_encounter_modal_del_vals,
-#             rownames = FALSE,
-#             options = list(dom = 't',
-#                            scrollX = T,
-#                            ordering = FALSE,
-#                            initComplete = JS(
-#                              "function(settings, json) {",
-#                              "$(this.api().table().header()).css({'background-color': '#9eb3d6'});",
-#                              "}")))
-# })
-#
-# observeEvent(input$fish_enc_delete, {
-#   fish_encounter_id = selected_fish_encounter_data()$fish_encounter_id
-#   fish_encounter_dependencies = get_fish_encounter_dependencies(fish_encounter_id)
-#   table_names = paste0(names(fish_encounter_dependencies), collapse = ", ")
-#   showModal(
-#     tags$div(id = "fish_encounter_delete_modal",
-#              if ( ncol(fish_encounter_dependencies) > 0L ) {
-#                modalDialog (
-#                  size = "m",
-#                  title = "Warning",
-#                  glue("Please delete associated fish data from the following tables first: {table_names}"),
-#                  easyClose = TRUE,
-#                  footer = NULL
-#                )
-#              } else {
-#                modalDialog (
-#                  size = 'l',
-#                  title = "Are you sure you want to delete this fish data from the database?",
-#                  fluidPage (
-#                    DT::DTOutput("fish_encounter_modal_delete_vals"),
-#                    br(),
-#                    br(),
-#                    actionButton("delete_fish_encounter", "Delete fish data")
-#                  ),
-#                  easyClose = TRUE,
-#                  footer = NULL
-#                )
-#              }
-#     ))
-# })
-#
-# # Update DB and reload DT
-# observeEvent(input$delete_fish_encounter, {
-#   fish_encounter_delete(selected_fish_encounter_data())
-#   removeModal()
-#   fish_encounters_after_delete = get_fish_encounter(pool, selected_survey_event_data()$survey_event_id) %>%
-#     select(fish_encounter_dt, fish_count, fish_status, sex, maturity, origin,
-#            cwt_status, clip_status, fish_behavior, prev_counted, created_dt,
-#            created_by, modified_dt, modified_by)
-#   replaceData(fish_encounter_dt_proxy, fish_encounters_after_delete)
-# })
+#========================================================
+# Edit operations: reactives, observers and modals
+#========================================================
+
+# Create reactive to collect input values for insert actions
+individual_fish_edit = reactive({
+  # Fish condition
+  fish_condition_input = input$fish_condition_select
+  if ( fish_condition_input == "" ) {
+    fish_condition_type_id = NA
+  } else {
+    fish_condition_vals = get_fish_condition(pool)
+    fish_condition_type_id = fish_condition_vals %>%
+      filter(fish_condition == fish_condition_input) %>%
+      pull(fish_condition_type_id)
+  }
+  # Fish trauma
+  fish_trauma_input = input$fish_trauma_select
+  if ( fish_trauma_input == "" ) {
+    fish_trauma_type_id = NA
+  } else {
+    fish_trauma_vals = get_fish_trauma(pool)
+    fish_trauma_type_id = fish_trauma_vals %>%
+      filter(fish_trauma == fish_trauma_input) %>%
+      pull(fish_trauma_type_id)
+  }
+  # Gill condition
+  gill_condition_input = input$gill_condition_select
+  if ( gill_condition_input == "" ) {
+    gill_condition_type_id = NA
+  } else {
+    gill_condition_vals = get_gill_condition(pool)
+    gill_condition_type_id = gill_condition_vals %>%
+      filter(gill_condition == gill_condition_input) %>%
+      pull(gill_condition_type_id)
+  }
+  # Spawn condition
+  spawn_condition_input = input$spawn_condition_select
+  if ( spawn_condition_input == "" ) {
+    spawn_condition_type_id = NA
+  } else {
+    spawn_condition_vals = get_spawn_condition(pool)
+    spawn_condition_type_id = spawn_condition_vals %>%
+      filter(spawn_condition == spawn_condition_input) %>%
+      pull(spawn_condition_type_id)
+  }
+  # Age code
+  age_code_input = input$age_code_select
+  if ( age_code_input == "" ) {
+    age_code_id = NA
+  } else {
+    age_code_vals = get_age_code(pool)
+    age_code_id = age_code_vals %>%
+      filter(age_code == age_code_input) %>%
+      pull(age_code_id)
+  }
+  # CWT result
+  cwt_result_input = input$cwt_result_select
+  if ( cwt_result_input == "" ) {
+    cwt_result_type_id = NA
+  } else {
+    cwt_result_vals = get_cwt_result(pool)
+    cwt_result_type_id = cwt_result_vals %>%
+      filter(cwt_result == cwt_result_input) %>%
+      pull(cwt_result_type_id)
+  }
+  edit_individual_fish = tibble(individual_fish_id = selected_individual_fish_data()$individual_fish_id,
+                                fish_condition = fish_condition_input,
+                                fish_condition_type_id = fish_condition_type_id,
+                                fish_trauma = fish_trauma_input,
+                                fish_trauma_type_id = fish_trauma_type_id,
+                                gill_condition = gill_condition_input,
+                                gill_condition_type_id = gill_condition_type_id,
+                                spawn_condition = spawn_condition_input,
+                                spawn_condition_type_id = spawn_condition_type_id,
+                                fish_sample_num = input$fish_sample_num_input,
+                                scale_card_num = input$scale_card_num_input,
+                                scale_position_num = input$scale_position_num_input,
+                                age_code = age_code_input,
+                                age_code_id = age_code_id,
+                                snout_sample_num = input$snout_sample_num_input,
+                                cwt_tag_code = input$cwt_tag_code_input,
+                                cwt_result = cwt_result_input,
+                                cwt_result_type_id = cwt_result_type_id,
+                                genetic_sample_num = input$genetic_sample_num_input,
+                                otolith_sample_num = input$otolith_sample_num_input,
+                                pct_eggs = input$pct_eggs_input,
+                                eggs_gram = input$eggs_gram_input,
+                                eggs_number = input$eggs_number_input,
+                                fish_comment = input$ind_fish_comment_input,
+                                created_dt = lubridate::with_tz(Sys.time(), "UTC"),
+                                created_by = Sys.getenv("USERNAME"))
+  return(edit_individual_fish)
+})
+
+# Generate values to show in modal
+output$individual_fish_modal_update_vals = renderDT({
+  individual_fish_modal_up_vals = individual_fish_edit() %>%
+    select(fish_condition, fish_trauma, gill_condition, spawn_condition, fish_sample_num, scale_card_num,
+           scale_position_num, age_code, snout_sample_num, cwt_tag_code, cwt_result, genetic_sample_num,
+           otolith_sample_num, pct_eggs, eggs_gram, eggs_number, fish_comment)
+  # Generate table
+  datatable(individual_fish_modal_up_vals,
+            rownames = FALSE,
+            options = list(dom = 't',
+                           scrollX = T,
+                           ordering = FALSE,
+                           initComplete = JS(
+                             "function(settings, json) {",
+                             "$(this.api().table().header()).css({'background-color': '#9eb3d6'});",
+                             "}")))
+})
+
+output$chk_edit = renderText({
+  old_individual_fish_vals = selected_individual_fish_data() %>%
+    select(fish_condition, fish_trauma, gill_condition, spawn_condition, fish_sample_num, scale_card_num,
+           scale_position_num, age_code, snout_sample_num, cwt_tag_code, cwt_result, genetic_sample_num,
+           otolith_sample_num, pct_eggs, eggs_gram, eggs_number, fish_comment)
+  new_individual_fish_vals = individual_fish_edit() %>%
+    #mutate(fish_count = as.integer(fish_count)) %>%
+    select(fish_condition, fish_trauma, gill_condition, spawn_condition, fish_sample_num, scale_card_num,
+           scale_position_num, age_code, snout_sample_num, cwt_tag_code, cwt_result, genetic_sample_num,
+           otolith_sample_num, pct_eggs, eggs_gram, eggs_number, fish_comment)
+  print(old_individual_fish_vals)
+  print(new_individual_fish_vals)
+  return(unlist(old_individual_fish_vals))
+})
+
+observeEvent(input$ind_fish_edit, {
+  old_individual_fish_vals = selected_individual_fish_data() %>%
+    select(fish_condition, fish_trauma, gill_condition, spawn_condition, fish_sample_num, scale_card_num,
+           scale_position_num, age_code, snout_sample_num, cwt_tag_code, cwt_result, genetic_sample_num,
+           otolith_sample_num, pct_eggs, eggs_gram, eggs_number, fish_comment)
+  new_individual_fish_vals = individual_fish_edit() %>%
+    #mutate(fish_count = as.integer(fish_count)) %>%
+    select(fish_condition, fish_trauma, gill_condition, spawn_condition, fish_sample_num, scale_card_num,
+           scale_position_num, age_code, snout_sample_num, cwt_tag_code, cwt_result, genetic_sample_num,
+           otolith_sample_num, pct_eggs, eggs_gram, eggs_number, fish_comment)
+  showModal(
+    tags$div(id = "fish_encounter_update_modal",
+             if ( !length(input$fish_encounters_rows_selected) == 1 ) {
+               modalDialog (
+                 size = "m",
+                 title = "Warning",
+                 paste("Please select a row to edit!"),
+                 easyClose = TRUE,
+                 footer = NULL
+               )
+             } else if ( isTRUE(all_equal(old_individual_fish_vals, new_individual_fish_vals)) ) {
+               modalDialog (
+                 size = "m",
+                 title = "Warning",
+                 paste("Please change at least one value!"),
+                 easyClose = TRUE,
+                 footer = NULL
+               )
+             } else {
+               modalDialog (
+                 size = 'l',
+                 title = "Update individual fish data to these new values?",
+                 fluidPage (
+                   DT::DTOutput("individual_fish_modal_update_vals"),
+                   br(),
+                   br(),
+                   actionButton("save_ind_fish_edits","Save changes")
+                 ),
+                 easyClose = TRUE,
+                 footer = NULL
+               )
+             }
+    ))
+})
+
+# Update DB and reload DT
+observeEvent(input$save_ind_fish_edits, {
+  individual_fish_update(individual_fish_edit())
+  removeModal()
+  post_individual_fish_edit_vals = get_individual_fish(pool, selected_fish_encounter_data()$fish_encounter_id) %>%
+    select(fish_condition, fish_trauma, gill_condition, spawn_condition, fish_sample_num, scale_card_num,
+           scale_position_num, age_code, snout_sample_num, cwt_tag_code, cwt_result, genetic_sample_num,
+           otolith_sample_num, pct_eggs, eggs_gram, eggs_number, fish_comment, created_dt, created_by,
+           modified_dt, modified_by)
+  replaceData(individual_fish_dt_proxy, post_individual_fish_edit_vals)
+})
+
+#========================================================
+# Delete operations: reactives, observers and modals
+#========================================================
+
+# Generate values to show in modal
+output$individual_fish_modal_delete_vals = renderDT({
+  individual_fish_modal_del_id = selected_individual_fish_data()$individual_fish_id
+  individual_fish_modal_del_vals = get_individual_fish(pool, selected_fish_encounter_data()$fish_encounter_id) %>%
+    filter(individual_fish_id == individual_fish_modal_del_id) %>%
+    select(fish_condition, fish_trauma, gill_condition, spawn_condition, fish_sample_num, scale_card_num,
+           scale_position_num, age_code, snout_sample_num, cwt_tag_code, cwt_result, genetic_sample_num,
+           otolith_sample_num, pct_eggs, eggs_gram, eggs_number, fish_comment)
+  # Generate table
+  datatable(individual_fish_modal_del_vals,
+            rownames = FALSE,
+            options = list(dom = 't',
+                           scrollX = T,
+                           ordering = FALSE,
+                           initComplete = JS(
+                             "function(settings, json) {",
+                             "$(this.api().table().header()).css({'background-color': '#9eb3d6'});",
+                             "}")))
+})
+
+observeEvent(input$ind_fish_delete, {
+  individual_fish_id = selected_individual_fish_data()$individual_fish_id
+  individual_fish_dependencies = get_individual_fish_dependencies(individual_fish_id)
+  table_names = paste0(names(individual_fish_dependencies), collapse = ", ")
+  showModal(
+    tags$div(id = "individual_fish_delete_modal",
+             if ( ncol(individual_fish_dependencies) > 0L ) {
+               modalDialog (
+                 size = "m",
+                 title = "Warning",
+                 glue("Please delete associated individual fish data from the following tables first: {table_names}"),
+                 easyClose = TRUE,
+                 footer = NULL
+               )
+             } else {
+               modalDialog (
+                 size = 'l',
+                 title = "Are you sure you want to delete this set of individual fish data from the database?",
+                 fluidPage (
+                   DT::DTOutput("individual_fish_modal_delete_vals"),
+                   br(),
+                   br(),
+                   actionButton("delete_individual_fish", "Delete data")
+                 ),
+                 easyClose = TRUE,
+                 footer = NULL
+               )
+             }
+    ))
+})
+
+# Update DB and reload DT
+observeEvent(input$delete_individual_fish, {
+  individual_fish_delete(selected_individual_fish_data())
+  removeModal()
+  individual_fish_after_delete = get_individual_fish(pool, selected_fish_encounter_data()$fish_encounter_id) %>%
+    select(fish_condition, fish_trauma, gill_condition, spawn_condition, fish_sample_num, scale_card_num,
+           scale_position_num, age_code, snout_sample_num, cwt_tag_code, cwt_result, genetic_sample_num,
+           otolith_sample_num, pct_eggs, eggs_gram, eggs_number, fish_comment, created_dt, created_by,
+           modified_dt, modified_by)
+  replaceData(individual_fish_dt_proxy, individual_fish_after_delete)
+})

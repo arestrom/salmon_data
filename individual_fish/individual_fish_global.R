@@ -125,7 +125,7 @@ get_cwt_result = function(pool) {
 }
 
 #========================================================
-# Insert callback.....NEED TO ADD eggs stuff....currently missing !!!!!!!!!!!!!!!!!!
+# Insert callback
 #========================================================
 
 # Define the insert callback
@@ -139,6 +139,9 @@ individual_fish_insert = function(new_individual_fish_values) {
   spawn_condition_type_id = new_insert_values$spawn_condition_type_id
   cwt_result_type_id = new_insert_values$cwt_result_type_id
   age_code_id = new_insert_values$age_code_id
+  percent_eggs_retained = new_insert_values$pct_eggs
+  eggs_retained_gram = new_insert_values$eggs_gram
+  eggs_retained_number = new_insert_values$eggs_number
   fish_sample_number = new_insert_values$fish_sample_num
   scale_sample_card_number = new_insert_values$scale_card_num
   scale_sample_position_number = new_insert_values$scale_position_num
@@ -159,6 +162,9 @@ individual_fish_insert = function(new_individual_fish_values) {
                   "spawn_condition_type_id, ",
                   "cwt_result_type_id, ",
                   "age_code_id, ",
+                  "percent_eggs_retained, ",
+                  "eggs_retained_gram, ",
+                  "eggs_retained_number, ",
                   "fish_sample_number, ",
                   "scale_sample_card_number, ",
                   "scale_sample_position_number, ",
@@ -169,10 +175,11 @@ individual_fish_insert = function(new_individual_fish_values) {
                   "comment_text, ",
                   "created_by) ",
                   "VALUES (",
-                  "?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)"))
+                  "?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)"))
   dbBind(insert_result, list(fish_encounter_id, fish_condition_type_id, fish_trauma_type_id,
                              gill_condition_type_id, spawn_condition_type_id, cwt_result_type_id,
-                             age_code_id, fish_sample_number, scale_sample_card_number,
+                             age_code_id, percent_eggs_retained, eggs_retained_gram,
+                             eggs_retained_number, fish_sample_number, scale_sample_card_number,
                              scale_sample_position_number, cwt_snout_sample_number, cwt_tag_code,
                              genetic_sample_number, otolith_sample_number, comment_text, created_by))
   dbGetRowsAffected(insert_result)
@@ -180,94 +187,95 @@ individual_fish_insert = function(new_individual_fish_values) {
   poolReturn(con)
 }
 
-# #========================================================
-# # Edit update callback
-# #========================================================
-#
-# # Define update callback
-# fish_encounter_update = function(fish_encounter_edit_values) {
-#   edit_values = fish_encounter_edit_values
-#   # Pull out data
-#   fish_encounter_id = edit_values$fish_encounter_id
-#   fish_status_id = edit_values$fish_status_id
-#   sex_id =  edit_values$sex_id
-#   maturity_id = edit_values$maturity_id
-#   origin_id = edit_values$origin_id
-#   cwt_detection_status_id = edit_values$cwt_detection_status_id
-#   adipose_clip_status_id = edit_values$adipose_clip_status_id
-#   fish_behavior_type_id = edit_values$fish_behavior_type_id
-#   fish_encounter_datetime = edit_values$fish_encounter_time
-#   fish_count = edit_values$fish_count
-#   previously_counted_indicator = edit_values$previously_counted_indicator
-#   if ( is.na(previously_counted_indicator) ) { previously_counted_indicator = FALSE }
-#   mod_dt = lubridate::with_tz(Sys.time(), "UTC")
-#   mod_by = Sys.getenv("USERNAME")
-#   # Checkout a connection
-#   con = poolCheckout(pool)
-#   update_result = dbSendStatement(
-#     con, glue_sql("UPDATE fish_encounter SET ",
-#                   "fish_status_id = ?, ",
-#                   "sex_id = ?, ",
-#                   "maturity_id = ?, ",
-#                   "origin_id = ?, ",
-#                   "cwt_detection_status_id = ?, ",
-#                   "adipose_clip_status_id = ?, ",
-#                   "fish_behavior_type_id = ?, ",
-#                   "fish_encounter_datetime = ?, ",
-#                   "fish_count = ?, ",
-#                   "previously_counted_indicator = ?, ",
-#                   "modified_datetime = ?, ",
-#                   "modified_by = ? ",
-#                   "where fish_encounter_id = ?"))
-#   dbBind(update_result, list(fish_status_id, sex_id, maturity_id, origin_id,
-#                              cwt_detection_status_id, adipose_clip_status_id,
-#                              fish_behavior_type_id, fish_encounter_datetime,
-#                              fish_count, previously_counted_indicator,
-#                              mod_dt, mod_by, fish_encounter_id))
-#   dbGetRowsAffected(update_result)
-#   dbClearResult(update_result)
-#   poolReturn(con)
-# }
-#
-# #========================================================
-# # Identify species dependencies prior to delete
-# #========================================================
-#
-# # Identify fish_encounter dependencies prior to delete
-# get_fish_encounter_dependencies = function(fish_encounter_id) {
-#   qry = glue("select ",
-#              "count(ind.individual_fish_id) as individual_fish, ",
-#              "count(fc.fish_capture_event_id) as fish_capture_event, ",
-#              "count(fm.fish_mark_id) as fish_mark ",
-#              "from fish_encounter as fe ",
-#              "left join individual_fish as ind on fe.fish_encounter_id = ind.fish_encounter_id ",
-#              "left join fish_capture_event as fc on fe.fish_encounter_id = fc.fish_encounter_id ",
-#              "left join fish_mark as fm on fe.fish_encounter_id = fm.fish_encounter_id ",
-#              "where fe.fish_encounter_id = '{fish_encounter_id}'")
-#   con = poolCheckout(pool)
-#   fish_encounter_dependents = DBI::dbGetQuery(pool, qry)
-#   has_entries = function(x) any(x > 0L)
-#   fish_encounter_dependents = fish_encounter_dependents %>%
-#     select_if(has_entries)
-#   return(fish_encounter_dependents)
-# }
-#
-# #========================================================
-# # Delete callback
-# #========================================================
-#
-# # Define delete callback
-# fish_encounter_delete = function(delete_values) {
-#   fish_encounter_id = delete_values$fish_encounter_id
-#   con = poolCheckout(pool)
-#   delete_result = dbSendStatement(
-#     con, glue_sql("DELETE FROM fish_encounter WHERE fish_encounter_id = ?"))
-#   dbBind(delete_result, list(fish_encounter_id))
-#   dbGetRowsAffected(delete_result)
-#   dbClearResult(delete_result)
-#   poolReturn(con)
-# }
-#
+#========================================================
+# Edit update callback
+#========================================================
+
+# Define update callback
+individual_fish_update = function(individual_fish_edit_values) {
+  edit_values = individual_fish_edit_values
+  # Pull out data
+  individual_fish_id = edit_values$individual_fish_id
+  fish_condition_type_id = edit_values$fish_condition_type_id
+  fish_trauma_type_id =  edit_values$fish_trauma_type_id
+  gill_condition_type_id = edit_values$gill_condition_type_id
+  spawn_condition_type_id = edit_values$spawn_condition_type_id
+  cwt_result_type_id = edit_values$cwt_result_type_id
+  age_code_id = edit_values$age_code_id
+  percent_eggs_retained = edit_values$pct_eggs
+  eggs_retained_gram = edit_values$eggs_gram
+  eggs_retained_number = edit_values$eggs_number
+  fish_sample_number = edit_values$fish_sample_num
+  scale_sample_card_number = edit_values$scale_card_num
+  scale_sample_position_number = edit_values$scale_position_num
+  cwt_snout_sample_number = edit_values$snout_sample_num
+  cwt_tag_code = edit_values$cwt_tag_code
+  genetic_sample_number = edit_values$genetic_sample_num
+  otolith_sample_number = edit_values$otolith_sample_num
+  comment_text = edit_values$fish_comment
+  mod_dt = lubridate::with_tz(Sys.time(), "UTC")
+  mod_by = Sys.getenv("USERNAME")
+  # Checkout a connection
+  con = poolCheckout(pool)
+  update_result = dbSendStatement(
+    con, glue_sql("UPDATE individual_fish SET ",    STOPPED HERE !!!!!!!!!!!!!!!!!!!!!!
+                  "fish_status_id = ?, ",
+                  "sex_id = ?, ",
+                  "maturity_id = ?, ",
+                  "origin_id = ?, ",
+                  "cwt_detection_status_id = ?, ",
+                  "adipose_clip_status_id = ?, ",
+                  "fish_behavior_type_id = ?, ",
+                  "fish_encounter_datetime = ?, ",
+                  "fish_count = ?, ",
+                  "previously_counted_indicator = ?, ",
+                  "modified_datetime = ?, ",
+                  "modified_by = ? ",
+                  "where individual_fish_id = ?"))
+  dbBind(update_result, list(fish_status_id, sex_id, maturity_id, origin_id,
+                             cwt_detection_status_id, adipose_clip_status_id,
+                             fish_behavior_type_id, fish_encounter_datetime,
+                             fish_count, previously_counted_indicator,
+                             mod_dt, mod_by, individual_fish_id))
+  dbGetRowsAffected(update_result)
+  dbClearResult(update_result)
+  poolReturn(con)
+}
+
+#========================================================
+# Identify individual fish dependencies prior to delete
+#========================================================
+
+# Identify fish_encounter dependencies prior to delete
+get_individual_fish_dependencies = function(individual_fish_id) {
+  qry = glue("select ",
+             "count(fl.fish_length_measurement_id) as fish_length_measurement ",
+             "from fish_length_measurement as fl ",
+             "where fl.individual_fish_id = '{individual_fish_id}'")
+  con = poolCheckout(pool)
+  individual_fish_dependents = DBI::dbGetQuery(pool, qry)
+  has_entries = function(x) any(x > 0L)
+  individual_fish_dependents = individual_fish_dependents %>%
+    select_if(has_entries)
+  return(individual_fish_dependents)
+}
+
+#========================================================
+# Delete callback
+#========================================================
+
+# Define delete callback
+individual_fish_delete = function(delete_values) {
+  individual_fish_id = delete_values$individual_fish_id
+  con = poolCheckout(pool)
+  delete_result = dbSendStatement(
+    con, glue_sql("DELETE FROM individual_fish WHERE individual_fish_id = ?"))
+  dbBind(delete_result, list(individual_fish_id))
+  dbGetRowsAffected(delete_result)
+  dbClearResult(delete_result)
+  poolReturn(con)
+}
+
 
 
 

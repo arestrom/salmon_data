@@ -468,6 +468,7 @@ output$fish_encounter_modal_update_vals = renderDT({
                              "}")))
 })
 
+# Edit modal
 observeEvent(input$fish_enc_edit, {
   old_fish_encounter_vals = selected_fish_encounter_data() %>%
     mutate(fish_encounter_dt = format(fish_encounter_time, "%H:%M")) %>%
