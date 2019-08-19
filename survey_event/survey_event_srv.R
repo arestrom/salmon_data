@@ -435,6 +435,7 @@ observeEvent(input$survey_event_delete, {
   survey_event_id = selected_survey_event_data()$survey_event_id
   survey_event_dependencies = get_survey_event_dependencies(survey_event_id)
   table_names = paste0(names(survey_event_dependencies), collapse = ", ")
+  table_names = gsub("survey_event", "species_data", table_names)
   showModal(
     tags$div(id = "survey_event_delete_modal",
              if ( ncol(survey_event_dependencies) > 0L ) {
