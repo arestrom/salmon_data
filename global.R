@@ -92,7 +92,6 @@ wria_list = readRDS("www/wria_list.rds")
 wria_polys = readRDS("www/wria_polys.rds")
 
 # Read content definitions of data-entry screens
-# Server code is sourced in server.R  !!!!!!
 source("dashboard/dash_header.R")
 source("dashboard/dash_leftsidebar.R")
 source("dashboard/dash_rightsidebar.R")
@@ -113,6 +112,8 @@ source("individual_fish/individual_fish_ui.R")
 source("individual_fish/individual_fish_global.R")
 source("fish_length_measurement/fish_length_measurement_ui.R")
 source("fish_length_measurement/fish_length_measurement_global.R")
+source("redd_encounter/redd_encounter_ui.R")
+source("redd_encounter/redd_encounter_global.R")
 
 # Define globals ================================================================
 

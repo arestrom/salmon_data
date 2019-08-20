@@ -14,6 +14,7 @@ server = function(input, output, session) {
   source("fish_encounter/fish_encounter_srv.R", local = TRUE)
   source("individual_fish/individual_fish_srv.R", local = TRUE)
   source("fish_length_measurement/fish_length_measurement_srv.R", local = TRUE)
+  source("redd_encounter/redd_encounter_srv.R", local = TRUE)
 
   # # close the R session when Chrome closes
   # session$onSessionEnded(function() {

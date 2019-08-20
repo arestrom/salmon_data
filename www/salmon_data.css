@@ -286,6 +286,33 @@
   border-radius: 4px;
 }
 
+#redd_enc_add {
+  color: #e6ebef;
+  background-color:#231651;
+  font-size: 11px;
+  font-weight: 300;
+  line-height: 1.3;
+  border-radius: 4px;
+}
+
+#redd_enc_edit {
+  color: #e6ebef;
+  background-color:#4d1566;
+  font-size: 11px;
+  font-weight: 300;
+  line-height: 1.3;
+  border-radius: 4px;
+}
+
+#redd_enc_delete {
+  color: #e6ebef;
+  background-color:#590b25;
+  font-size: 11px;
+  font-weight: 300;
+  line-height: 1.3;
+  border-radius: 4px;
+}
+
 .shiny-input-container {
   display: inline-block;
   vertical-align:top;
@@ -1289,6 +1316,53 @@
 #length_measurement_delete_modal .btn-default {
   color: #e6ebef;
   background-color:#590b25;
+  font-size: 11px;
+  font-weight: 300;
+  line-height: 1.3;
+}
+
+#redd_encounter_time_select {
+  display: inline-block;
+  vertical-align:top;
+  min-height: 28px;
+  height: 28px;
+  font-size: 11px;
+  line-height: 1.0;
+}
+
+#redd_encounter_insert_modal .modal-lg {
+  width: 900px;
+}
+
+#redd_encounter_insert_modal .modal-content {
+  border-radius: 6px;
+}
+
+#redd_encounter_insert_modal .modal-header {
+  background-color: #becc4a;
+  border-top-left-radius: 6px;
+  border-top-right-radius: 6px;
+}
+
+#redd_encounter_insert_modal .modal-body {
+  background-color: #ffffff;
+  border-bottom-left-radius: 6px;
+  border-bottom-right-radius: 6px;
+  border-top-left-radius: 6px;
+  border-top-right-radius: 6px;
+  font-size: 14px;
+  font-weight: bold;
+}
+
+#redd_encounter_insert_modal .modal-title {
+  font-size: 15px;
+  font-weight: bold;
+  color: #191c13;
+}
+
+#redd_encounter_insert_modal .btn-default {
+  color: #e6ebef;
+  background-color:#231651;
   font-size: 11px;
   font-weight: 300;
   line-height: 1.3;

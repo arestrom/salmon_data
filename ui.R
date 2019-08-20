@@ -89,9 +89,8 @@ ui = dashboardPagePlus(
         collapsible = TRUE,
         solidHeader = FALSE,
         collapsed = TRUE,
-        #redd_encounter_content,
+        redd_encounter_ui,
         width = 12,
-        "This is some text",
         accordion(
           accordionItem(
             id = 7,
@@ -99,7 +98,7 @@ ui = dashboardPagePlus(
             color = "purple",
             collapsed = TRUE,
             "This is some text"
-            #individual_redd_ui
+            #redd_location_ui
           ),
           accordionItem(
             id = 8,
@@ -107,7 +106,7 @@ ui = dashboardPagePlus(
             color = "purple",
             collapsed = TRUE,
             "This is some text"
-            #redd_location_ui
+            #individual_redd_ui
           ),
           accordionItem(
             id = 9,
