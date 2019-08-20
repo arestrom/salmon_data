@@ -15,6 +15,6 @@ fish_length_measurement_ui = tags$div(
   br(),
   br(),
   br(),
-  DT::DTOutput("length_measurements")
-  #verbatimTextOutput("chk_edit")
+  DT::DTOutput("length_measurements"),
+  verbatimTextOutput("chk_edit")
 )

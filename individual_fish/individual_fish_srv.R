@@ -506,8 +506,8 @@ observeEvent(input$ind_fish_edit, {
     mutate(eggs_gram = as.numeric(eggs_gram)) %>%
     mutate(eggs_number = as.integer(eggs_number))
   showModal(
-    tags$div(id = "fish_encounter_update_modal",
-             if ( !length(input$fish_encounters_rows_selected) == 1 ) {
+    tags$div(id = "individual_fish_update_modal",
+             if ( !length(input$individual_fishes_rows_selected) == 1 ) {
                modalDialog (
                  size = "m",
                  title = "Warning",

@@ -48,9 +48,9 @@ length_measurement_dt_proxy = dataTableProxy(outputId = "length_measurements")
 # Create reactive to collect input values for update and delete actions
 selected_length_measurement_data = reactive({
   req(input$length_measurements_rows_selected)
-  lengh_measurement_data = get_length_measurements(pool, selected_individual_fish_data()$individual_fish_id)
+  length_measurement_data = get_length_measurements(pool, selected_individual_fish_data()$individual_fish_id)
   length_measurement_row = input$length_measurements_rows_selected
-  selected_length_measurement = tibble(fish_length_mesaurement_id = length_measurement_data$individual_fish_id[length_measurement_row],
+  selected_length_measurement = tibble(fish_length_measurement_id = length_measurement_data$fish_length_measurement_id[length_measurement_row],
                                        length_type = length_measurement_data$length_type[length_measurement_row],
                                        length_cm = length_measurement_data$length_cm[length_measurement_row],
                                        created_date = length_measurement_data$created_date[length_measurement_row],
@@ -67,8 +67,8 @@ selected_length_measurement_data = reactive({
 # Update all survey input values to values in selected row
 observeEvent(input$length_measurements_rows_selected, {
   slmdat = selected_length_measurement_data()
-  updateSelectizeInput(session, "length_type_select", selected = sindat$fish_condition)
-  updateNumericInput(session, "length_cm_input", value = sindat$pct_eggs)
+  updateSelectizeInput(session, "length_type_select", selected = slmdat$length_type)
+  updateNumericInput(session, "length_cm_input", value = slmdat$length_cm)
 })
 
 #========================================================
@@ -117,6 +117,8 @@ output$lengh_measurement_modal_insert_vals = renderDT({
 # Modal for new intents. Need a dup flag, multiple rows possible
 observeEvent(input$fish_meas_add, {
   new_length_measurement_vals = length_measurement_create()
+  existing_length_measurement_vals = get_length_measurements(pool, selected_individual_fish_data()$individual_fish_id)
+  dup_length_type_flag = dup_length_type(new_length_measurement_vals, existing_length_measurement_vals)
   showModal(
     # Verify required fields have data...none can be blank
     tags$div(id = "length_measurement_insert_modal",
@@ -130,7 +132,7 @@ observeEvent(input$fish_meas_add, {
                  footer = NULL
                )
                # Write to DB
-             } else if ( dup_length_flag == TRUE ) {
+             } else if ( dup_length_type_flag == TRUE ) {
                modalDialog (
                  size = "m",
                  title = "Warning",
@@ -141,7 +143,7 @@ observeEvent(input$fish_meas_add, {
                # Write to DB
              } else {
                modalDialog (
-                 size = 'l',
+                 size = 'm',
                  title = glue("Insert new length data to the database?"),
                  fluidPage (
                    DT::DTOutput("lengh_measurement_modal_insert_vals"),
@@ -156,308 +158,182 @@ observeEvent(input$fish_meas_add, {
     ))
 })
 
-
-# STOPPED HERE !!!!!!!!!!!!!!!!!!!!!!!!!!   Need dup_length_flag in global
-
-
-
 # Reactive to hold values actually inserted
-individual_fish_insert_vals = reactive({
-  new_ind_fish_values = individual_fish_create() %>%
-    select(fish_encounter_id, fish_condition_type_id, fish_trauma_type_id, gill_condition_type_id,
-           spawn_condition_type_id, cwt_result_type_id, age_code_id, pct_eggs, eggs_gram, eggs_number,
-           fish_sample_num, scale_card_num, scale_position_num, snout_sample_num, cwt_tag_code,
-           genetic_sample_num, otolith_sample_num, fish_comment, created_by)
-  return(new_ind_fish_values)
+length_measurement_insert_vals = reactive({
+  new_length_meas_values = length_measurement_create() %>%
+    select(individual_fish_id, fish_length_measurement_type_id, length_cm, created_by)
+  return(new_length_meas_values)
 })
 
-# # Update DB and reload DT
-# observeEvent(input$insert_individual_fish, {
-#   individual_fish_insert(individual_fish_insert_vals())
-#   removeModal()
-#   post_individual_fish_insert_vals = get_individual_fish(pool, selected_fish_encounter_data()$fish_encounter_id) %>%
-#     select(fish_condition, fish_trauma, gill_condition, spawn_condition, fish_sample_num, scale_card_num,
-#            scale_position_num, age_code, snout_sample_num, cwt_tag_code, cwt_result, genetic_sample_num,
-#            otolith_sample_num, pct_eggs, eggs_gram, eggs_number, fish_comment, created_dt, created_by,
-#            modified_dt, modified_by)
-#   replaceData(individual_fish_dt_proxy, post_individual_fish_insert_vals)
+# Update DB and reload DT
+observeEvent(input$insert_length_measurements, {
+  length_measurement_insert(length_measurement_insert_vals())
+  removeModal()
+  post_length_measurement_insert_vals = get_length_measurements(pool, selected_individual_fish_data()$individual_fish_id) %>%
+    select(length_type, length_cm, created_dt, created_by, modified_dt, modified_by)
+  replaceData(length_measurement_dt_proxy, post_length_measurement_insert_vals)
+})
+
+#========================================================
+# Edit operations: reactives, observers and modals
+#========================================================
+
+# Create reactive to collect input values for insert actions
+length_measurement_edit = reactive({
+  # length_type
+  length_type_input = input$length_type_select
+  if ( length_type_input == "" ) {
+    fish_length_measurement_type_id = NA
+  } else {
+    fish_length_vals = get_length_type(pool)
+    fish_length_measurement_type_id = fish_length_vals %>%
+      filter(length_type == length_type_input) %>%
+      pull(fish_length_measurement_type_id)
+  }
+  edit_length_measurement = tibble(fish_length_measurement_id = selected_length_measurement_data()$fish_length_measurement_id,
+                                   length_type = length_type_input,
+                                   fish_length_measurement_type_id = fish_length_measurement_type_id,
+                                   length_cm = input$length_cm_input,
+                                   created_dt = lubridate::with_tz(Sys.time(), "UTC"),
+                                   created_by = Sys.getenv("USERNAME"))
+  return(edit_length_measurement)
+})
+
+# Generate values to show in modal
+output$length_measurement_modal_update_vals = renderDT({
+  length_measurement_modal_up_vals = length_measurement_edit() %>%
+    select(length_type, length_cm)
+  # Generate table
+  datatable(length_measurement_modal_up_vals,
+            rownames = FALSE,
+            options = list(dom = 't',
+                           scrollX = T,
+                           ordering = FALSE,
+                           initComplete = JS(
+                             "function(settings, json) {",
+                             "$(this.api().table().header()).css({'background-color': '#9eb3d6'});",
+                             "}")))
+})
+
+# output$chk_edit = renderText({
+#   old_length_measurement_vals = selected_length_measurement_data() %>%
+#     select(length_type, length_cm) %>%
+#     mutate(length_cm = as.numeric(length_cm))
+#   new_length_measurement_vals = length_measurement_edit() %>%
+#     select(length_type, length_cm) %>%
+#     mutate(length_cm = as.numeric(length_cm))
+#   print(old_length_measurement_vals)
+#   print(new_length_measurement_vals)
+#   return(unlist(old_length_measurement_vals))
 # })
-#
-# #========================================================
-# # Edit operations: reactives, observers and modals
-# #========================================================
-#
-# # Create reactive to collect input values for insert actions
-# individual_fish_edit = reactive({
-#   # Fish condition
-#   fish_condition_input = input$fish_condition_select
-#   if ( fish_condition_input == "" ) {
-#     fish_condition_type_id = NA
-#   } else {
-#     fish_condition_vals = get_fish_condition(pool)
-#     fish_condition_type_id = fish_condition_vals %>%
-#       filter(fish_condition == fish_condition_input) %>%
-#       pull(fish_condition_type_id)
-#   }
-#   # Fish trauma
-#   fish_trauma_input = input$fish_trauma_select
-#   if ( fish_trauma_input == "" ) {
-#     fish_trauma_type_id = NA
-#   } else {
-#     fish_trauma_vals = get_fish_trauma(pool)
-#     fish_trauma_type_id = fish_trauma_vals %>%
-#       filter(fish_trauma == fish_trauma_input) %>%
-#       pull(fish_trauma_type_id)
-#   }
-#   # Gill condition
-#   gill_condition_input = input$gill_condition_select
-#   if ( gill_condition_input == "" ) {
-#     gill_condition_type_id = NA
-#   } else {
-#     gill_condition_vals = get_gill_condition(pool)
-#     gill_condition_type_id = gill_condition_vals %>%
-#       filter(gill_condition == gill_condition_input) %>%
-#       pull(gill_condition_type_id)
-#   }
-#   # Spawn condition
-#   spawn_condition_input = input$spawn_condition_select
-#   if ( spawn_condition_input == "" ) {
-#     spawn_condition_type_id = NA
-#   } else {
-#     spawn_condition_vals = get_spawn_condition(pool)
-#     spawn_condition_type_id = spawn_condition_vals %>%
-#       filter(spawn_condition == spawn_condition_input) %>%
-#       pull(spawn_condition_type_id)
-#   }
-#   # Age code
-#   age_code_input = input$age_code_select
-#   if ( age_code_input == "" ) {
-#     age_code_id = NA
-#   } else {
-#     age_code_vals = get_age_code(pool)
-#     age_code_id = age_code_vals %>%
-#       filter(age_code == age_code_input) %>%
-#       pull(age_code_id)
-#   }
-#   # CWT result
-#   cwt_result_input = input$cwt_result_select
-#   if ( cwt_result_input == "" ) {
-#     cwt_result_type_id = NA
-#   } else {
-#     cwt_result_vals = get_cwt_result(pool)
-#     cwt_result_type_id = cwt_result_vals %>%
-#       filter(cwt_result == cwt_result_input) %>%
-#       pull(cwt_result_type_id)
-#   }
-#   edit_individual_fish = tibble(individual_fish_id = selected_individual_fish_data()$individual_fish_id,
-#                                 fish_condition = fish_condition_input,
-#                                 fish_condition_type_id = fish_condition_type_id,
-#                                 fish_trauma = fish_trauma_input,
-#                                 fish_trauma_type_id = fish_trauma_type_id,
-#                                 gill_condition = gill_condition_input,
-#                                 gill_condition_type_id = gill_condition_type_id,
-#                                 spawn_condition = spawn_condition_input,
-#                                 spawn_condition_type_id = spawn_condition_type_id,
-#                                 fish_sample_num = input$fish_sample_num_input,
-#                                 scale_card_num = input$scale_card_num_input,
-#                                 scale_position_num = input$scale_position_num_input,
-#                                 age_code = age_code_input,
-#                                 age_code_id = age_code_id,
-#                                 snout_sample_num = input$snout_sample_num_input,
-#                                 cwt_tag_code = input$cwt_tag_code_input,
-#                                 cwt_result = cwt_result_input,
-#                                 cwt_result_type_id = cwt_result_type_id,
-#                                 genetic_sample_num = input$genetic_sample_num_input,
-#                                 otolith_sample_num = input$otolith_sample_num_input,
-#                                 pct_eggs = input$pct_eggs_input,
-#                                 eggs_gram = input$eggs_gram_input,
-#                                 eggs_number = input$eggs_number_input,
-#                                 fish_comment = input$ind_fish_comment_input,
-#                                 created_dt = lubridate::with_tz(Sys.time(), "UTC"),
-#                                 created_by = Sys.getenv("USERNAME"))
-#   edit_individual_fish = edit_individual_fish %>%
-#     mutate(fish_sample_num = if_else(is.na(fish_sample_num) | fish_sample_num == "", NA_character_, fish_sample_num)) %>%
-#     mutate(scale_card_num = if_else(is.na(scale_card_num) | scale_card_num == "", NA_character_, scale_card_num)) %>%
-#     mutate(scale_position_num = if_else(is.na(scale_position_num) | scale_position_num == "", NA_character_, scale_position_num)) %>%
-#     mutate(snout_sample_num = if_else(is.na(snout_sample_num) | snout_sample_num == "", NA_character_, snout_sample_num)) %>%
-#     mutate(cwt_tag_code = if_else(is.na(cwt_tag_code) | cwt_tag_code == "", NA_character_, cwt_tag_code)) %>%
-#     mutate(genetic_sample_num = if_else(is.na(genetic_sample_num) | genetic_sample_num == "", NA_character_, genetic_sample_num)) %>%
-#     mutate(otolith_sample_num = if_else(is.na(otolith_sample_num) | otolith_sample_num == "", NA_character_, otolith_sample_num)) %>%
-#     mutate(fish_comment = if_else(is.na(fish_comment) | fish_comment == "", NA_character_, fish_comment))
-#   return(edit_individual_fish)
-# })
-#
-# # Generate values to show in modal
-# output$individual_fish_modal_update_vals = renderDT({
-#   individual_fish_modal_up_vals = individual_fish_edit() %>%
-#     select(fish_condition, fish_trauma, gill_condition, spawn_condition, fish_sample_num, scale_card_num,
-#            scale_position_num, age_code, snout_sample_num, cwt_tag_code, cwt_result, genetic_sample_num,
-#            otolith_sample_num, pct_eggs, eggs_gram, eggs_number, fish_comment)
-#   # Generate table
-#   datatable(individual_fish_modal_up_vals,
-#             rownames = FALSE,
-#             options = list(dom = 't',
-#                            scrollX = T,
-#                            ordering = FALSE,
-#                            initComplete = JS(
-#                              "function(settings, json) {",
-#                              "$(this.api().table().header()).css({'background-color': '#9eb3d6'});",
-#                              "}")))
-# })
-#
-# # output$chk_edit = renderText({
-# #   old_individual_fish_vals = selected_individual_fish_data() %>%
-# #     select(fish_condition, fish_trauma, gill_condition, spawn_condition, fish_sample_num, scale_card_num,
-# #            scale_position_num, age_code, snout_sample_num, cwt_tag_code, cwt_result, genetic_sample_num,
-# #            otolith_sample_num, pct_eggs, eggs_gram, eggs_number, fish_comment)
-# #   old_individual_fish_vals[] = lapply(old_individual_fish_vals, remisc::set_empty)
-# #   old_individual_fish_vals = old_individual_fish_vals %>%
-# #     mutate(pct_eggs = as.integer(pct_eggs)) %>%
-# #     mutate(eggs_gram = as.numeric(eggs_gram)) %>%
-# #     mutate(eggs_number = as.integer(eggs_number))
-# #   new_individual_fish_vals = individual_fish_edit() %>%
-# #     select(fish_condition, fish_trauma, gill_condition, spawn_condition, fish_sample_num, scale_card_num,
-# #            scale_position_num, age_code, snout_sample_num, cwt_tag_code, cwt_result, genetic_sample_num,
-# #            otolith_sample_num, pct_eggs, eggs_gram, eggs_number, fish_comment)
-# #   new_individual_fish_vals[] = lapply(new_individual_fish_vals, remisc::set_empty)
-# #   new_individual_fish_vals = new_individual_fish_vals %>%
-# #     mutate(pct_eggs = as.integer(pct_eggs)) %>%
-# #     mutate(eggs_gram = as.numeric(eggs_gram)) %>%
-# #     mutate(eggs_number = as.integer(eggs_number))
-# #   print(old_individual_fish_vals)
-# #   print(new_individual_fish_vals)
-# #   return(unlist(old_individual_fish_vals))
-# # })
-#
-# observeEvent(input$ind_fish_edit, {
-#   old_individual_fish_vals = selected_individual_fish_data() %>%
-#     select(fish_condition, fish_trauma, gill_condition, spawn_condition, fish_sample_num, scale_card_num,
-#            scale_position_num, age_code, snout_sample_num, cwt_tag_code, cwt_result, genetic_sample_num,
-#            otolith_sample_num, pct_eggs, eggs_gram, eggs_number, fish_comment)
-#   old_individual_fish_vals[] = lapply(old_individual_fish_vals, remisc::set_empty)
-#   old_individual_fish_vals = old_individual_fish_vals %>%
-#     mutate(pct_eggs = as.integer(pct_eggs)) %>%
-#     mutate(eggs_gram = as.numeric(eggs_gram)) %>%
-#     mutate(eggs_number = as.integer(eggs_number))
-#   new_individual_fish_vals = individual_fish_edit() %>%
-#     select(fish_condition, fish_trauma, gill_condition, spawn_condition, fish_sample_num, scale_card_num,
-#            scale_position_num, age_code, snout_sample_num, cwt_tag_code, cwt_result, genetic_sample_num,
-#            otolith_sample_num, pct_eggs, eggs_gram, eggs_number, fish_comment)
-#   new_individual_fish_vals[] = lapply(new_individual_fish_vals, remisc::set_empty)
-#   new_individual_fish_vals = new_individual_fish_vals %>%
-#     mutate(pct_eggs = as.integer(pct_eggs)) %>%
-#     mutate(eggs_gram = as.numeric(eggs_gram)) %>%
-#     mutate(eggs_number = as.integer(eggs_number))
-#   showModal(
-#     tags$div(id = "fish_encounter_update_modal",
-#              if ( !length(input$fish_encounters_rows_selected) == 1 ) {
-#                modalDialog (
-#                  size = "m",
-#                  title = "Warning",
-#                  paste("Please select a row to edit!"),
-#                  easyClose = TRUE,
-#                  footer = NULL
-#                )
-#              } else if ( isTRUE(all_equal(old_individual_fish_vals, new_individual_fish_vals)) ) {
-#                modalDialog (
-#                  size = "m",
-#                  title = "Warning",
-#                  paste("Please change at least one value!"),
-#                  easyClose = TRUE,
-#                  footer = NULL
-#                )
-#              } else {
-#                modalDialog (
-#                  size = 'l',
-#                  title = "Update individual fish data to these new values?",
-#                  fluidPage (
-#                    DT::DTOutput("individual_fish_modal_update_vals"),
-#                    br(),
-#                    br(),
-#                    actionButton("save_ind_fish_edits","Save changes")
-#                  ),
-#                  easyClose = TRUE,
-#                  footer = NULL
-#                )
-#              }
-#     ))
-# })
-#
-# # Update DB and reload DT
-# observeEvent(input$save_ind_fish_edits, {
-#   individual_fish_update(individual_fish_edit())
-#   removeModal()
-#   post_individual_fish_edit_vals = get_individual_fish(pool, selected_fish_encounter_data()$fish_encounter_id) %>%
-#     select(fish_condition, fish_trauma, gill_condition, spawn_condition, fish_sample_num, scale_card_num,
-#            scale_position_num, age_code, snout_sample_num, cwt_tag_code, cwt_result, genetic_sample_num,
-#            otolith_sample_num, pct_eggs, eggs_gram, eggs_number, fish_comment, created_dt, created_by,
-#            modified_dt, modified_by)
-#   replaceData(individual_fish_dt_proxy, post_individual_fish_edit_vals)
-# })
-#
-# #========================================================
-# # Delete operations: reactives, observers and modals
-# #========================================================
-#
-# # Generate values to show in modal
-# output$individual_fish_modal_delete_vals = renderDT({
-#   individual_fish_modal_del_id = selected_individual_fish_data()$individual_fish_id
-#   individual_fish_modal_del_vals = get_individual_fish(pool, selected_fish_encounter_data()$fish_encounter_id) %>%
-#     filter(individual_fish_id == individual_fish_modal_del_id) %>%
-#     select(fish_condition, fish_trauma, gill_condition, spawn_condition, fish_sample_num, scale_card_num,
-#            scale_position_num, age_code, snout_sample_num, cwt_tag_code, cwt_result, genetic_sample_num,
-#            otolith_sample_num, pct_eggs, eggs_gram, eggs_number, fish_comment)
-#   # Generate table
-#   datatable(individual_fish_modal_del_vals,
-#             rownames = FALSE,
-#             options = list(dom = 't',
-#                            scrollX = T,
-#                            ordering = FALSE,
-#                            initComplete = JS(
-#                              "function(settings, json) {",
-#                              "$(this.api().table().header()).css({'background-color': '#9eb3d6'});",
-#                              "}")))
-# })
-#
-# observeEvent(input$ind_fish_delete, {
-#   individual_fish_id = selected_individual_fish_data()$individual_fish_id
-#   individual_fish_dependencies = get_individual_fish_dependencies(individual_fish_id)
-#   table_names = paste0(names(individual_fish_dependencies), collapse = ", ")
-#   showModal(
-#     tags$div(id = "individual_fish_delete_modal",
-#              if ( ncol(individual_fish_dependencies) > 0L ) {
-#                modalDialog (
-#                  size = "m",
-#                  title = "Warning",
-#                  glue("Please delete associated individual fish data from the following tables first: {table_names}"),
-#                  easyClose = TRUE,
-#                  footer = NULL
-#                )
-#              } else {
-#                modalDialog (
-#                  size = 'l',
-#                  title = "Are you sure you want to delete this set of individual fish data from the database?",
-#                  fluidPage (
-#                    DT::DTOutput("individual_fish_modal_delete_vals"),
-#                    br(),
-#                    br(),
-#                    actionButton("delete_individual_fish", "Delete data")
-#                  ),
-#                  easyClose = TRUE,
-#                  footer = NULL
-#                )
-#              }
-#     ))
-# })
-#
-# # Update DB and reload DT
-# observeEvent(input$delete_individual_fish, {
-#   individual_fish_delete(selected_individual_fish_data())
-#   removeModal()
-#   individual_fish_after_delete = get_individual_fish(pool, selected_fish_encounter_data()$fish_encounter_id) %>%
-#     select(fish_condition, fish_trauma, gill_condition, spawn_condition, fish_sample_num, scale_card_num,
-#            scale_position_num, age_code, snout_sample_num, cwt_tag_code, cwt_result, genetic_sample_num,
-#            otolith_sample_num, pct_eggs, eggs_gram, eggs_number, fish_comment, created_dt, created_by,
-#            modified_dt, modified_by)
-#   replaceData(individual_fish_dt_proxy, individual_fish_after_delete)
-# })
+
+observeEvent(input$fish_meas_edit, {
+  old_length_measurement_vals = selected_length_measurement_data() %>%
+    select(length_type, length_cm) %>%
+    mutate(length_cm = as.numeric(length_cm))
+  new_length_measurement_vals = length_measurement_edit() %>%
+    select(length_type, length_cm) %>%
+    mutate(length_cm = as.numeric(length_cm))
+  showModal(
+    tags$div(id = "length_measurement_update_modal",
+             if ( !length(input$length_measurements_rows_selected) == 1 ) {
+               modalDialog (
+                 size = "m",
+                 title = "Warning",
+                 paste("Please select a row to edit!"),
+                 easyClose = TRUE,
+                 footer = NULL
+               )
+             } else if ( isTRUE(all_equal(old_length_measurement_vals, new_length_measurement_vals)) ) {
+               modalDialog (
+                 size = "m",
+                 title = "Warning",
+                 paste("Please change at least one value!"),
+                 easyClose = TRUE,
+                 footer = NULL
+               )
+             } else {
+               modalDialog (
+                 size = 'm',
+                 title = "Update fish length data to these new values?",
+                 fluidPage (
+                   DT::DTOutput("length_measurement_modal_update_vals"),
+                   br(),
+                   br(),
+                   actionButton("save_length_meas_edits","Save changes")
+                 ),
+                 easyClose = TRUE,
+                 footer = NULL
+               )
+             }
+    ))
+})
+
+# Update DB and reload DT
+observeEvent(input$save_length_meas_edits, {
+  length_measurement_update(length_measurement_edit())
+  removeModal()
+  post_length_measurement_edit_vals = get_length_measurements(pool, selected_individual_fish_data()$individual_fish_id) %>%
+    select(length_type, length_cm, created_dt, created_by, modified_dt, modified_by)
+  replaceData(length_measurement_dt_proxy, post_length_measurement_edit_vals)
+})
+
+#========================================================
+# Delete operations: reactives, observers and modals
+#========================================================
+
+# Generate values to show in modal
+output$length_measurement_modal_delete_vals = renderDT({
+  length_measurement_modal_del_id = selected_length_measurement_data()$fish_length_measurement_id
+  length_measurement_modal_del_vals = get_length_measurements(pool, selected_individual_fish_data()$individual_fish_id) %>%
+    filter(fish_length_measurement_id == length_measurement_modal_del_id) %>%
+    select(length_type, length_cm)
+  # Generate table
+  datatable(length_measurement_modal_del_vals,
+            rownames = FALSE,
+            options = list(dom = 't',
+                           scrollX = T,
+                           ordering = FALSE,
+                           initComplete = JS(
+                             "function(settings, json) {",
+                             "$(this.api().table().header()).css({'background-color': '#9eb3d6'});",
+                             "}")))
+})
+
+observeEvent(input$fish_meas_delete, {
+  fish_length_measurement_id = selected_length_measurement_data()$fish_length_measurement_id
+  showModal(
+    tags$div(id = "length_measurement_delete_modal",
+             if ( length(fish_length_measurement_id) == 0 ) {
+               modalDialog (
+                 size = "m",
+                 title = "Warning",
+                 glue("Please select a row to delete!"),
+                 easyClose = TRUE,
+                 footer = NULL
+               )
+             } else {
+               modalDialog (
+                 size = 'm',
+                 title = "Are you sure you want to delete this set of length data from the database?",
+                 fluidPage (
+                   DT::DTOutput("length_measurement_modal_delete_vals"),
+                   br(),
+                   br(),
+                   actionButton("delete_length_measurements", "Delete data")
+                 ),
+                 easyClose = TRUE,
+                 footer = NULL
+               )
+             }
+    ))
+})
+
+# Update DB and reload DT
+observeEvent(input$delete_length_measurements, {
+  length_measurement_delete(selected_length_measurement_data())
+  removeModal()
+  length_measurement_after_delete = get_length_measurements(pool, selected_individual_fish_data()$individual_fish_id) %>%
+    select(length_type, length_cm, created_dt, created_by, modified_dt, modified_by)
+  replaceData(length_measurement_dt_proxy, length_measurement_after_delete)
+})
