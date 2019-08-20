@@ -76,11 +76,10 @@ ui = dashboardPagePlus(
           ),
           accordionItem(
             id = 6,
-            title = "Fish measurement",
+            title = "Fish length measurement",
             color = "purple",
             collapsed = TRUE,
-            "This is some text"
-            #fish_measurement_ui
+            fish_length_measurement_ui
           )
         )
       ),

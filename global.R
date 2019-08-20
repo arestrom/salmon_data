@@ -111,6 +111,8 @@ source("fish_encounter/fish_encounter_ui.R")
 source("fish_encounter/fish_encounter_global.R")
 source("individual_fish/individual_fish_ui.R")
 source("individual_fish/individual_fish_global.R")
+source("fish_length_measurement/fish_length_measurement_ui.R")
+source("fish_length_measurement/fish_length_measurement_global.R")
 
 # Define globals ================================================================
 

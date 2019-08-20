@@ -313,4 +313,3 @@ individual_fish_delete = function(delete_values) {
 
 
 
-
