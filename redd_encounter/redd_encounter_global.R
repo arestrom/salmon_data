@@ -145,44 +145,44 @@ redd_encounter_insert = function(new_redd_encounter_values) {
 #   poolReturn(con)
 # }
 #
-# #========================================================
-# # Identify species dependencies prior to delete
-# #========================================================
-#
-# # Identify fish_encounter dependencies prior to delete
-# get_fish_encounter_dependencies = function(fish_encounter_id) {
-#   qry = glue("select ",
-#              "count(ind.individual_fish_id) as individual_fish, ",
-#              "count(fc.fish_capture_event_id) as fish_capture_event, ",
-#              "count(fm.fish_mark_id) as fish_mark ",
-#              "from fish_encounter as fe ",
-#              "left join individual_fish as ind on fe.fish_encounter_id = ind.fish_encounter_id ",
-#              "left join fish_capture_event as fc on fe.fish_encounter_id = fc.fish_encounter_id ",
-#              "left join fish_mark as fm on fe.fish_encounter_id = fm.fish_encounter_id ",
-#              "where fe.fish_encounter_id = '{fish_encounter_id}'")
-#   con = poolCheckout(pool)
-#   fish_encounter_dependents = DBI::dbGetQuery(pool, qry)
-#   has_entries = function(x) any(x > 0L)
-#   fish_encounter_dependents = fish_encounter_dependents %>%
-#     select_if(has_entries)
-#   return(fish_encounter_dependents)
-# }
-#
-# #========================================================
-# # Delete callback
-# #========================================================
-#
-# # Define delete callback
-# fish_encounter_delete = function(delete_values) {
-#   fish_encounter_id = delete_values$fish_encounter_id
-#   con = poolCheckout(pool)
-#   delete_result = dbSendStatement(
-#     con, glue_sql("DELETE FROM fish_encounter WHERE fish_encounter_id = ?"))
-#   dbBind(delete_result, list(fish_encounter_id))
-#   dbGetRowsAffected(delete_result)
-#   dbClearResult(delete_result)
-#   poolReturn(con)
-# }
+#========================================================
+# Identify redd encounter dependencies prior to delete
+#========================================================
+
+# Identify fish_encounter dependencies prior to delete
+get_redd_encounter_dependencies = function(redd_encounter_id) {
+  qry = glue("select ",
+             "count(ir.individual_redd_id) as individual_redd, ",
+             "count(rc.redd_confidence_id) as redd_confidence, ",
+             "count(rs.redd_substrate_id) as redd_substrate ",
+             "from redd_encounter as rd ",
+             "left join individual_redd as ir on rd.redd_encounter_id = ir.redd_encounter_id ",
+             "left join redd_confidence as rc on rd.redd_encounter_id = rc.redd_encounter_id ",
+             "left join redd_substrate as rs on rd.redd_encounter_id = rs.redd_encounter_id ",
+             "where rd.redd_encounter_id = '{redd_encounter_id}'")
+  con = poolCheckout(pool)
+  redd_encounter_dependents = DBI::dbGetQuery(pool, qry)
+  has_entries = function(x) any(x > 0L)
+  redd_encounter_dependents = redd_encounter_dependents %>%
+    select_if(has_entries)
+  return(redd_encounter_dependents)
+}
+
+#========================================================
+# Delete callback
+#========================================================
+
+# Define delete callback
+redd_encounter_delete = function(delete_values) {
+  redd_encounter_id = delete_values$redd_encounter_id
+  con = poolCheckout(pool)
+  delete_result = dbSendStatement(
+    con, glue_sql("DELETE FROM redd_encounter WHERE redd_encounter_id = ?"))
+  dbBind(delete_result, list(redd_encounter_id))
+  dbGetRowsAffected(delete_result)
+  dbClearResult(delete_result)
+  poolReturn(con)
+}
 
 
 

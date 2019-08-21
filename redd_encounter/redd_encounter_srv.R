@@ -140,6 +140,7 @@ redd_encounter_create = reactive({
 # Generate values to show in modal
 output$redd_encounter_modal_insert_vals = renderDT({
   redd_encounter_modal_in_vals = redd_encounter_create() %>%
+    mutate(redd_encounter_dt = format(redd_encounter_dt, "%H:%M")) %>%
     select(redd_encounter_dt, redd_status, redd_count,
            redd_name, redd_comment)
   # Generate table
@@ -413,68 +414,66 @@ observeEvent(input$insert_redd_encounter, {
 #            created_by, modified_dt, modified_by)
 #   replaceData(fish_encounter_dt_proxy, post_fish_encounter_edit_vals)
 # })
-#
-# #========================================================
-# # Delete operations: reactives, observers and modals
-# #========================================================
-#
-# # Generate values to show in modal
-# output$fish_encounter_modal_delete_vals = renderDT({
-#   fish_encounter_modal_del_id = selected_fish_encounter_data()$fish_encounter_id
-#   fish_encounter_modal_del_vals = get_fish_encounter(pool, selected_survey_event_data()$survey_event_id) %>%
-#     filter(fish_encounter_id == fish_encounter_modal_del_id) %>%
-#     select(fish_encounter_dt, fish_count, fish_status, sex, maturity, origin, cwt_status,
-#            clip_status, fish_behavior, prev_counted)
-#   # Generate table
-#   datatable(fish_encounter_modal_del_vals,
-#             rownames = FALSE,
-#             options = list(dom = 't',
-#                            scrollX = T,
-#                            ordering = FALSE,
-#                            initComplete = JS(
-#                              "function(settings, json) {",
-#                              "$(this.api().table().header()).css({'background-color': '#9eb3d6'});",
-#                              "}")))
-# })
-#
-# observeEvent(input$fish_enc_delete, {
-#   fish_encounter_id = selected_fish_encounter_data()$fish_encounter_id
-#   fish_encounter_dependencies = get_fish_encounter_dependencies(fish_encounter_id)
-#   table_names = paste0(names(fish_encounter_dependencies), collapse = ", ")
-#   showModal(
-#     tags$div(id = "fish_encounter_delete_modal",
-#              if ( ncol(fish_encounter_dependencies) > 0L ) {
-#                modalDialog (
-#                  size = "m",
-#                  title = "Warning",
-#                  glue("Please delete associated fish data from the following tables first: {table_names}"),
-#                  easyClose = TRUE,
-#                  footer = NULL
-#                )
-#              } else {
-#                modalDialog (
-#                  size = 'l',
-#                  title = "Are you sure you want to delete this fish data from the database?",
-#                  fluidPage (
-#                    DT::DTOutput("fish_encounter_modal_delete_vals"),
-#                    br(),
-#                    br(),
-#                    actionButton("delete_fish_encounter", "Delete fish data")
-#                  ),
-#                  easyClose = TRUE,
-#                  footer = NULL
-#                )
-#              }
-#     ))
-# })
-#
-# # Update DB and reload DT
-# observeEvent(input$delete_fish_encounter, {
-#   fish_encounter_delete(selected_fish_encounter_data())
-#   removeModal()
-#   fish_encounters_after_delete = get_fish_encounter(pool, selected_survey_event_data()$survey_event_id) %>%
-#     select(fish_encounter_dt, fish_count, fish_status, sex, maturity, origin,
-#            cwt_status, clip_status, fish_behavior, prev_counted, created_dt,
-#            created_by, modified_dt, modified_by)
-#   replaceData(fish_encounter_dt_proxy, fish_encounters_after_delete)
-# })
+
+#========================================================
+# Delete operations: reactives, observers and modals
+#========================================================
+
+# Generate values to show in modal
+output$redd_encounter_modal_delete_vals = renderDT({
+  redd_encounter_modal_del_id = selected_redd_encounter_data()$redd_encounter_id
+  redd_encounter_modal_del_vals = get_redd_encounter(pool, selected_survey_event_data()$survey_event_id) %>%
+    filter(redd_encounter_id == redd_encounter_modal_del_id) %>%
+    select(redd_encounter_dt, redd_status, redd_count, redd_name, redd_comment)
+  # Generate table
+  datatable(redd_encounter_modal_del_vals,
+            rownames = FALSE,
+            options = list(dom = 't',
+                           scrollX = T,
+                           ordering = FALSE,
+                           initComplete = JS(
+                             "function(settings, json) {",
+                             "$(this.api().table().header()).css({'background-color': '#9eb3d6'});",
+                             "}")))
+})
+
+observeEvent(input$redd_enc_delete, {
+  redd_encounter_id = selected_redd_encounter_data()$redd_encounter_id
+  redd_encounter_dependencies = get_redd_encounter_dependencies(redd_encounter_id)
+  table_names = paste0(names(redd_encounter_dependencies), collapse = ", ")
+  showModal(
+    tags$div(id = "redd_encounter_delete_modal",
+             if ( ncol(redd_encounter_dependencies) > 0L ) {
+               modalDialog (
+                 size = "m",
+                 title = "Warning",
+                 glue("Please delete associated redd data from the following tables first: {table_names}"),
+                 easyClose = TRUE,
+                 footer = NULL
+               )
+             } else {
+               modalDialog (
+                 size = 'l',
+                 title = "Are you sure you want to delete this redd data from the database?",
+                 fluidPage (
+                   DT::DTOutput("redd_encounter_modal_delete_vals"),
+                   br(),
+                   br(),
+                   actionButton("delete_redd_encounter", "Delete redd data")
+                 ),
+                 easyClose = TRUE,
+                 footer = NULL
+               )
+             }
+    ))
+})
+
+# Update DB and reload DT
+observeEvent(input$delete_redd_encounter, {
+  redd_encounter_delete(selected_redd_encounter_data())
+  removeModal()
+  redd_encounters_after_delete = get_redd_encounter(pool, selected_survey_event_data()$survey_event_id) %>%
+    select(redd_encounter_dt, redd_status, redd_count, redd_name, redd_comment,
+           created_dt, created_by, modified_dt, modified_by)
+  replaceData(redd_encounter_dt_proxy, redd_encounters_after_delete)
+})

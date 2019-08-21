@@ -253,6 +253,7 @@ fish_encounter_create = reactive({
 # Generate values to show in modal
 output$fish_encounter_modal_insert_vals = renderDT({
   fish_encounter_modal_in_vals = fish_encounter_create() %>%
+    mutate(fish_encounter_dt = format(fish_encounter_dt, "%H:%M")) %>%
     select(fish_encounter_dt, fish_count, fish_status, sex, maturity, origin, cwt_status,
            clip_status, fish_behavior, prev_counted)
   # Generate table
