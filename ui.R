@@ -97,8 +97,7 @@ ui = dashboardPagePlus(
             title = "Redd location",
             color = "purple",
             collapsed = TRUE,
-            "This is some text"
-            #redd_location_ui
+            redd_location_ui
           ),
           accordionItem(
             id = 8,

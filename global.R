@@ -114,6 +114,7 @@ source("fish_length_measurement/fish_length_measurement_ui.R")
 source("fish_length_measurement/fish_length_measurement_global.R")
 source("redd_encounter/redd_encounter_ui.R")
 source("redd_encounter/redd_encounter_global.R")
+source("redd_location/redd_location_ui.R")
 
 # Define globals ================================================================
 
