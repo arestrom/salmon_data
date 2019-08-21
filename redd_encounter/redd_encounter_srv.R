@@ -284,20 +284,22 @@ output$redd_encounter_modal_update_vals = renderDT({
                              "}")))
 })
 
-output$chk_redd_edit = renderText({
-  old_redd_encounter_vals = selected_redd_encounter_data() %>%
-    mutate(redd_encounter_dt = format(redd_encounter_time, "%H:%M")) %>%
-    select(redd_encounter_dt, redd_status, redd_count,
-           redd_name, redd_comment)
-  new_redd_encounter_vals = redd_encounter_edit() %>%
-    mutate(redd_count = as.integer(redd_count)) %>%
-    mutate(redd_encounter_dt = format(redd_encounter_dt, "%H:%M")) %>%
-    select(redd_encounter_dt, redd_status, redd_count,
-           redd_name, redd_comment)
-  print(old_redd_encounter_vals)
-  print(new_redd_encounter_vals)
-  return(unlist(old_redd_encounter_vals))
-})
+# output$chk_redd_edit = renderText({
+#   old_redd_encounter_vals = selected_redd_encounter_data() %>%
+#     mutate(redd_encounter_dt = format(redd_encounter_time, "%H:%M")) %>%
+#     select(redd_encounter_dt, redd_status, redd_count,
+#            redd_name, redd_comment)
+#   old_redd_encounter_vals[] = lapply(old_redd_encounter_vals, remisc::set_na)
+#   new_redd_encounter_vals = redd_encounter_edit() %>%
+#     mutate(redd_count = as.integer(redd_count)) %>%
+#     mutate(redd_encounter_dt = format(redd_encounter_dt, "%H:%M")) %>%
+#     select(redd_encounter_dt, redd_status, redd_count,
+#            redd_name, redd_comment)
+#   new_redd_encounter_vals[] = lapply(new_redd_encounter_vals, remisc::set_na)
+#   print(old_redd_encounter_vals)
+#   print(new_redd_encounter_vals)
+#   return(unlist(old_redd_encounter_vals))
+# })
 
 # Edit modal
 observeEvent(input$redd_enc_edit, {
@@ -305,11 +307,13 @@ observeEvent(input$redd_enc_edit, {
     mutate(redd_encounter_dt = format(redd_encounter_time, "%H:%M")) %>%
     select(redd_encounter_dt, redd_status, redd_count,
            redd_name, redd_comment)
+  old_redd_encounter_vals[] = lapply(old_redd_encounter_vals, remisc::set_na)
   new_redd_encounter_vals = redd_encounter_edit() %>%
     mutate(redd_count = as.integer(redd_count)) %>%
     mutate(redd_encounter_dt = format(redd_encounter_dt, "%H:%M")) %>%
     select(redd_encounter_dt, redd_status, redd_count,
            redd_name, redd_comment)
+  new_redd_encounter_vals[] = lapply(new_redd_encounter_vals, remisc::set_na)
   showModal(
     tags$div(id = "redd_encounter_update_modal",
              if ( !length(input$redd_encounters_rows_selected) == 1 ) {
