@@ -211,209 +211,149 @@ observeEvent(input$insert_redd_encounter, {
   replaceData(redd_encounter_dt_proxy, post_redd_encounter_insert_vals)
 })
 
-# #========================================================
-# # Edit operations: reactives, observers and modals
-# #========================================================
-#
-# # Create reactive to collect input values for insert actions
-# fish_encounter_edit = reactive({
-#   # Survey date
-#   survey_date = selected_survey_data()$survey_date
-#   # # Location....NA for now
-#   # fish_location_input = NA
-#   # Fish encounter time
-#   fish_encounter_dt = format(input$fish_encounter_time_select)
-#   if (nchar(fish_encounter_dt) < 16) { fish_encounter_dt = NA_character_ }
-#   fish_encounter_dt = as.POSIXct(fish_encounter_dt)
-#   # Fish status
-#   fish_status_input = input$fish_status_select
-#   if ( fish_status_input == "" ) {
-#     fish_status_id = NA
-#   } else {
-#     fish_status_vals = get_fish_status(pool)
-#     fish_status_id = fish_status_vals %>%
-#       filter(fish_status == fish_status_input) %>%
-#       pull(fish_status_id)
-#   }
-#   # Sex
-#   sex_input = input$sex_select
-#   if ( sex_input == "" ) {
-#     sex_id = NA
-#   } else {
-#     sex_vals = get_sex(pool)
-#     sex_id = sex_vals %>%
-#       filter(sex == sex_input) %>%
-#       pull(sex_id)
-#   }
-#   # Maturity
-#   maturity_input = input$maturity_select
-#   if ( maturity_input == "" ) {
-#     maturity_id = NA
-#   } else {
-#     maturity_vals = get_maturity(pool)
-#     maturity_id = maturity_vals %>%
-#       filter(maturity == maturity_input) %>%
-#       pull(maturity_id)
-#   }
-#   # Origin
-#   origin_input = input$origin_select
-#   if ( origin_input == "" ) {
-#     origin_id = NA
-#   } else {
-#     origin_vals = get_origin(pool)
-#     origin_id = origin_vals %>%
-#       filter(origin == origin_input) %>%
-#       pull(origin_id)
-#   }
-#   # CWT status
-#   cwt_status_input = input$cwt_status_select
-#   if ( cwt_status_input == "" ) {
-#     cwt_status_id = NA
-#   } else {
-#     cwt_status_vals = get_cwt_status(pool)
-#     cwt_detection_status_id = cwt_status_vals %>%
-#       filter(cwt_status == cwt_status_input) %>%
-#       pull(cwt_detection_status_id)
-#   }
-#   # Clip status
-#   clip_status_input = input$clip_status_select
-#   if ( clip_status_input == "" ) {
-#     clip_status_id = NA
-#   } else {
-#     clip_status_vals = get_clip_status(pool)
-#     adipose_clip_status_id = clip_status_vals %>%
-#       filter(clip_status == clip_status_input) %>%
-#       pull(adipose_clip_status_id)
-#   }
-#   # Fish behavior
-#   fish_behavior_input = input$fish_behavior_select
-#   if ( fish_behavior_input == "" ) {
-#     fish_behavior_id = NA
-#   } else {
-#     fish_behavior_vals = get_fish_behavior(pool)
-#     fish_behavior_type_id = fish_behavior_vals %>%
-#       filter(fish_behavior == fish_behavior_input) %>%
-#       pull(fish_behavior_type_id)
-#   }
-#   edit_fish_encounter = tibble(fish_encounter_id = selected_fish_encounter_data()$fish_encounter_id,
-#                                #fish_location_id = fish_location_input,
-#                                # Need to create full datetime values below modal
-#                                fish_encounter_dt = fish_encounter_dt,
-#                                fish_count = input$fish_count_input,
-#                                fish_status = fish_status_input,
-#                                fish_status_id = fish_status_id,
-#                                sex = sex_input,
-#                                sex_id = sex_id,
-#                                maturity = maturity_input,
-#                                maturity_id = maturity_id,
-#                                origin = origin_input,
-#                                origin_id = origin_id,
-#                                cwt_status = cwt_status_input,
-#                                cwt_detection_status_id = cwt_detection_status_id,
-#                                clip_status = clip_status_input,
-#                                adipose_clip_status_id = adipose_clip_status_id,
-#                                fish_behavior = fish_behavior_input,
-#                                fish_behavior_type_id = fish_behavior_type_id,
-#                                # Need to create prev_counted boolean below
-#                                prev_counted = input$prev_counted_select,
-#                                modified_dt = lubridate::with_tz(Sys.time(), "UTC"),
-#                                modified_by = Sys.getenv("USERNAME"))
-#   edit_fish_encounter = edit_fish_encounter %>%
-#     mutate(fish_encounter_time = case_when(
-#       is.na(fish_encounter_dt) ~ as.POSIXct(NA),
-#       !is.na(fish_encounter_dt) ~ as.POSIXct(paste0(format(survey_date), " ", format(fish_encounter_dt, "%H:%M")),
-#                                         tz = "America/Los_Angeles"))) %>%
-#     mutate(fish_encounter_time = with_tz(fish_encounter_time, tzone = "UTC")) %>%
-#     mutate(previously_counted_indicator = if_else(prev_counted == "No", FALSE, TRUE))
-#   return(edit_fish_encounter)
-# })
-#
-# # Generate values to show in modal
-# output$fish_encounter_modal_update_vals = renderDT({
-#   fish_encounter_modal_up_vals = fish_encounter_edit() %>%
-#     mutate(fish_encounter_dt = format(fish_encounter_dt, "%H:%M")) %>%
-#     select(fish_encounter_dt, fish_count, fish_status, sex, maturity, origin, cwt_status,
-#            clip_status, fish_behavior, prev_counted)
-#   # Generate table
-#   datatable(fish_encounter_modal_up_vals,
-#             rownames = FALSE,
-#             options = list(dom = 't',
-#                            scrollX = T,
-#                            ordering = FALSE,
-#                            initComplete = JS(
-#                              "function(settings, json) {",
-#                              "$(this.api().table().header()).css({'background-color': '#9eb3d6'});",
-#                              "}")))
-# })
-#
-# # output$chk_edit = renderText({
-# #   old_length_measurement_vals = selected_length_measurement_data() %>%
-# #     select(length_type, length_cm) %>%
-# #     mutate(length_cm = as.numeric(length_cm))
-# #   new_length_measurement_vals = length_measurement_edit() %>%
-# #     select(length_type, length_cm) %>%
-# #     mutate(length_cm = as.numeric(length_cm))
-# #   print(old_length_measurement_vals)
-# #   print(new_length_measurement_vals)
-# #   return(unlist(old_length_measurement_vals))
-# # })
-#
-# # Edit modal
-# observeEvent(input$fish_enc_edit, {
-#   old_fish_encounter_vals = selected_fish_encounter_data() %>%
-#     mutate(fish_encounter_dt = format(fish_encounter_time, "%H:%M")) %>%
-#     select(fish_encounter_dt, fish_count, fish_status, sex, maturity, origin, cwt_status,
-#            clip_status, fish_behavior, prev_counted)
-#   new_fish_encounter_vals = fish_encounter_edit() %>%
-#     mutate(fish_count = as.integer(fish_count)) %>%
-#     mutate(fish_encounter_dt = format(fish_encounter_dt, "%H:%M")) %>%
-#     select(fish_encounter_dt, fish_count, fish_status, sex, maturity, origin, cwt_status,
-#            clip_status, fish_behavior, prev_counted)
-#   showModal(
-#     tags$div(id = "fish_encounter_update_modal",
-#              if ( !length(input$fish_encounters_rows_selected) == 1 ) {
-#                modalDialog (
-#                  size = "m",
-#                  title = "Warning",
-#                  paste("Please select a row to edit!"),
-#                  easyClose = TRUE,
-#                  footer = NULL
-#                )
-#              } else if ( isTRUE(all_equal(old_fish_encounter_vals, new_fish_encounter_vals)) ) {
-#                modalDialog (
-#                  size = "m",
-#                  title = "Warning",
-#                  paste("Please change at least one value!"),
-#                  easyClose = TRUE,
-#                  footer = NULL
-#                )
-#              } else {
-#                modalDialog (
-#                  size = 'l',
-#                  title = "Update fish data to these new values?",
-#                  fluidPage (
-#                    DT::DTOutput("fish_encounter_modal_update_vals"),
-#                    br(),
-#                    br(),
-#                    actionButton("save_fish_enc_edits","Save changes")
-#                  ),
-#                  easyClose = TRUE,
-#                  footer = NULL
-#                )
-#              }
-#     ))
-# })
-#
-# # Update DB and reload DT
-# observeEvent(input$save_fish_enc_edits, {
-#   fish_encounter_update(fish_encounter_edit())
-#   removeModal()
-#   post_fish_encounter_edit_vals = get_fish_encounter(pool, selected_survey_event_data()$survey_event_id) %>%
-#     select(fish_encounter_dt, fish_count, fish_status, sex, maturity, origin,
-#            cwt_status, clip_status, fish_behavior, prev_counted, created_dt,
-#            created_by, modified_dt, modified_by)
-#   replaceData(fish_encounter_dt_proxy, post_fish_encounter_edit_vals)
-# })
+#========================================================
+# Edit operations: reactives, observers and modals
+#========================================================
+
+# Create reactive to collect input values for insert actions
+redd_encounter_edit = reactive({
+  # Survey date
+  survey_date = selected_survey_data()$survey_date
+  # Survey_event_id
+  survey_event_id_input = selected_survey_event_data()$survey_event_id
+  # Redd encounter time
+  redd_encounter_dt = format(input$redd_encounter_time_select)
+  if (nchar(redd_encounter_dt) < 16) { redd_encounter_dt = NA_character_ }
+  redd_encounter_dt = as.POSIXct(redd_encounter_dt)
+  # Redd status
+  redd_status_input = input$redd_status_select
+  if ( redd_status_input == "" ) {
+    redd_status_id = NA
+  } else {
+    redd_status_vals = get_redd_status(pool)
+    redd_status_id = redd_status_vals %>%
+      filter(redd_status == redd_status_input) %>%
+      pull(redd_status_id)
+  }
+  # Redd name, location_id
+  redd_name_input = input$redd_name_select
+  if ( redd_name_input == "" ) {
+    redd_location_id = NA
+  } else {
+    redd_name_vals = get_redd_name(pool, survey_event_id_input)
+    redd_location_id = redd_name_vals %>%
+      filter(redd_name == redd_name_input) %>%
+      pull(redd_location_id)
+  }
+  edit_redd_encounter = tibble(redd_encounter_id = selected_redd_encounter_data()$redd_encounter_id,
+                               # Need to create full datetime values below modal
+                               survey_date = survey_date,
+                               redd_encounter_dt = redd_encounter_dt,
+                               redd_status = redd_status_input,
+                               redd_status_id = redd_status_id,
+                               redd_count = input$redd_count_input,
+                               redd_name = redd_name_input,
+                               redd_location_id = redd_location_id,
+                               redd_comment = input$redd_comment_input,
+                               modified_dt = lubridate::with_tz(Sys.time(), "UTC"),
+                               modified_by = Sys.getenv("USERNAME"))
+  edit_redd_encounter = edit_redd_encounter %>%
+    mutate(redd_encounter_time = case_when(
+      is.na(redd_encounter_dt) ~ as.POSIXct(NA),
+      !is.na(redd_encounter_dt) ~ as.POSIXct(paste0(format(survey_date), " ", format(redd_encounter_dt, "%H:%M")),
+                                        tz = "America/Los_Angeles"))) %>%
+    mutate(redd_encounter_time = with_tz(redd_encounter_time, tzone = "UTC"))
+  return(edit_redd_encounter)
+})
+
+# Generate values to show in modal
+output$redd_encounter_modal_update_vals = renderDT({
+  redd_encounter_modal_up_vals = redd_encounter_edit() %>%
+    mutate(redd_encounter_dt = format(redd_encounter_dt, "%H:%M")) %>%
+    select(redd_encounter_dt, redd_status, redd_count,
+           redd_name, redd_comment)
+  # Generate table
+  datatable(redd_encounter_modal_up_vals,
+            rownames = FALSE,
+            options = list(dom = 't',
+                           scrollX = T,
+                           ordering = FALSE,
+                           initComplete = JS(
+                             "function(settings, json) {",
+                             "$(this.api().table().header()).css({'background-color': '#9eb3d6'});",
+                             "}")))
+})
+
+output$chk_redd_edit = renderText({
+  old_redd_encounter_vals = selected_redd_encounter_data() %>%
+    mutate(redd_encounter_dt = format(redd_encounter_time, "%H:%M")) %>%
+    select(redd_encounter_dt, redd_status, redd_count,
+           redd_name, redd_comment)
+  new_redd_encounter_vals = redd_encounter_edit() %>%
+    mutate(redd_count = as.integer(redd_count)) %>%
+    mutate(redd_encounter_dt = format(redd_encounter_dt, "%H:%M")) %>%
+    select(redd_encounter_dt, redd_status, redd_count,
+           redd_name, redd_comment)
+  print(old_redd_encounter_vals)
+  print(new_redd_encounter_vals)
+  return(unlist(old_redd_encounter_vals))
+})
+
+# Edit modal
+observeEvent(input$redd_enc_edit, {
+  old_redd_encounter_vals = selected_redd_encounter_data() %>%
+    mutate(redd_encounter_dt = format(redd_encounter_time, "%H:%M")) %>%
+    select(redd_encounter_dt, redd_status, redd_count,
+           redd_name, redd_comment)
+  new_redd_encounter_vals = redd_encounter_edit() %>%
+    mutate(redd_count = as.integer(redd_count)) %>%
+    mutate(redd_encounter_dt = format(redd_encounter_dt, "%H:%M")) %>%
+    select(redd_encounter_dt, redd_status, redd_count,
+           redd_name, redd_comment)
+  showModal(
+    tags$div(id = "redd_encounter_update_modal",
+             if ( !length(input$redd_encounters_rows_selected) == 1 ) {
+               modalDialog (
+                 size = "m",
+                 title = "Warning",
+                 paste("Please select a row to edit!"),
+                 easyClose = TRUE,
+                 footer = NULL
+               )
+             } else if ( isTRUE(all_equal(old_redd_encounter_vals, new_redd_encounter_vals)) ) {
+               modalDialog (
+                 size = "m",
+                 title = "Warning",
+                 paste("Please change at least one value!"),
+                 easyClose = TRUE,
+                 footer = NULL
+               )
+             } else {
+               modalDialog (
+                 size = 'l',
+                 title = "Update redd data to these new values?",
+                 fluidPage (
+                   DT::DTOutput("redd_encounter_modal_update_vals"),
+                   br(),
+                   br(),
+                   actionButton("save_redd_enc_edits", "Save changes")
+                 ),
+                 easyClose = TRUE,
+                 footer = NULL
+               )
+             }
+    ))
+})
+
+# Update DB and reload DT
+observeEvent(input$save_redd_enc_edits, {
+  redd_encounter_update(redd_encounter_edit())
+  removeModal()
+  post_redd_encounter_edit_vals = get_redd_encounter(pool, selected_survey_event_data()$survey_event_id) %>%
+    select(redd_encounter_dt, redd_status, redd_count, redd_name, redd_comment,
+           created_dt, created_by, modified_dt, modified_by)
+  replaceData(redd_encounter_dt_proxy, post_redd_encounter_edit_vals)
+})
 
 #========================================================
 # Delete operations: reactives, observers and modals

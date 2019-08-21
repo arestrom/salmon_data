@@ -96,55 +96,44 @@ redd_encounter_insert = function(new_redd_encounter_values) {
   poolReturn(con)
 }
 
-# #========================================================
-# # Edit update callback
-# #========================================================
-#
-# # Define update callback
-# fish_encounter_update = function(fish_encounter_edit_values) {
-#   edit_values = fish_encounter_edit_values
-#   # Pull out data
-#   fish_encounter_id = edit_values$fish_encounter_id
-#   fish_status_id = edit_values$fish_status_id
-#   sex_id =  edit_values$sex_id
-#   maturity_id = edit_values$maturity_id
-#   origin_id = edit_values$origin_id
-#   cwt_detection_status_id = edit_values$cwt_detection_status_id
-#   adipose_clip_status_id = edit_values$adipose_clip_status_id
-#   fish_behavior_type_id = edit_values$fish_behavior_type_id
-#   fish_encounter_datetime = edit_values$fish_encounter_time
-#   fish_count = edit_values$fish_count
-#   previously_counted_indicator = edit_values$previously_counted_indicator
-#   if ( is.na(previously_counted_indicator) ) { previously_counted_indicator = FALSE }
-#   mod_dt = lubridate::with_tz(Sys.time(), "UTC")
-#   mod_by = Sys.getenv("USERNAME")
-#   # Checkout a connection
-#   con = poolCheckout(pool)
-#   update_result = dbSendStatement(
-#     con, glue_sql("UPDATE fish_encounter SET ",
-#                   "fish_status_id = ?, ",
-#                   "sex_id = ?, ",
-#                   "maturity_id = ?, ",
-#                   "origin_id = ?, ",
-#                   "cwt_detection_status_id = ?, ",
-#                   "adipose_clip_status_id = ?, ",
-#                   "fish_behavior_type_id = ?, ",
-#                   "fish_encounter_datetime = ?, ",
-#                   "fish_count = ?, ",
-#                   "previously_counted_indicator = ?, ",
-#                   "modified_datetime = ?, ",
-#                   "modified_by = ? ",
-#                   "where fish_encounter_id = ?"))
-#   dbBind(update_result, list(fish_status_id, sex_id, maturity_id, origin_id,
-#                              cwt_detection_status_id, adipose_clip_status_id,
-#                              fish_behavior_type_id, fish_encounter_datetime,
-#                              fish_count, previously_counted_indicator,
-#                              mod_dt, mod_by, fish_encounter_id))
-#   dbGetRowsAffected(update_result)
-#   dbClearResult(update_result)
-#   poolReturn(con)
-# }
-#
+#========================================================
+# Edit update callback
+#========================================================
+
+# Define update callback
+redd_encounter_update = function(redd_encounter_edit_values) {
+  edit_values = redd_encounter_edit_values
+  # Pull out data
+  redd_encounter_id = edit_values$redd_encounter_id
+  redd_location_id = edit_values$redd_location_id
+  redd_status_id = edit_values$redd_status_id
+  redd_encounter_datetime = edit_values$redd_encounter_time
+  redd_count = edit_values$redd_count
+  comment_text = edit_values$redd_comment
+  if (is.na(comment_text) | comment_text == "") { comment_text = NA }
+  mod_dt = lubridate::with_tz(Sys.time(), "UTC")
+  mod_by = Sys.getenv("USERNAME")
+  # Checkout a connection
+  con = poolCheckout(pool)
+  update_result = dbSendStatement(
+    con, glue_sql("UPDATE redd_encounter SET ",
+                  "redd_location_id = ?, ",
+                  "redd_status_id = ?, ",
+                  "redd_encounter_datetime = ?, ",
+                  "redd_count = ?, ",
+                  "comment_text = ?, ",
+                  "modified_datetime = ?, ",
+                  "modified_by = ? ",
+                  "where redd_encounter_id = ?"))
+  dbBind(update_result, list(redd_location_id, redd_status_id,
+                             redd_encounter_datetime, redd_count,
+                             comment_text, mod_dt, mod_by,
+                             redd_encounter_id))
+  dbGetRowsAffected(update_result)
+  dbClearResult(update_result)
+  poolReturn(con)
+}
+
 #========================================================
 # Identify redd encounter dependencies prior to delete
 #========================================================

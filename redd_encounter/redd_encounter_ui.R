@@ -19,6 +19,6 @@ redd_encounter_ui = tags$div(
   br(),
   br(),
   br(),
-  DT::DTOutput("redd_encounters")
-  #verbatimTextOutput("chk_edit")
+  DT::DTOutput("redd_encounters"),
+  verbatimTextOutput("chk_redd_edit")
 )
