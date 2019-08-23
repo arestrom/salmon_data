@@ -606,9 +606,96 @@ get_redd_location = function(pool, redd_encounter_id) {
   return(redd_locations)
 }
 
+# Main redd_encounter query
+get_redd_location = function(pool, redd_encounter_id) {
+  qry = glue("select loc.location_id as redd_location_id, ",
+             "lc.location_coordinates_id, ",
+             "loc.location_name as redd_name, ",
+             "st_x(st_transform(lc.geom, 4326)) as longitude, ",
+             "st_y(st_transform(lc.geom, 4326)) as latitude, ",
+             "lc.horizontal_accuracy as horiz_accuracy, ",
+             "sc.channel_type_description as channel_type, ",
+             "lo.orientation_type_description as orientation_type, ",
+             "loc.location_description, ",
+             "loc.created_datetime as created_date, loc.created_by, ",
+             "loc.modified_datetime as modified_date, loc.modified_by ",
+             "from redd_encounter as rd ",
+             "inner join location as loc on rd.redd_location_id = loc.location_id ",
+             "left join location_coordinates as lc on loc.location_id = lc.location_id ",
+             "left join stream_channel_type_lut as sc on loc.stream_channel_type_id = sc.stream_channel_type_id ",
+             "left join location_orientation_type_lut as lo on loc.location_orientation_type_id = lo.location_orientation_type_id ",
+             "where rd.redd_encounter_id = '{redd_encounter_id}'")
+  redd_locations = DBI::dbGetQuery(pool, qry)
+  redd_locations = redd_locations %>%
+    mutate(redd_location_id = tolower(redd_location_id)) %>%
+    mutate(location_coordinates_id = tolower(location_coordinates_id)) %>%
+    mutate(created_date = with_tz(created_date, tzone = "America/Los_Angeles")) %>%
+    mutate(created_dt = format(created_date, "%m/%d/%Y %H:%M")) %>%
+    mutate(modified_date = with_tz(modified_date, tzone = "America/Los_Angeles")) %>%
+    mutate(modified_dt = format(modified_date, "%m/%d/%Y %H:%M")) %>%
+    select(redd_location_id, location_coordinates_id, redd_name,
+           latitude, longitude, horiz_accuracy, channel_type,
+           orientation_type, location_description, created_date,
+           created_dt, created_by, modified_date, modified_dt,
+           modified_by) %>%
+    arrange(created_date)
+  return(redd_locations)
+}
+
 # Test...Works !!
 redd_encounter_id = "75b4e633-1e18-476d-9bbd-c465e725ef73"
 redd_locations = get_redd_location(pool, redd_encounter_id)
+
+#====================================================================
+# Test of creating points as binary
+#====================================================================
+
+# Create a point...sfg. sfg can not include crs. Only sfc (column) can have crs
+redd_loc = st_point(c(-123.10987, 46.6167))
+redd_loc
+class(redd_loc)
+
+# Convert point to sfc
+redd_geom = st_sfc(redd_loc, crs = 4326)
+redd_geom
+class(redd_geom)
+
+# Transform to new crs
+redd_geom = st_transform(redd_geom, 2927)
+redd_geom
+
+# Convert to binary, then hex
+redd_hex = rawToHex(st_as_binary(redd_geom))
+redd_hex
+class(redd_hex)
+
+# Check impact of precision argument
+st_point(c(-123.10987, 46.6167)) %>%
+  st_sfc(., crs = 4326) %>%
+  st_transform(., 2927) %>%
+  st_as_binary(.) %>%
+  rawToHex(.)
+
+# Check impact of precision argument
+st_point(c(-123.10987, 46.6167)) %>%
+  st_sfc(., crs = 4326, precision = 1000) %>%
+  st_transform(., 2927) %>%
+  st_as_binary(.) %>%
+  rawToHex(.)
+
+# Check impact of precision argument
+st_point(c(-123.10987, 46.6167)) %>%
+  st_sfc(., crs = 4326, precision = 0.01) %>%
+  st_transform(., 2927) %>%
+  st_as_binary(.) %>%
+  rawToHex(.)
+
+
+
+
+
+
+
 
 
 

@@ -57,6 +57,10 @@
 #     in fields below. May need some req statements in lower
 #     accordian fields. May also just have been some weird
 #     data...now deleted. Cannot recreate crash....
+# 13. Need to use ulid as a unique id for location_coordinates_temp
+#     table. Need to avoid possiblity of any clash.
+# 14. May want to eliminate all cases of "pool" as an argument
+#     in any global functions. Just call check out and check in.
 #
 # AS 2019-07-15
 #==============================================================
@@ -115,6 +119,7 @@ source("fish_length_measurement/fish_length_measurement_global.R")
 source("redd_encounter/redd_encounter_ui.R")
 source("redd_encounter/redd_encounter_global.R")
 source("redd_location/redd_location_ui.R")
+source("redd_location/redd_location_global.R")
 
 # Define globals ================================================================
 

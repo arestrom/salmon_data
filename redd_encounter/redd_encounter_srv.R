@@ -211,6 +211,10 @@ observeEvent(input$insert_redd_encounter, {
   replaceData(redd_encounter_dt_proxy, post_redd_encounter_insert_vals)
 })
 
+
+# NEED TO UPDATE REDD ENCOUNTER AFTER LOCATION IS INSERTED....Look for latest entry in location table....it has a name entered
+
+
 #========================================================
 # Edit operations: reactives, observers and modals
 #========================================================

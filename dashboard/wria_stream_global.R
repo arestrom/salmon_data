@@ -8,10 +8,24 @@ map_modal = bs_modal (
   footer = NULL
 )
 
+# get_streams = function(pool, chosen_wria) {
+#   qry = glue("select distinct wb.waterbody_id, wb.waterbody_display_name as stream_name, ",
+#              "wb.waterbody_name, wb.latitude_longitude_id as llid, ",
+#              "wb.stream_catalog_code as cat_code, ",
+#              "wr.wria_code || ' ' || wr.wria_description as wria_name, st.geom as geometry ",
+#              "from waterbody_lut as wb ",
+#              "inner join stream as st on wb.waterbody_id = st.waterbody_id ",
+#              "inner join wria_lut as wr on st_intersects(st.geom, wr.geom)")
+#   streams_st = pool %>%
+#     sf::st_read(query = qry) %>%
+#     filter(wria_name %in% chosen_wria)
+#   return(streams_st)
+# }
+
 get_streams = function(pool, chosen_wria) {
   qry = glue("select distinct wb.waterbody_id, wb.waterbody_display_name as stream_name, ",
              "wb.waterbody_name, wb.latitude_longitude_id as llid, ",
-             "wb.stream_catalog_code as cat_code, ",
+             "wb.stream_catalog_code as cat_code, wr.wria_id, ",
              "wr.wria_code || ' ' || wr.wria_description as wria_name, st.geom as geometry ",
              "from waterbody_lut as wb ",
              "inner join stream as st on wb.waterbody_id = st.waterbody_id ",
