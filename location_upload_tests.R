@@ -31,7 +31,7 @@ poolReturn(con)
 
 # Create data to insert to location table
 location_id = remisc::get_uuid(1L)
-location_name = "01-08-27-19"
+location_name = "01-08-28-19"
 created_by = Sys.getenv("USERNAME")
 
 # Checkout a connection

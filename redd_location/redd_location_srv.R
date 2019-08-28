@@ -90,7 +90,7 @@ observeEvent(input$redd_locations_rows_selected, {
   updateNumericInput(session, "latitude_input", value = srldat$latitude)
   updateNumericInput(session, "longitude_input", value = srldat$longitude)
   updateNumericInput(session, "horiz_accuracy_input", value = srldat$horiz_accuracy)
-  updateTextAreaInput(session, "location_description_input", value = srldat$redd_comment)
+  updateTextAreaInput(session, "location_description_input", value = srldat$location_description)
 })
 
 #========================================================
@@ -218,7 +218,6 @@ redd_location_insert_vals = reactive({
            stream_channel_type_id, location_orientation_type_id,
            redd_name, location_description, latitude, longitude,
            horiz_accuracy, created_by)
-  print(new_redd_loc_values)
   return(new_redd_loc_values)
 })
 
@@ -381,65 +380,69 @@ observeEvent(input$insert_redd_location, {
 #   replaceData(redd_encounter_dt_proxy, post_redd_encounter_edit_vals)
 # })
 #
-# #========================================================
-# # Delete operations: reactives, observers and modals
-# #========================================================
-#
-# # Generate values to show in modal
-# output$redd_encounter_modal_delete_vals = renderDT({
-#   redd_encounter_modal_del_id = selected_redd_encounter_data()$redd_encounter_id
-#   redd_encounter_modal_del_vals = get_redd_encounter(pool, selected_survey_event_data()$survey_event_id) %>%
-#     filter(redd_encounter_id == redd_encounter_modal_del_id) %>%
-#     select(redd_encounter_dt, redd_status, redd_count, redd_name, redd_comment)
-#   # Generate table
-#   datatable(redd_encounter_modal_del_vals,
-#             rownames = FALSE,
-#             options = list(dom = 't',
-#                            scrollX = T,
-#                            ordering = FALSE,
-#                            initComplete = JS(
-#                              "function(settings, json) {",
-#                              "$(this.api().table().header()).css({'background-color': '#9eb3d6'});",
-#                              "}")))
-# })
-#
-# observeEvent(input$redd_enc_delete, {
-#   redd_encounter_id = selected_redd_encounter_data()$redd_encounter_id
-#   redd_encounter_dependencies = get_redd_encounter_dependencies(redd_encounter_id)
-#   table_names = paste0(names(redd_encounter_dependencies), collapse = ", ")
-#   showModal(
-#     tags$div(id = "redd_encounter_delete_modal",
-#              if ( ncol(redd_encounter_dependencies) > 0L ) {
-#                modalDialog (
-#                  size = "m",
-#                  title = "Warning",
-#                  glue("Please delete associated redd data from the following tables first: {table_names}"),
-#                  easyClose = TRUE,
-#                  footer = NULL
-#                )
-#              } else {
-#                modalDialog (
-#                  size = 'l',
-#                  title = "Are you sure you want to delete this redd data from the database?",
-#                  fluidPage (
-#                    DT::DTOutput("redd_encounter_modal_delete_vals"),
-#                    br(),
-#                    br(),
-#                    actionButton("delete_redd_encounter", "Delete redd data")
-#                  ),
-#                  easyClose = TRUE,
-#                  footer = NULL
-#                )
-#              }
-#     ))
-# })
-#
-# # Update DB and reload DT
-# observeEvent(input$delete_redd_encounter, {
-#   redd_encounter_delete(selected_redd_encounter_data())
-#   removeModal()
-#   redd_encounters_after_delete = get_redd_encounter(pool, selected_survey_event_data()$survey_event_id) %>%
-#     select(redd_encounter_dt, redd_status, redd_count, redd_name, redd_comment,
-#            created_dt, created_by, modified_dt, modified_by)
-#   replaceData(redd_encounter_dt_proxy, redd_encounters_after_delete)
-# })
+#========================================================
+# Delete operations: reactives, observers and modals
+#========================================================
+
+
+# STOPPED HERE....NEED TO FILL modal below....otherwise, delete operations work properly....
+
+
+# Generate values to show in modal
+output$redd_location_modal_delete_vals = renderDT({
+  redd_location_modal_del_id = selected_redd_location_data()$redd_location_id
+  redd_location_modal_del_vals = get_redd_location(pool, selected_redd_location_data()$redd_location_id) %>%
+    filter(redd_location_id == redd_location_modal_del_id) %>%
+    select(redd_name, channel_type, orientation_type, latitude,
+           longitude, horiz_accuracy, location_description)
+  # Generate table
+  datatable(redd_location_modal_del_vals,
+            rownames = FALSE,
+            options = list(dom = 't',
+                           scrollX = T,
+                           ordering = FALSE,
+                           initComplete = JS(
+                             "function(settings, json) {",
+                             "$(this.api().table().header()).css({'background-color': '#9eb3d6'});",
+                             "}")))
+})
+
+observeEvent(input$redd_loc_delete, {
+  redd_location_id = selected_redd_location_data()$redd_location_id
+  showModal(
+    tags$div(id = "redd_location_delete_modal",
+             if ( length(redd_location_id) == 0 ) {
+               modalDialog (
+                 size = "m",
+                 title = "Warning",
+                 glue("Please select a row to delete!"),
+                 easyClose = TRUE,
+                 footer = NULL
+               )
+             } else {
+               modalDialog (
+                 size = 'l',
+                 title = "Are you sure you want to delete this redd location data from the database?",
+                 fluidPage (
+                   DT::DTOutput("redd_location_modal_delete_vals"),
+                   br(),
+                   br(),
+                   actionButton("delete_redd_location", "Delete location data")
+                 ),
+                 easyClose = TRUE,
+                 footer = NULL
+               )
+             }
+    ))
+})
+
+# Update DB and reload DT
+observeEvent(input$delete_redd_location, {
+  redd_location_delete(selected_redd_location_data(), selected_redd_encounter_data())
+  removeModal()
+  redd_locations_after_delete = get_redd_location(pool, selected_redd_encounter_data()$redd_encounter_id) %>%
+    select(redd_name, channel_type, orientation_type, latitude,
+           longitude, horiz_accuracy, location_description,
+           created_dt, created_by, modified_dt, modified_by)
+  replaceData(redd_location_dt_proxy, redd_locations_after_delete)
+})

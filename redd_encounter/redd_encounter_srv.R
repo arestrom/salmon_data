@@ -213,10 +213,10 @@ observeEvent(input$insert_redd_encounter, {
 
 # Update DB and reload DT
 observeEvent(input$insert_redd_location, {
-  post_redd_encounter_insert_vals = get_redd_encounter(pool, selected_survey_event_data()$survey_event_id) %>%
+  post_redd_location_insert_encounter_vals = get_redd_encounter(pool, selected_survey_event_data()$survey_event_id) %>%
     select(redd_encounter_dt, redd_status, redd_count, redd_name, redd_comment,
            created_dt, created_by, modified_dt, modified_by)
-  replaceData(redd_encounter_dt_proxy, post_redd_encounter_insert_vals)
+  replaceData(redd_encounter_dt_proxy, post_redd_location_insert_encounter_vals)
 })
 
 #========================================================
@@ -429,3 +429,12 @@ observeEvent(input$delete_redd_encounter, {
            created_dt, created_by, modified_dt, modified_by)
   replaceData(redd_encounter_dt_proxy, redd_encounters_after_delete)
 })
+
+# Update DB and reload DT
+observeEvent(input$delete_redd_location, {
+  redd_encounters_after_location_delete = get_redd_encounter(pool, selected_survey_event_data()$survey_event_id) %>%
+    select(redd_encounter_dt, redd_status, redd_count, redd_name, redd_comment,
+           created_dt, created_by, modified_dt, modified_by)
+  replaceData(redd_encounter_dt_proxy, redd_encounters_after_location_delete)
+})
+
