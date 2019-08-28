@@ -211,9 +211,13 @@ observeEvent(input$insert_redd_encounter, {
   replaceData(redd_encounter_dt_proxy, post_redd_encounter_insert_vals)
 })
 
-
-# NEED TO UPDATE REDD ENCOUNTER AFTER LOCATION IS INSERTED....Look for latest entry in location table....it has a name entered
-
+# Update DB and reload DT
+observeEvent(input$insert_redd_location, {
+  post_redd_encounter_insert_vals = get_redd_encounter(pool, selected_survey_event_data()$survey_event_id) %>%
+    select(redd_encounter_dt, redd_status, redd_count, redd_name, redd_comment,
+           created_dt, created_by, modified_dt, modified_by)
+  replaceData(redd_encounter_dt_proxy, post_redd_encounter_insert_vals)
+})
 
 #========================================================
 # Edit operations: reactives, observers and modals

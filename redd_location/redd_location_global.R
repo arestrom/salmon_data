@@ -64,7 +64,7 @@ get_orientation_type = function(pool) {
 }
 
 #========================================================
-# Insert callback....need unique name for temp table !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+# Insert callback
 #========================================================
 
 # Define the insert callback
@@ -77,25 +77,6 @@ redd_location_insert = function(new_redd_location_values) {
   horizontal_accuracy = as.numeric(new_insert_values$horiz_accuracy)
   latitude = new_insert_values$latitude
   longitude = new_insert_values$longitude
-  geom = st_point(c(longitude, latitude)) %>%
-    st_sfc(., crs = 4326) %>%
-    st_transform(., 2927)
-  # Get max_gid....did not work assuming default
-  # Checkout a connection
-  # con = poolCheckout(pool)
-  # qry = "select max(gid) from location_coordinates"
-  # max_gid = dbGetQuery(con, qry)
-  # new_gid = max_gid$gid + 1L
-  # Create dataframe for upload to location_coordinates using sf
-  coords = tibble(location_id = location_id,
-                  horizontal_accuracy = horizontal_accuracy,
-                  geom = geom,
-                  created_by = created_by)
-  print("coords")
-  print(coords)
-  # Insert to location_coordinates table...need to create unique table name !!!!....use a ulid
-  con = poolCheckout(pool)
-  st_write(obj = coords, dsn = con, layer = "location_coordinates_temp", overwrite = TRUE)
   # Pull out location table data
   waterbody_id = new_insert_values$waterbody_id
   wria_id = new_insert_values$wria_id
@@ -106,7 +87,12 @@ redd_location_insert = function(new_redd_location_values) {
   location_description = new_insert_values$location_description
   if (is.na(location_name) | location_name == "") { location_name = NA }
   if (is.na(location_description) | location_description == "") { location_description = NA }
+  # Pull out redd_encounter table data
+  redd_encounter_id = new_insert_values$redd_encounter_id
+  mod_dt = lubridate::with_tz(Sys.time(), "UTC")
+  mod_by = Sys.getenv("USERNAME")
   # Insert to location table
+  con = poolCheckout(pool)
   insert_loc_result = dbSendStatement(
     con, glue_sql("INSERT INTO location (",
                   "location_id, ",
@@ -126,15 +112,21 @@ redd_location_insert = function(new_redd_location_values) {
                                  location_description, created_by))
   dbGetRowsAffected(insert_loc_result)
   dbClearResult(insert_loc_result)
-  # Use select into query to get data into location_coordinates
-  qry = glue("insert into location_coordinates ",
-             "(location_id, horizontal_accuracy, geom, created_by) ",
-             "select cast(location_id as uuid), horizontal_accuracy, geom, created_by ",
-             "FROM location_coordinates_temp")
-  # Insert select to DB
-  dbExecute(con, qry)
-  # # Drop temp
-  # dbExecute(con, "drop table location_coordinates_temp")
+  # Insert coordinates to location_coordinates
+  qry = glue_sql("INSERT INTO location_coordinates ",
+                 "(location_id, horizontal_accuracy, gid, geom, created_by) ",
+                 "VALUES ({location_id}, {horizontal_accuracy}, ",
+                 "nextval('location_coordinates_gid_seq'::regclass), ",
+                 "ST_GeomFromText('POINT({longitude} {latitude})', 2927), {created_by}) ",
+                 .con = con)
+  # Checkout a connection
+  DBI::dbExecute(con, qry)
+  # Update location_id in redd_encounter table
+  qry = glue_sql("UPDATE redd_encounter SET redd_location_id = {location_id}, ",
+                 "modified_datetime = {mod_dt}, modified_by = {mod_by} ",
+                 "WHERE redd_encounter_id = {redd_encounter_id}", .con = con)
+  # Checkout a connection
+  DBI::dbExecute(con, qry)
   poolReturn(con)
 }
 

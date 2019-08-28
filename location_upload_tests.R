@@ -31,7 +31,7 @@ poolReturn(con)
 
 # Create data to insert to location table
 location_id = remisc::get_uuid(1L)
-location_name = "01-23-19-52"
+location_name = "01-08-27-19"
 created_by = Sys.getenv("USERNAME")
 
 # Checkout a connection
@@ -44,6 +44,128 @@ insert_loc_result = dbSendStatement(
                 "VALUES (",
                 "?, ?, ?)"))
 dbBind(insert_loc_result, list(location_id, location_name, created_by))
+dbGetRowsAffected(insert_loc_result)
+dbClearResult(insert_loc_result)
+poolReturn(con)
+
+# Create insert values for geometry table
+horizontal_accuracy = 8L
+comment_text = "Very sparse"
+gid = 2L
+lon = -123.300142
+lat = 46.485271
+#geom = "ST_GeomFromText('POINT(-123.300146  46.485270)', 2927)"
+geom = glue("(select ST_GeomFromText('POINT({lon}  {lat})', 2927))")
+
+qry = glue_sql("INSERT INTO location_coordinates ",
+               "(location_id, horizontal_accuracy, comment_text, gid, geom, created_by) ",
+               "VALUES ({location_id}, {horizontal_accuracy}, {comment_text}, {gid}, ST_GeomFromText('POINT({lon} {lat})', 2927), {created_by}) ",
+               .con = con)
+
+# Checkout a connection
+con = poolCheckout(pool)
+DBI::dbExecute(con, qry)
+poolReturn(con)
+
+#===================================================================
+# Test without GID....Works
+#===================================================================
+
+# Create insert values for geometry table
+horizontal_accuracy = 2L
+comment_text = "Nada again"
+lon = -123.300258
+lat = 46.485279
+
+qry = glue_sql("INSERT INTO location_coordinates ",
+               "(location_id, horizontal_accuracy, comment_text, gid, geom, created_by) ",
+               "VALUES ({location_id}, {horizontal_accuracy}, {comment_text}, ",
+               "nextval('location_coordinates_gid_seq'::regclass), ",
+               "ST_GeomFromText('POINT({lon} {lat})', 2927), {created_by}) ",
+               .con = con)
+
+# Checkout a connection
+con = poolCheckout(pool)
+DBI::dbExecute(con, qry)
+poolReturn(con)
+
+#===================================================================
+# Test without GID....Does not work
+#===================================================================
+
+# Create insert values for geometry table
+horizontal_accuracy = 2L
+comment_text = "Nada again"
+lon = -123.300258
+lat = 46.485279
+
+qry = glue_sql("INSERT INTO location_coordinates ",
+               "(location_id, horizontal_accuracy, comment_text, gid, geom, created_by) ",
+               "VALUES (?, ?, ?, ",
+               "nextval('location_coordinates_gid_seq'::regclass), ",
+               "ST_GeomFromText('POINT(? ?)', 2927), {created_by}) ",
+               .con = con)
+
+# Checkout a connection
+con = poolCheckout(pool)
+query = DBI::dbExecute(con, qry)
+DBI::dbBind(query, list(location_id, horizontal_accuracy, comment_text, lon, lat, created_by))
+DBI::dbExecute(query)
+poolReturn(con)
+
+
+#===================================================================
+# Test without send_statement...not working...just using above code
+#===================================================================
+
+# Create insert values for geometry table
+horizontal_accuracy = 15L
+comment_text = "Nada Nada"
+lon = -123.300254
+lat = 46.485277
+
+# Checkout a connection
+con = poolCheckout(pool)
+insert_loc_result = dbSendStatement(
+  con, glue("INSERT INTO location_coordinates ",
+                "(location_id, horizontal_accuracy, comment_text, gid, geom, created_by) ",
+                "VALUES (?, ?, ?, ",
+                "nextval('location_coordinates_gid_seq'::regclass), ",
+                "ST_GeomFromText('POINT(? ?)', 2927), ?)")
+dbBind(insert_loc_result, list(location_id, horizontal_accuracy, comment_text, lon, lat, created_by))
+dbGetRowsAffected(insert_loc_result)
+dbClearResult(insert_loc_result)
+poolReturn(con)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+# Checkout a connection
+con = poolCheckout(pool)
+insert_loc_result = dbSendStatement(
+  con, glue_sql("INSERT INTO location_coordinates (",
+                "location_id, ",
+                "horizontal_accuracy, ",
+                "comment_text, ",
+                "gid, ",
+                "geom, ",
+                "created_by) ",
+                "VALUES (",
+                "?, ?, ?, ?, ?, ?)"))
+dbBind(insert_loc_result, list(location_id, horizonal_accuracy,
+                               comment_text, gid, geom, created_by))
 dbGetRowsAffected(insert_loc_result)
 dbClearResult(insert_loc_result)
 poolReturn(con)
@@ -99,7 +221,7 @@ DBI::dbExecute(chk_con, qry)
 poolReturn(chk_con)
 
 #==============================================================================================================
-# TEST ON REAL DB, using data in temp table
+# TEST ON REAL DB, using data in temp table....gid needed to be defined in temp table....redo so it is loaded
 #==============================================================================================================
 
 # Define dsns

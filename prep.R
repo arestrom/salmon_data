@@ -578,33 +578,10 @@ ind_fish = get_individual_fish(pool, fish_encounter_id)
 # Get redd_locations
 #=================================================================================
 
-# Main redd_encounter query
-get_redd_location = function(pool, redd_encounter_id) {
-  qry = glue("select loc.location_id as redd_location_id, ",
-             "lc.location_coordinates_id, ",
-             "loc.location_name as redd_name, ",
-             "st_x(st_transform(lc.geom, 4326)) as longitude, ",
-             "st_y(st_transform(lc.geom, 4326)) as latitude, ",
-             "loc.created_datetime as created_date, loc.created_by, ",
-             "loc.modified_datetime as modified_date, loc.modified_by ",
-             "from redd_encounter as rd ",
-             "inner join location as loc on rd.redd_location_id = loc.location_id ",
-             "left join location_coordinates as lc on loc.location_id = lc.location_id ",
-             "where rd.redd_encounter_id = '{redd_encounter_id}'")
-  redd_locations = DBI::dbGetQuery(pool, qry)
-  redd_locations = redd_locations %>%
-    mutate(redd_location_id = tolower(redd_location_id)) %>%
-    mutate(location_coordinates_id = tolower(location_coordinates_id)) %>%
-    mutate(created_date = with_tz(created_date, tzone = "America/Los_Angeles")) %>%
-    mutate(created_dt = format(created_date, "%m/%d/%Y %H:%M")) %>%
-    mutate(modified_date = with_tz(modified_date, tzone = "America/Los_Angeles")) %>%
-    mutate(modified_dt = format(modified_date, "%m/%d/%Y %H:%M")) %>%
-    select(redd_location_id, location_coordinates_id, redd_name,
-           latitude, longitude, created_date, created_dt, created_by,
-           modified_date, modified_dt, modified_by) %>%
-    arrange(created_date)
-  return(redd_locations)
-}
+# Define dsns
+salmon_db = "local_spawn"
+# Set up dsn connection
+pool = pool::dbPool(drv = odbc::odbc(), timezone = "UTC", dsn = salmon_db)
 
 # Main redd_encounter query
 get_redd_location = function(pool, redd_encounter_id) {
@@ -644,7 +621,9 @@ get_redd_location = function(pool, redd_encounter_id) {
 
 # Test...Works !!
 redd_encounter_id = "75b4e633-1e18-476d-9bbd-c465e725ef73"
+redd_encounter_id = "5e2fa75c-e922-4786-853c-565b5f3192aa"
 redd_locations = get_redd_location(pool, redd_encounter_id)
+poolReturn(con)
 
 #====================================================================
 # Test of creating points as binary
