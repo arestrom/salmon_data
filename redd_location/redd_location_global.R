@@ -132,108 +132,57 @@ redd_location_insert = function(new_redd_location_values) {
   poolReturn(con)
 }
 
-# # Define the insert callback
-# redd_location_insert = function(new_redd_location_values) {
-#   new_insert_values = new_redd_location_values
-#   # Generate location_id
-#   location_id = remisc::get_uuid(1L)
-#   created_by = new_insert_values$created_by
-#   # Pull out location_coordinates table data
-#   horizontal_accuracy = as.numeric(new_insert_values$horiz_accuracy)
-#   latitude = new_insert_values$latitude
-#   longitude = new_insert_values$longitude
-#   # Pull out location table data
-#   waterbody_id = new_insert_values$waterbody_id
-#   wria_id = new_insert_values$wria_id
-#   location_type_id = new_insert_values$location_type_id
-#   stream_channel_type_id = new_insert_values$stream_channel_type_id
-#   location_orientation_type_id = new_insert_values$location_orientation_type_id
-#   location_name = new_insert_values$redd_name
-#   location_description = new_insert_values$location_description
-#   if (is.na(location_name) | location_name == "") { location_name = NA }
-#   if (is.na(location_description) | location_description == "") { location_description = NA }
-#   # Pull out redd_encounter table data
-#   redd_encounter_id = new_insert_values$redd_encounter_id
-#   mod_dt = lubridate::with_tz(Sys.time(), "UTC")
-#   mod_by = Sys.getenv("USERNAME")
-#   # Insert to location table
-#   con = poolCheckout(pool)
-#   insert_loc_result = dbSendStatement(
-#     con, glue_sql("INSERT INTO location (",
-#                   "location_id, ",
-#                   "waterbody_id, ",
-#                   "wria_id, ",
-#                   "location_type_id, ",
-#                   "stream_channel_type_id, ",
-#                   "location_orientation_type_id, ",
-#                   "location_name, ",
-#                   "location_description, ",
-#                   "created_by) ",
-#                   "VALUES (",
-#                   "?, ?, ?, ?, ?, ?, ?, ?, ?)"))
-#   dbBind(insert_loc_result, list(location_id, waterbody_id, wria_id,
-#                                  location_type_id, stream_channel_type_id,
-#                                  location_orientation_type_id, location_name,
-#                                  location_description, created_by))
-#   dbGetRowsAffected(insert_loc_result)
-#   dbClearResult(insert_loc_result)
-#   # Insert coordinates to location_coordinates
-#   qry = glue_sql("INSERT INTO location_coordinates ",
-#                  "(location_id, horizontal_accuracy, gid, geom, created_by) ",
-#                  "VALUES ({location_id}, {horizontal_accuracy}, ",
-#                  "nextval('location_coordinates_gid_seq'::regclass), ",
-#                  "ST_Transform(ST_GeomFromText('POINT({longitude} {latitude})', 4326), 2927), ",
-#                  "{created_by}) ",
-#                  .con = con)
-#   # Checkout a connection
-#   DBI::dbExecute(con, qry)
-#   # Update location_id in redd_encounter table
-#   qry = glue_sql("UPDATE redd_encounter SET redd_location_id = {location_id}, ",
-#                  "modified_datetime = {mod_dt}, modified_by = {mod_by} ",
-#                  "WHERE redd_encounter_id = {redd_encounter_id}", .con = con)
-#   # Checkout a connection
-#   DBI::dbExecute(con, qry)
-#   poolReturn(con)
-# }
+#========================================================
+# Edit location callback
+#========================================================
 
-# #========================================================
-# # Edit update callback
-# #========================================================
-#
-# # Define update callback
-# redd_encounter_update = function(redd_encounter_edit_values) {
-#   edit_values = redd_encounter_edit_values
-#   # Pull out data
-#   redd_encounter_id = edit_values$redd_encounter_id
-#   redd_location_id = edit_values$redd_location_id
-#   redd_status_id = edit_values$redd_status_id
-#   redd_encounter_datetime = edit_values$redd_encounter_time
-#   redd_count = edit_values$redd_count
-#   comment_text = edit_values$redd_comment
-#   if (is.na(comment_text) | comment_text == "") { comment_text = NA }
-#   mod_dt = lubridate::with_tz(Sys.time(), "UTC")
-#   mod_by = Sys.getenv("USERNAME")
-#   # Checkout a connection
-#   con = poolCheckout(pool)
-#   update_result = dbSendStatement(
-#     con, glue_sql("UPDATE redd_encounter SET ",
-#                   "redd_location_id = ?, ",
-#                   "redd_status_id = ?, ",
-#                   "redd_encounter_datetime = ?, ",
-#                   "redd_count = ?, ",
-#                   "comment_text = ?, ",
-#                   "modified_datetime = ?, ",
-#                   "modified_by = ? ",
-#                   "where redd_encounter_id = ?"))
-#   dbBind(update_result, list(redd_location_id, redd_status_id,
-#                              redd_encounter_datetime, redd_count,
-#                              comment_text, mod_dt, mod_by,
-#                              redd_encounter_id))
-#   dbGetRowsAffected(update_result)
-#   dbClearResult(update_result)
-#   poolReturn(con)
-# }
-#
+# Define update callback
+redd_location_update = function(redd_location_edit_values) {
+  edit_values = redd_location_edit_values
+  # Pull out data for location table
+  location_id = edit_values$redd_location_id
+  stream_channel_type_id = edit_values$stream_channel_type_id
+  location_orientation_type_id = edit_values$location_orientation_type_id
+  location_name = edit_values$redd_name
+  location_description = edit_values$location_description
+  if (is.na(location_name) | location_name == "") { location_name = NA }
+  if (is.na(location_description) | location_description == "") { location_description = NA }
+  mod_dt = lubridate::with_tz(Sys.time(), "UTC")
+  mod_by = Sys.getenv("USERNAME")
+  # Pull out data for location_coordinates table
+  horizontal_accuracy = edit_values$horiz_accuracy
+  latitude = edit_values$latitude
+  longitude = edit_values$longitude
+  # Checkout a connection
+  con = poolCheckout(pool)
+  update_result = dbSendStatement(
+    con, glue_sql("UPDATE location SET ",
+                  "stream_channel_type_id = ?, ",
+                  "location_orientation_type_id = ?, ",
+                  "location_name = ?, ",
+                  "location_description = ?, ",
+                  "modified_datetime = ?, ",
+                  "modified_by = ? ",
+                  "where location_id = ?"))
+  dbBind(update_result, list(stream_channel_type_id,
+                             location_orientation_type_id,
+                             location_name, location_description,
+                             mod_dt, mod_by,
+                             location_id))
+  dbGetRowsAffected(update_result)
+  dbClearResult(update_result)
+  # Update coordinates to location_coordinates
+  qry = glue_sql("UPDATE location_coordinates ",
+                 "SET horizontal_accuracy = {horizontal_accuracy}, ",
+                 "geom = ST_Transform(ST_GeomFromText('POINT({longitude} {latitude})', 4326), 2927), ",
+                 "modified_datetime = {mod_dt}, modified_by = {mod_by} ",
+                 "WHERE location_id = {location_id} ",
+                 .con = con)
+  # Checkout a connection
+  DBI::dbExecute(con, qry)
+  poolReturn(con)
+}
+
 #========================================================
 # Delete callback
 #========================================================

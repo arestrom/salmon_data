@@ -61,6 +61,14 @@
 #     table. Need to avoid possiblity of any clash.
 # 14. May want to eliminate all cases of "pool" as an argument
 #     in any global functions. Just call check out and check in.
+# 15. Need to dump and reload all lakes data...using new layer
+#     Dale is creating for me. Look for intersecting polygons
+#     before uploading and dump any duplicates. Dale's layer
+#     is omitting the marshland.
+# 16. Need to scan all existing stream geometry for overlapping
+#     segments...then dump those and reset sequences. Need to
+#     add code to look for overlapping segments in scripts to
+#     upload all geometry.
 #
 # AS 2019-07-15
 #==============================================================
