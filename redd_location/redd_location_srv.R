@@ -230,7 +230,7 @@ observeEvent(input$insert_redd_location, {
            longitude, horiz_accuracy, location_description,
            created_dt, created_by, modified_dt, modified_by)
   replaceData(redd_location_dt_proxy, post_redd_location_insert_vals)
-})
+}, priority = 9999)
 
 # #========================================================
 # # Edit operations: reactives, observers and modals
@@ -391,7 +391,7 @@ observeEvent(input$insert_redd_location, {
 # Generate values to show in modal
 output$redd_location_modal_delete_vals = renderDT({
   redd_location_modal_del_id = selected_redd_location_data()$redd_location_id
-  redd_location_modal_del_vals = get_redd_location(pool, selected_redd_location_data()$redd_location_id) %>%
+  redd_location_modal_del_vals = get_redd_location(pool, selected_redd_encounter_data()$redd_encounter_id) %>%
     filter(redd_location_id == redd_location_modal_del_id) %>%
     select(redd_name, channel_type, orientation_type, latitude,
            longitude, horiz_accuracy, location_description)
@@ -445,4 +445,4 @@ observeEvent(input$delete_redd_location, {
            longitude, horiz_accuracy, location_description,
            created_dt, created_by, modified_dt, modified_by)
   replaceData(redd_location_dt_proxy, redd_locations_after_delete)
-})
+}, priority = 9999)
