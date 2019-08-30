@@ -97,8 +97,86 @@ observeEvent(input$redd_locations_rows_selected, {
 # Update inputs to values of selected map location
 #========================================================
 
-# NEED TO FILL IN HERE !!!!!!!!!!!!!!!!
-# Make point moveable
+# Get centroid of stream for setting view of redd_map
+selected_stream_centroid = reactive({
+  req(input$stream_select)
+  stream_centroid_coords = get_stream_centroid(waterbody_id())
+  return(stream_centroid_coords)
+})
+
+# Output leaflet bidn map
+output$redd_map <- renderLeaflet({
+  m = leaflet() %>%
+    setView(lng = selected_stream_centroid()$center_lon,
+            lat = selected_stream_centroid()$center_lat,
+            zoom = 14) %>%
+    addPolylines(data = wria_streams(),
+                 group = "Streams",
+                 weight = 3,
+                 color = "#0000e6",
+                 label = ~stream_label,
+                 layerId = ~stream_label,
+                 labelOptions = labelOptions(noHide = FALSE)) %>%
+    addMarkers(lng = selected_redd_location_data()$longitude,
+               lat = selected_redd_location_data()$latitude,
+               layerId = selected_redd_location_data()$redd_location_id,
+               popup = selected_redd_location_data()$redd_name,
+               options = markerOptions(draggable = TRUE, riseOnHover = TRUE)) %>%
+    addProviderTiles("Esri.WorldImagery", group = "Esri World Imagery") %>%
+    addProviderTiles("OpenTopoMap", group = "Open Topo Map") %>%
+    addLayersControl(position = 'bottomright',
+                     baseGroups = c("Esri World Imagery", "Open Topo Map"),
+                     overlayGroups = c("Streams"),
+                     options = layersControlOptions(collapsed = TRUE))
+  m
+})
+
+
+# STOPPED HERE. Create table in modal to show updated marker location
+# Allow to add new marker if none is present
+# Wire in modal button to capture location and write to updated lat-lon inputs
+
+
+# Create reactive to hold click data
+marker_data = reactive({
+  req(input$surveymap_marker_click)
+  click_data = input$surveymap_marker_click
+  mark_dat = data_frame(id = as.character(click_data$id),
+                        Latitude = as.numeric(click_data$lat),
+                        Longitude = as.numeric(click_data$lng))
+  mark_dat = mark_dat %>%
+    left_join(surveys, by = "id") %>%
+    select(SurveyDate = survey_date, LocationID = id, Latitude, Longitude)
+  mark_dat
+})
+
+# Get dataframe of updated locations
+output$marker_data = DT::renderDataTable({
+  DT::datatable(marker_data(),
+                rownames = FALSE,
+                options = list(dom = "t"),
+                class = "compact nowrap cell-border stripe")
+})
+
+# Modal for new redd locations...add or edit a point...write coordinates to lat, lon
+observeEvent(input$redd_loc_map, {
+  showModal(
+    # Verify required fields have data...none can be blank
+    tags$div(id = "redd_location_map_modal",
+             modalDialog (
+               size = 'l',
+               title = glue("Create or edit a point"),
+               fluidPage (
+                 leafletOutput("redd_map", height = 500),
+                 br(),
+                 br(),
+                 actionButton("capture_redd_loc", "Capture redd location")
+               ),
+               easyClose = TRUE,
+               footer = NULL
+             )
+    ))
+})
 
 #========================================================
 # Insert operations: reactives, observers and modals
@@ -171,7 +249,7 @@ output$redd_location_modal_insert_vals = renderDT({
                              "}")))
 })
 
-# Modal for new redd encounters. No need for dup flag, multiple rows possible
+# Modal for new redd locations
 observeEvent(input$redd_loc_add, {
   new_redd_location_vals = redd_location_create()
   showModal(

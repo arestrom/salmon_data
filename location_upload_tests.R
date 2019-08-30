@@ -150,8 +150,6 @@ poolReturn(con)
 
 
 
-
-
 # Checkout a connection
 con = poolCheckout(pool)
 insert_loc_result = dbSendStatement(
@@ -242,14 +240,34 @@ DBI::dbExecute(chk_con, qry)
 # Return con to pool
 poolReturn(chk_con)
 
+#==========================================================================
+# Get centroid of waterbody to use in interactive redd_map
+#==========================================================================
 
+# Define dsns
+salmon_db = "local_spawn"
 
+# Set up dsn connection
+pool = pool::dbPool(drv = odbc::odbc(), timezone = "UTC", dsn = salmon_db)
 
+# Alder Creek 23.1185
+waterbody_id = '3fd8a43f-505c-4e1b-9474-94046099af62'
 
+# Stream centroid
+get_stream_centroid = function(waterbody_id) {
+  qry = glue("select DISTINCT waterbody_id, ",
+             "ST_X(ST_Transform(ST_Centroid(geom), 4326)) as center_lon, ",
+             "ST_Y(ST_Transform(ST_Centroid(geom), 4326)) as center_lat ",
+             "from stream ",
+             "where waterbody_id = '{waterbody_id}'")
+  con = poolCheckout(pool)
+  stream_centroid = DBI::dbGetQuery(con, qry)
+  poolReturn(con)
+  return(stream_centroid)
+}
 
-
-
-
+# Test
+stream_centroid = get_stream_centroid(waterbody_id)
 
 # Function to close pool
 onStop(function() {

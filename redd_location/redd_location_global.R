@@ -65,6 +65,22 @@ get_orientation_type = function(pool) {
   return(orientation_type_list)
 }
 
+#==========================================================================
+# Get centroid of waterbody to use in interactive redd_map
+#==========================================================================
+
+get_stream_centroid = function(waterbody_id) {
+  qry = glue("select DISTINCT waterbody_id, ",
+             "ST_X(ST_Transform(ST_Centroid(geom), 4326)) as center_lon, ",
+             "ST_Y(ST_Transform(ST_Centroid(geom), 4326)) as center_lat ",
+             "from stream ",
+             "where waterbody_id = '{waterbody_id}'")
+  con = poolCheckout(pool)
+  stream_centroid = DBI::dbGetQuery(con, qry)
+  poolReturn(con)
+  return(stream_centroid)
+}
+
 #========================================================
 # Insert callback
 #========================================================
