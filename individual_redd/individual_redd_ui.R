@@ -3,22 +3,34 @@
 #=============================================================
 
 # Define the survey data content
-redd_encounter_ui = tags$div(
-  actionButton(inputId = "redd_enc_add", label = "New", class = "new_button"),
-  actionButton(inputId = "redd_enc_edit", label = "Edit", class = "edit_button"),
-  actionButton(inputId = "redd_enc_delete", label = "Delete", class = "delete_button"),
+individual_redd_ui = tags$div(
+  actionButton(inputId = "ind_redd_add", label = "New", class = "new_button"),
+  actionButton(inputId = "ind_redd_edit", label = "Edit", class = "edit_button"),
+  actionButton(inputId = "ind_redd_delete", label = "Delete", class = "delete_button"),
   br(),
   br(),
-  timeInput(inputId = "redd_encounter_time_select", "encounter_time", seconds = FALSE),
-  uiOutput("redd_status_select", inline = TRUE),
-  numericInput(inputId = "redd_count_input", label = "redd_count", value = 0,
-               min = 0, step = 1, width = "75px"),
-  uiOutput("redd_name_select", inline = TRUE),
-  textAreaInput(inputId = "redd_comment_input", label = "redd_comment", value = "",
+  uiOutput("redd_shape_select", inline = TRUE),
+  uiOutput("dewatered_type_select", inline = TRUE),
+  numericInput(inputId = "pct_visible_input", label = "pct_visible", value = 0,
+               min = 0, max = 100, step = 5, width = "100px"),
+  numericInput(inputId = "redd_length_input", label = "redd_length_m", value = 0,
+               min = 0, max = 50, step = 5, width = "100px"),
+  numericInput(inputId = "redd_width_input", label = "redd_width_m", value = 0,
+               min = 0, max = 50, step = 5, width = "100px"),
+  numericInput(inputId = "redd_depth_input", label = "redd_depth_m", value = 0,
+               min = 0, max = 10, step = 1, width = "100px"),
+  numericInput(inputId = "tailspill_height_input", label = "tailspill_height_m", value = 0,
+               min = 0, max = 10, step = 1, width = "150px"),
+  numericInput(inputId = "pct_superimposed_input", label = "pct_superimposed", value = 0,
+               min = 0, max = 100, step = 5, width = "125px"),
+  numericInput(inputId = "pct_degraded_input", label = "pct_degraded", value = 0,
+               min = 0, max = 100, step = 5, width = "125px"),
+  textInput(inputId = "superimposed_redd_name_input", label = "superimposed_redd_name", width = "175px"),
+  textAreaInput(inputId = "ind_redd_comment_input", label = "individual_redd_comment", value = "",
                 width = "300px", resize = "both"),
   br(),
   br(),
   br(),
-  DT::DTOutput("redd_encounters"),
-  verbatimTextOutput("chk_redd_edit")
+  DT::DTOutput("individual_redds"),
+  verbatimTextOutput("chk_ind_redd_edit")
 )

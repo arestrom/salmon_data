@@ -129,6 +129,8 @@ source("redd_encounter/redd_encounter_ui.R")
 source("redd_encounter/redd_encounter_global.R")
 source("redd_location/redd_location_ui.R")
 source("redd_location/redd_location_global.R")
+source("individual_redd/individual_redd_ui.R")
+source("individual_redd/individual_redd_global.R")
 
 # Define globals ================================================================
 

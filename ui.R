@@ -104,8 +104,7 @@ ui = dashboardPagePlus(
             title = "Individual redd",
             color = "purple",
             collapsed = TRUE,
-            "This is some text"
-            #individual_redd_ui
+            individual_redd_ui
           ),
           accordionItem(
             id = 9,
