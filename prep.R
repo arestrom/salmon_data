@@ -669,6 +669,57 @@ st_point(c(-123.10987, 46.6167)) %>%
   st_as_binary(.) %>%
   rawToHex(.)
 
+#========================================================================
+# Possible use of leaflet.extras draw and edit features for adding point
+#========================================================================
+
+# Worked to here. Needed to wire in ability to remove other marker
+# And get coordinates when clicked
+
+# Output leaflet bidn map....could also use color to indicate species:
+# See: https://rstudio.github.io/leaflet/markers.html
+output$redd_map <- renderLeaflet({
+  m = leaflet() %>%
+    setView(lng = selected_stream_centroid()$center_lon,
+            lat = selected_stream_centroid()$center_lat,
+            zoom = 14) %>%
+    addDrawToolbar(circleOptions = NA,
+                   circleMarkerOptions =
+                     drawCircleMarkerOptions(weight = 3,
+                                             fillColor = "red",
+                                             fillOpacity = 0.5,
+                                             stroke = FALSE),
+                   editOptions = editToolbarOptions(),
+                   markerOptions = NA,
+                   polygonOptions = NA,
+                   rectangleOptions = NA,
+                   polylineOptions = NA) %>%
+    addPolylines(data = wria_streams(),
+                 group = "Streams",
+                 weight = 3,
+                 color = "#0000e6",
+                 label = ~stream_label,
+                 layerId = ~stream_label,
+                 labelOptions = labelOptions(noHide = FALSE)) %>%
+    addCircleMarkers(lng = selected_redd_location_data()$longitude,
+                     lat = selected_redd_location_data()$latitude,
+                     layerId = selected_redd_location_data()$redd_location_id,
+                     popup = selected_redd_location_data()$redd_name,
+                     radius = 8,
+                     color = "red",
+                     fillOpacity = 0.5,
+                     stroke = FALSE,
+                     options = markerOptions(draggable = TRUE,
+                                             riseOnHover = TRUE)) %>%
+    addProviderTiles("Esri.WorldImagery", group = "Esri World Imagery") %>%
+    addProviderTiles("OpenTopoMap", group = "Open Topo Map") %>%
+    addLayersControl(position = 'bottomright',
+                     baseGroups = c("Esri World Imagery", "Open Topo Map"),
+                     overlayGroups = c("Streams"),
+                     options = layersControlOptions(collapsed = TRUE))
+  m
+})
+
 
 
 
