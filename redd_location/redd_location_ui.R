@@ -25,5 +25,4 @@ redd_location_ui = tags$div(
   br(),
   br(),
   DT::DTOutput("redd_locations")
-  #verbatimTextOutput("chk_loc_edit")
 )

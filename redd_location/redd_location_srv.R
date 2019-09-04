@@ -74,7 +74,7 @@ selected_redd_location_data = reactive({
                                   created_by = redd_location_data$created_by[redd_location_row],
                                   modified_date = redd_location_data$modified_date[redd_location_row],
                                   modified_by = redd_location_data$modified_by[redd_location_row])
-  print(selected_redd_location)
+  #print(selected_redd_location)
   return(selected_redd_location)
 })
 
@@ -95,7 +95,7 @@ observeEvent(input$redd_locations_rows_selected, {
 })
 
 #========================================================
-# Update inputs to values of selected map location
+# Get centroid of selected stream for redd_map
 #========================================================
 
 # Get centroid of stream for setting view of redd_map
@@ -105,40 +105,48 @@ selected_stream_centroid = reactive({
   return(stream_centroid_coords)
 })
 
-# # Output leaflet bidn map....could also use color to indicate species:
-# # See: https://rstudio.github.io/leaflet/markers.html
-# output$redd_map <- renderLeaflet({
-#   m = leaflet() %>%
-#     setView(
-#       lng = selected_stream_centroid()$center_lon,
-#       lat = selected_stream_centroid()$center_lat,
-#       zoom = 14) %>%
-#     addPolylines(
-#       data = wria_streams(),
-#       group = "Streams",
-#       weight = 3,
-#       color = "#0000e6",
-#       label = ~stream_label,
-#       layerId = ~stream_label,
-#       labelOptions = labelOptions(noHide = FALSE)) %>%
-#     addProviderTiles("Esri.WorldImagery", group = "Esri World Imagery") %>%
-#     addProviderTiles("OpenTopoMap", group = "Open Topo Map") %>%
-#     addLayersControl(position = 'bottomright',
-#                      baseGroups = c("Esri World Imagery", "Open Topo Map"),
-#                      overlayGroups = c("Streams"),
-#                      options = layersControlOptions(collapsed = TRUE))
-#   m
-# })
+#================================================================
+# Get either selected redd coordinates or default stream centroid
+#================================================================
+
+# Get centroid of stream for setting view of redd_map
+selected_redd_coords = reactive({
+  req(input$redd_encounters_rows_selected)
+  # Get centroid of stream....always available if stream is selected
+  center_lat = selected_stream_centroid()$center_lat
+  center_lon = selected_stream_centroid()$center_lon
+  # Get location_coordinates data should be nrow == 0 if no coordiinates present
+  redd_coords = get_redd_coordinates(pool, selected_redd_encounter_data()$redd_encounter_id)
+  if ( nrow(redd_coords) == 0 ) {
+    redd_lat = center_lat
+    redd_lon = center_lon
+    redd_name = "need redd name"
+  } else {
+    redd_lat = redd_coords$latitude
+    redd_lon = redd_coords$longitude
+    redd_name = selected_redd_encounter_data()$redd_name
+  }
+  redd_coords = tibble(redd_encounter_id = selected_redd_encounter_data()$redd_encounter_id,
+                       redd_name = redd_name,
+                       redd_lat = redd_lat,
+                       redd_lon = redd_lon)
+  return(redd_coords)
+})
 
 # Output leaflet bidn map....could also use color to indicate species:
 # See: https://rstudio.github.io/leaflet/markers.html
 output$redd_map <- renderLeaflet({
-  redd_loc_data = get_redd_location(pool, selected_redd_encounter_data()$redd_encounter_id)
+  redd_loc_data = selected_redd_coords()
+  redd_lat = redd_loc_data$redd_lat
+  redd_lon = redd_loc_data$redd_lon
+  redd_name = redd_loc_data$redd_name
+  redd_encounter_id = redd_loc_data$redd_encounter_id
   m = leaflet() %>%
     setView(
       lng = selected_stream_centroid()$center_lon,
       lat = selected_stream_centroid()$center_lat,
       zoom = 14) %>%
+    # Needed to enable draggable circle-markers
     addDrawToolbar(circleOptions = NA,
                    circleMarkerOptions = NA,
                    markerOptions = NA,
@@ -154,16 +162,10 @@ output$redd_map <- renderLeaflet({
       layerId = ~stream_label,
       labelOptions = labelOptions(noHide = FALSE)) %>%
     addCircleMarkers(
-      lng = if_else(nrow(redd_loc_data) == 1L & !is.na(redd_loc_data$longitude),
-                    redd_loc_data$longitude,
-                    selected_stream_centroid()$center_lon),
-      lat = if_else(nrow(redd_loc_data) == 1L & !is.na(redd_loc_data$latitude),
-                    redd_loc_data$latitude,
-                    selected_stream_centroid()$center_lat),
-      # layerId = if_else(!is.na(selected_redd_location_data()$redd_location_id),
-      #                   selected_redd_location_data()$redd_location_id, "none"),
-      # popup = if_else(!is.na(selected_redd_location_data()$redd_name),
-      #                 selected_redd_location_data()$redd_name, "need redd_name"),
+      lng = redd_lon,
+      lat = redd_lat,
+      layerId = redd_encounter_id,
+      popup = redd_name,
       radius = 8,
       color = "red",
       fillOpacity = 0.5,
@@ -179,110 +181,22 @@ output$redd_map <- renderLeaflet({
   m
 })
 
-# # Output leaflet bidn map....could also use color to indicate species:
-# # See: https://rstudio.github.io/leaflet/markers.html
-# output$redd_map <- renderLeaflet({
-#   m = leaflet() %>%
-#     setView(
-#       lng = selected_stream_centroid()$center_lon,
-#       lat = selected_stream_centroid()$center_lat,
-#       zoom = 14) %>%
-#     addPolylines(
-#       data = wria_streams(),
-#       group = "Streams",
-#       weight = 3,
-#       color = "#0000e6",
-#       label = ~stream_label,
-#       layerId = ~stream_label,
-#       labelOptions = labelOptions(noHide = FALSE)) %>%
-#     addCircleMarkers(
-#       lng = selected_redd_location_data()$longitude,
-#       lat = selected_redd_location_data()$latitude,
-#       layerId = selected_redd_location_data()$redd_location_id,
-#       popup = selected_redd_location_data()$redd_name,
-#       radius = 8,
-#       color = "red",
-#       fillOpacity = 0.5,
-#       stroke = FALSE,
-#       options = markerOptions(draggable = TRUE,
-#                               riseOnHover = TRUE)) %>%
-#     addProviderTiles("Esri.WorldImagery", group = "Esri World Imagery") %>%
-#     addProviderTiles("OpenTopoMap", group = "Open Topo Map") %>%
-#     addLayersControl(position = 'bottomright',
-#                      baseGroups = c("Esri World Imagery", "Open Topo Map"),
-#                      overlayGroups = c("Streams"),
-#                      options = layersControlOptions(collapsed = TRUE))
-#   m
-# })
-
-# STOPPED HERE. Create table in modal to show updated marker location
-# Allow to add new marker if none is present
-# Wire in modal button to capture location and write to updated lat-lon inputs
-
-# Steps in redd_map proxy:
-# 1. Check if selected_redd_location data includes coordinates.
-#    If so
-#    if not just draw empty map
-# 2. Check if redd_map_click has occurred...will only happen if
-#    empty map was created...Then add circle marker
-
-# # Draw circleMarker from existing data
-# observeEvent(input$redd_loc_map, {
-#   redd_loc = selected_redd_location_data() %>%
-#     select(redd_location_id, redd_name,
-#            lng = longitude, lat = latitude)
-#   redd_map_proxy = leafletProxy("redd_map")
-#   if ( !is.na(redd_loc$lat) &
-#        !is.na(redd_loc$lng) ) {
-#     redd_map_proxy %>%
-#       addCircleMarkers(
-#         lng = redd_loc$lng,
-#         lat = redd_loc$lat,
-#         layerId = redd_loc$redd_location_id,
-#         popup = redd_loc$redd_name,
-#         radius = 8,
-#         color = "red",
-#         fillOpacity = 0.5,
-#         stroke = FALSE,
-#         options = markerOptions(draggable = TRUE,
-#                                 riseOnHover = TRUE))
-#   }
-# }, priority = 9999)
-#
-#
-#
-
-# # Observe mouse clicks in empty map to record location
-# observeEvent(input$redd_map_click, {
-#   # Capture coordinates from click
-#   redd_click = input$redd_map_click
-#   redd_lat = redd_click$lat
-#   redd_lng <- redd_click$lng
-#
-#   ## Add the circleMarker to proxy redd_map if no redd present on map
-#   if ()
-#     leafletProxy('map') %>% # use the proxy to save computation
-#     addCircles(lng=clng, lat=clat, group='circles',
-#                weight=1, radius=100, color='black', fillColor='orange',
-#                popup=address, fillOpacity=0.5, opacity=1)
-# })
-
 # Create reactive to hold click data
 marker_data = reactive({
   req(input$redd_map_marker_click)
   click_data = input$redd_map_marker_click
-  mark_dat = tibble(Latitude = round(as.numeric(click_data$lat), digits = 6),
-                    Longitude = round(as.numeric(click_data$lng), digits = 6))
+  mark_dat = tibble(latitude = round(as.numeric(click_data$lat), digits = 6),
+                    longitude = round(as.numeric(click_data$lng), digits = 6))
   return(mark_dat)
 })
 
 # Get dataframe of updated locations
-output$redd_coordinates = renderText({
-  if (nrow(marker_data()) > 0 ) {
-    glue({marker_data()$Latitude}, ": ", {marker_data()$Longitude})
-  } else {
-    "Please click on a redd marker"
-  }
+output$redd_coordinates = renderUI({
+  if ( length(input$redd_map_marker_click) == 0L ) {
+  HTML("Drag marker to edit location. Click on marker to set coordinates")
+} else {
+  HTML(glue("Redd location: ", {marker_data()$latitude}, ": ", {marker_data()$longitude}))
+}
 })
 
 # Modal for new redd locations...add or edit a point...write coordinates to lat, lon
@@ -303,8 +217,8 @@ observeEvent(input$redd_loc_map, {
                  fluidRow(
                    column(width = 2,
                           actionButton("capture_redd_loc", "Capture redd location")),
-                   column(width = 3,
-                          verbatimTextOutput("redd_coordinates"))
+                   column(width = 10,
+                          htmlOutput("redd_coordinates"))
                  )
                ),
                easyClose = TRUE,
@@ -312,6 +226,18 @@ observeEvent(input$redd_loc_map, {
              )
     )
   )
+})
+
+#======================================================================
+# Update redd location coordinate inputs to coordinates selected on map
+#======================================================================
+
+# Update all input values to values in selected row
+observeEvent(input$capture_redd_loc, {
+  coord_data = marker_data()
+  updateNumericInput(session, "latitude_input", value = coord_data$latitude)
+  updateNumericInput(session, "longitude_input", value = coord_data$longitude)
+  removeModal()
 })
 
 #========================================================
@@ -514,23 +440,6 @@ output$redd_location_modal_update_vals = renderDT({
                              "$(this.api().table().header()).css({'background-color': '#9eb3d6'});",
                              "}")))
 })
-
-# output$chk_loc_edit = renderText({
-#   old_redd_location_vals = selected_redd_location_data() %>%
-#     select(redd_name, channel_type, orientation_type, latitude,
-#            longitude, horiz_accuracy, location_description)
-#   old_redd_location_vals[] = lapply(old_redd_location_vals, remisc::set_na)
-#   new_redd_location_vals = redd_location_edit() %>%
-#     mutate(horiz_accuracy = as.numeric(horiz_accuracy)) %>%
-#     select(redd_name, channel_type, orientation_type, latitude,
-#            longitude, horiz_accuracy, location_description)
-#   new_redd_location_vals[] = lapply(new_redd_location_vals, remisc::set_na)
-#   print("old locations")
-#   print(old_redd_location_vals)
-#   print("new locations")
-#   print(new_redd_location_vals)
-#   return(unlist(old_redd_location_vals))
-# })
 
 # Edit modal
 observeEvent(input$redd_loc_edit, {

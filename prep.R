@@ -625,6 +625,52 @@ redd_encounter_id = "5e2fa75c-e922-4786-853c-565b5f3192aa"
 redd_locations = get_redd_location(pool, redd_encounter_id)
 poolReturn(con)
 
+#==========================================================================
+# Get just the redd_coordinates
+#==========================================================================
+
+# Define dsns
+salmon_db = "local_spawn"
+# Set up dsn connection
+pool = pool::dbPool(drv = odbc::odbc(), timezone = "UTC", dsn = salmon_db)
+
+# Redd_coordinates query
+get_redd_coordinates = function(pool, redd_encounter_id) {
+  qry = glue("select lc.location_id as redd_location_id, ",
+             "lc.location_coordinates_id, ",
+             "st_x(st_transform(lc.geom, 4326)) as longitude, ",
+             "st_y(st_transform(lc.geom, 4326)) as latitude, ",
+             "lc.horizontal_accuracy as horiz_accuracy, ",
+             "lc.created_datetime as created_date, lc.created_by, ",
+             "lc.modified_datetime as modified_date, lc.modified_by ",
+             "from redd_encounter as rd ",
+             "inner join location as loc on rd.redd_location_id = loc.location_id ",
+             "inner join location_coordinates as lc on loc.location_id = lc.location_id ",
+             "where rd.redd_encounter_id = '{redd_encounter_id}'")
+  redd_coordinates = DBI::dbGetQuery(pool, qry)
+  redd_coordinates = redd_coordinates %>%
+    mutate(redd_location_id = tolower(redd_location_id)) %>%
+    mutate(location_coordinates_id = tolower(location_coordinates_id)) %>%
+    mutate(latitude = round(latitude, 6)) %>%
+    mutate(longitude = round(longitude, 6)) %>%
+    mutate(created_date = with_tz(created_date, tzone = "America/Los_Angeles")) %>%
+    mutate(created_dt = format(created_date, "%m/%d/%Y %H:%M")) %>%
+    mutate(modified_date = with_tz(modified_date, tzone = "America/Los_Angeles")) %>%
+    mutate(modified_dt = format(modified_date, "%m/%d/%Y %H:%M")) %>%
+    select(redd_location_id, location_coordinates_id,
+           latitude, longitude, horiz_accuracy, created_date,
+           created_dt, created_by, modified_date, modified_dt,
+           modified_by) %>%
+    arrange(created_date)
+  return(redd_coordinates)
+}
+
+# Test...Works !!
+redd_encounter_id = "75b4e633-1e18-476d-9bbd-c465e725ef73"
+redd_encounter_id = "5e2fa75c-e922-4786-853c-565b5f3192aa"
+redd_coordinates = get_redd_coordinates(pool, redd_encounter_id)
+poolReturn(con)
+
 #====================================================================
 # Test of creating points as binary
 #====================================================================
@@ -719,6 +765,118 @@ output$redd_map <- renderLeaflet({
                      options = layersControlOptions(collapsed = TRUE))
   m
 })
+
+#========================================================================
+# If just adding point in stream_centroid position...this works.
+# But am re-doing to use map proxy object
+#========================================================================
+
+# Output leaflet bidn map....could also use color to indicate species:
+# See: https://rstudio.github.io/leaflet/markers.html
+output$redd_map <- renderLeaflet({
+  redd_loc_data = selected_redd_coords()
+  redd_lat = redd_loc_data$redd_lat
+  redd_lon = redd_loc_data$redd_lon
+  redd_name = redd_loc_data$redd_name
+  redd_encounter_id = redd_loc_data$redd_encounter_id
+  m = leaflet() %>%
+    setView(
+      lng = selected_stream_centroid()$center_lon,
+      lat = selected_stream_centroid()$center_lat,
+      zoom = 14) %>%
+    # Needed to enable draggable circle-markers
+    addDrawToolbar(circleOptions = NA,
+                   circleMarkerOptions = NA,
+                   markerOptions = NA,
+                   polygonOptions = NA,
+                   rectangleOptions = NA,
+                   polylineOptions = NA) %>%
+    addPolylines(
+      data = wria_streams(),
+      group = "Streams",
+      weight = 3,
+      color = "#0000e6",
+      label = ~stream_label,
+      layerId = ~stream_label,
+      labelOptions = labelOptions(noHide = FALSE)) %>%
+    addCircleMarkers(
+      lng = redd_lon,
+      lat = redd_lat,
+      layerId = redd_encounter_id,
+      popup = redd_name,
+      radius = 8,
+      color = "red",
+      fillOpacity = 0.5,
+      stroke = FALSE,
+      options = markerOptions(draggable = TRUE,
+                              riseOnHover = TRUE)) %>%
+    addProviderTiles("Esri.WorldImagery", group = "Esri World Imagery") %>%
+    addProviderTiles("OpenTopoMap", group = "Open Topo Map") %>%
+    addLayersControl(position = 'bottomright',
+                     baseGroups = c("Esri World Imagery", "Open Topo Map"),
+                     overlayGroups = c("Streams"),
+                     options = layersControlOptions(collapsed = TRUE))
+  m
+})
+
+#========================================================================
+# Did not work....
+#========================================================================
+
+# Output leaflet bidn map....could also use color to indicate species:
+# See: https://rstudio.github.io/leaflet/markers.html
+output$redd_map <- renderLeaflet({
+  m = leaflet() %>%
+    setView(
+      lng = selected_stream_centroid()$center_lon,
+      lat = selected_stream_centroid()$center_lat,
+      zoom = 14) %>%
+    addPolylines(
+      data = wria_streams(),
+      group = "Streams",
+      weight = 3,
+      color = "#0000e6",
+      label = ~stream_label,
+      layerId = ~stream_label,
+      labelOptions = labelOptions(noHide = FALSE)) %>%
+    addProviderTiles("Esri.WorldImagery", group = "Esri World Imagery") %>%
+    addProviderTiles("OpenTopoMap", group = "Open Topo Map") %>%
+    addLayersControl(position = 'bottomright',
+                     baseGroups = c("Esri World Imagery", "Open Topo Map"),
+                     overlayGroups = c("Streams"),
+                     options = layersControlOptions(collapsed = TRUE))
+  m
+})
+
+# Add draggable circleMarker based on what redd_encounter row is clicked
+observeEvent(input$redd_loc_map, {
+  redd_loc_data = selected_redd_coords()
+  redd_lat = redd_loc_data$redd_lat
+  redd_lon = redd_loc_data$redd_lon
+  redd_name = redd_loc_data$redd_name
+  redd_encounter_id = redd_loc_data$redd_encounter_id
+  redd_map_proxy = leafletProxy("redd_map")
+  redd_map_proxy %>%
+    addDrawToolbar(circleOptions = NA,
+                   circleMarkerOptions = NA,
+                   markerOptions = NA,
+                   polygonOptions = NA,
+                   rectangleOptions = NA,
+                   polylineOptions = NA) %>%
+    addCircleMarkers(
+      lng = redd_lon,
+      lat = redd_lat,
+      layerId = redd_encounter_id,
+      popup = redd_name,
+      radius = 8,
+      color = "red",
+      fillOpacity = 0.5,
+      stroke = FALSE,
+      options = markerOptions(draggable = TRUE,
+                              riseOnHover = TRUE))
+  redd_map_proxy
+})
+
 
 
 

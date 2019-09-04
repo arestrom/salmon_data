@@ -38,6 +38,41 @@ get_redd_location = function(pool, redd_encounter_id) {
 }
 
 #==========================================================================
+# Get just the redd_coordinates
+#==========================================================================
+
+# Redd_coordinates query
+get_redd_coordinates = function(pool, redd_encounter_id) {
+  qry = glue("select lc.location_id as redd_location_id, ",
+             "lc.location_coordinates_id, ",
+             "st_x(st_transform(lc.geom, 4326)) as longitude, ",
+             "st_y(st_transform(lc.geom, 4326)) as latitude, ",
+             "lc.horizontal_accuracy as horiz_accuracy, ",
+             "lc.created_datetime as created_date, lc.created_by, ",
+             "lc.modified_datetime as modified_date, lc.modified_by ",
+             "from redd_encounter as rd ",
+             "inner join location as loc on rd.redd_location_id = loc.location_id ",
+             "inner join location_coordinates as lc on loc.location_id = lc.location_id ",
+             "where rd.redd_encounter_id = '{redd_encounter_id}'")
+  redd_coordinates = DBI::dbGetQuery(pool, qry)
+  redd_coordinates = redd_coordinates %>%
+    mutate(redd_location_id = tolower(redd_location_id)) %>%
+    mutate(location_coordinates_id = tolower(location_coordinates_id)) %>%
+    mutate(latitude = round(latitude, 6)) %>%
+    mutate(longitude = round(longitude, 6)) %>%
+    mutate(created_date = with_tz(created_date, tzone = "America/Los_Angeles")) %>%
+    mutate(created_dt = format(created_date, "%m/%d/%Y %H:%M")) %>%
+    mutate(modified_date = with_tz(modified_date, tzone = "America/Los_Angeles")) %>%
+    mutate(modified_dt = format(modified_date, "%m/%d/%Y %H:%M")) %>%
+    select(redd_location_id, location_coordinates_id,
+           latitude, longitude, horiz_accuracy, created_date,
+           created_dt, created_by, modified_date, modified_dt,
+           modified_by) %>%
+    arrange(created_date)
+  return(redd_coordinates)
+}
+
+#==========================================================================
 # Get generic lut input values
 #==========================================================================
 
