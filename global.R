@@ -69,6 +69,12 @@
 #     segments...then dump those and reset sequences. Need to
 #     add code to look for overlapping segments in scripts to
 #     upload all geometry.
+# 17. Dump bs_modal in favor of shiny modal in dashboard_ui
+# 18. Add input$delete observe to all shinyjs disable code
+#     See example in redd_substrate_srv code.
+# 19. Check that select inputs are ordered optimally. Use
+#     example code in redd_substrate_global as example to
+#     order by levels.
 #
 # AS 2019-07-15
 #==============================================================
@@ -131,6 +137,8 @@ source("redd_location/redd_location_ui.R")
 source("redd_location/redd_location_global.R")
 source("individual_redd/individual_redd_ui.R")
 source("individual_redd/individual_redd_global.R")
+source("redd_substrate/redd_substrate_ui.R")
+source("redd_substrate/redd_substrate_global.R")
 
 # Define globals ================================================================
 

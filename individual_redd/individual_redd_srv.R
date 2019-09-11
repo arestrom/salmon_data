@@ -310,26 +310,6 @@ output$individual_redd_modal_update_vals = renderDT({
                              "}")))
 })
 
-# output$chk_ind_redd_edit = renderText({
-#   old_individual_redd_vals = selected_individual_redd_data() %>%
-#     select(redd_shape, dewatered_type, pct_visible, redd_length_m, redd_width_m,
-#            redd_depth_m, tailspill_height_m, pct_superimposed, pct_degraded,
-#            superimposed_redd_name, individual_redd_comment)
-#   old_individual_redd_vals[] = lapply(old_individual_redd_vals, remisc::set_na)
-#   new_individual_redd_vals = individual_redd_edit() %>%
-#     mutate(redd_length_m = as.numeric(redd_length_m)) %>%
-#     mutate(redd_width_m = as.numeric(redd_width_m)) %>%
-#     mutate(redd_depth_m = as.numeric(redd_depth_m)) %>%
-#     mutate(tailspill_height_m = as.numeric(tailspill_height_m)) %>%
-#     select(redd_shape, dewatered_type, pct_visible, redd_length_m, redd_width_m,
-#            redd_depth_m, tailspill_height_m, pct_superimposed, pct_degraded,
-#            superimposed_redd_name, individual_redd_comment)
-#   new_individual_redd_vals[] = lapply(new_individual_redd_vals, remisc::set_na)
-#   print(old_individual_redd_vals)
-#   print(new_individual_redd_vals)
-#   return(unlist(old_individual_redd_vals))
-# })
-
 # Edit modal
 observeEvent(input$ind_redd_edit, {
   old_individual_redd_vals = selected_individual_redd_data() %>%

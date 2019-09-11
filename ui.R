@@ -111,8 +111,7 @@ ui = dashboardPagePlus(
             title = "Redd substrate",
             color = "purple",
             collapsed = TRUE,
-            "This is some text"
-            #redd_substrate_ui
+            redd_substrate_ui
           )
         )
       )

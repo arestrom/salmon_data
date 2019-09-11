@@ -1,5 +1,5 @@
 #=============================================================
-# HTML content definition of redd_encounter accordion
+# HTML content definition of individual_redd accordion
 #=============================================================
 
 # Define the survey data content
@@ -32,6 +32,5 @@ individual_redd_ui = tags$div(
   br(),
   br(),
   br(),
-  DT::DTOutput("individual_redds"),
-  verbatimTextOutput("chk_ind_redd_edit")
+  DT::DTOutput("individual_redds")
 )
