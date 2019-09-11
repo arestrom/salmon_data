@@ -115,83 +115,77 @@ individual_redd_insert = function(new_individual_redd_values) {
   poolReturn(con)
 }
 
-# #========================================================
-# # Edit update callback
-# #========================================================
-#
-# # Define update callback
-# redd_encounter_update = function(redd_encounter_edit_values) {
-#   edit_values = redd_encounter_edit_values
-#   # Pull out data
-#   redd_encounter_id = edit_values$redd_encounter_id
-#   redd_location_id = edit_values$redd_location_id
-#   redd_status_id = edit_values$redd_status_id
-#   redd_encounter_datetime = edit_values$redd_encounter_time
-#   redd_count = edit_values$redd_count
-#   comment_text = edit_values$redd_comment
-#   if (is.na(comment_text) | comment_text == "") { comment_text = NA }
-#   mod_dt = lubridate::with_tz(Sys.time(), "UTC")
-#   mod_by = Sys.getenv("USERNAME")
-#   # Checkout a connection
-#   con = poolCheckout(pool)
-#   update_result = dbSendStatement(
-#     con, glue_sql("UPDATE redd_encounter SET ",
-#                   "redd_location_id = ?, ",
-#                   "redd_status_id = ?, ",
-#                   "redd_encounter_datetime = ?, ",
-#                   "redd_count = ?, ",
-#                   "comment_text = ?, ",
-#                   "modified_datetime = ?, ",
-#                   "modified_by = ? ",
-#                   "where redd_encounter_id = ?"))
-#   dbBind(update_result, list(redd_location_id, redd_status_id,
-#                              redd_encounter_datetime, redd_count,
-#                              comment_text, mod_dt, mod_by,
-#                              redd_encounter_id))
-#   dbGetRowsAffected(update_result)
-#   dbClearResult(update_result)
-#   poolReturn(con)
-# }
-#
-# #========================================================
-# # Identify redd encounter dependencies prior to delete
-# #========================================================
-#
-# # Identify fish_encounter dependencies prior to delete
-# get_redd_encounter_dependencies = function(redd_encounter_id) {
-#   qry = glue("select ",
-#              "count(ir.individual_redd_id) as individual_redd, ",
-#              "count(rc.redd_confidence_id) as redd_confidence, ",
-#              "count(rs.redd_substrate_id) as redd_substrate ",
-#              "from redd_encounter as rd ",
-#              "left join individual_redd as ir on rd.redd_encounter_id = ir.redd_encounter_id ",
-#              "left join redd_confidence as rc on rd.redd_encounter_id = rc.redd_encounter_id ",
-#              "left join redd_substrate as rs on rd.redd_encounter_id = rs.redd_encounter_id ",
-#              "where rd.redd_encounter_id = '{redd_encounter_id}'")
-#   con = poolCheckout(pool)
-#   redd_encounter_dependents = DBI::dbGetQuery(pool, qry)
-#   has_entries = function(x) any(x > 0L)
-#   redd_encounter_dependents = redd_encounter_dependents %>%
-#     select_if(has_entries)
-#   return(redd_encounter_dependents)
-# }
-#
-# #========================================================
-# # Delete callback
-# #========================================================
-#
-# # Define delete callback
-# redd_encounter_delete = function(delete_values) {
-#   redd_encounter_id = delete_values$redd_encounter_id
-#   con = poolCheckout(pool)
-#   delete_result = dbSendStatement(
-#     con, glue_sql("DELETE FROM redd_encounter WHERE redd_encounter_id = ?"))
-#   dbBind(delete_result, list(redd_encounter_id))
-#   dbGetRowsAffected(delete_result)
-#   dbClearResult(delete_result)
-#   poolReturn(con)
-# }
-#
+#========================================================
+# Edit update callback
+#========================================================
+
+# Define update callback
+individual_redd_update = function(individual_redd_edit_values) {
+  edit_values = individual_redd_edit_values
+  # Pull out data
+  individual_redd_id = edit_values$individual_redd_id
+  redd_shape_id = edit_values$redd_shape_id
+  redd_dewatered_type_id = edit_values$redd_dewatered_type_id
+  percent_redd_visible = edit_values$pct_visible
+  redd_length_measure_meter = edit_values$redd_length_m
+  redd_width_measure_meter = edit_values$redd_width_m
+  redd_depth_measure_meter = edit_values$redd_depth_m
+  tailspill_height_measure_meter = edit_values$tailspill_height_m
+  percent_redd_superimposed = edit_values$pct_superimposed
+  percent_redd_degraded = edit_values$pct_degraded
+  superimposed_redd_name = edit_values$superimposed_redd_name
+  comment_text = edit_values$individual_redd_comment
+  if (is.na(superimposed_redd_name) | superimposed_redd_name == "") { superimposed_redd_name = NA }
+  if (is.na(comment_text) | comment_text == "") { comment_text = NA }
+  mod_dt = lubridate::with_tz(Sys.time(), "UTC")
+  mod_by = Sys.getenv("USERNAME")
+  # Checkout a connection
+  con = poolCheckout(pool)
+  update_result = dbSendStatement(
+    con, glue_sql("UPDATE individual_redd SET ",
+                  "redd_shape_id = ?, ",
+                  "redd_dewatered_type_id = ?, ",
+                  "percent_redd_visible = ?, ",
+                  "redd_length_measure_meter = ?, ",
+                  "redd_width_measure_meter = ?, ",
+                  "redd_depth_measure_meter = ?, ",
+                  "tailspill_height_measure_meter = ?, ",
+                  "percent_redd_superimposed = ?, ",
+                  "percent_redd_degraded = ?, ",
+                  "superimposed_redd_name = ?, ",
+                  "comment_text = ?, ",
+                  "modified_datetime = ?, ",
+                  "modified_by = ? ",
+                  "where individual_redd_id = ?"))
+  dbBind(update_result, list(redd_shape_id, redd_dewatered_type_id,
+                             percent_redd_visible, redd_length_measure_meter,
+                             redd_width_measure_meter, redd_depth_measure_meter,
+                             tailspill_height_measure_meter, percent_redd_superimposed,
+                             percent_redd_degraded, superimposed_redd_name,
+                             comment_text, mod_dt, mod_by,
+                             individual_redd_id))
+  dbGetRowsAffected(update_result)
+  dbClearResult(update_result)
+  poolReturn(con)
+}
+
+
+#========================================================
+# Delete callback
+#========================================================
+
+# Define delete callback
+individual_redd_delete = function(delete_values) {
+  individual_redd_id = delete_values$individual_redd_id
+  con = poolCheckout(pool)
+  delete_result = dbSendStatement(
+    con, glue_sql("DELETE FROM individual_redd WHERE individual_redd_id = ?"))
+  dbBind(delete_result, list(individual_redd_id))
+  dbGetRowsAffected(delete_result)
+  dbClearResult(delete_result)
+  poolReturn(con)
+}
+
 
 
 

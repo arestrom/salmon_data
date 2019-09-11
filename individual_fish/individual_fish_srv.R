@@ -277,8 +277,8 @@ output$individual_fish_modal_insert_vals = renderDT({
 observeEvent(input$ind_fish_add, {
   new_individual_fish_vals = individual_fish_create()
   showModal(
-    # Verify required fields have data...none can be blank
     tags$div(id = "individual_fish_insert_modal",
+             # Verify required fields have data...none can be blank
              if ( is.na(new_individual_fish_vals$fish_condition_type_id) |
                   is.na(new_individual_fish_vals$fish_trauma_type_id) |
                   is.na(new_individual_fish_vals$gill_condition_type_id) |
@@ -291,12 +291,12 @@ observeEvent(input$ind_fish_add, {
                  easyClose = TRUE,
                  footer = NULL
                )
-               # Write to DB
+               # Verify fish count is one
              } else if (!individual_fish_create()$fish_count == 1 ) {
                modalDialog (
                  size = "m",
                  title = "Warning",
-                 paste0("Individual fish data can only be entered if the fish_count value above equals 1"),
+                 paste0("Individual fish data can only be entered if the fish_count value equals 1"),
                  easyClose = TRUE,
                  footer = NULL
                )
