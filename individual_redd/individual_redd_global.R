@@ -1,5 +1,5 @@
 
-# Main redd_encounter query
+# Main individual_redd query
 get_individual_redd = function(pool, redd_encounter_id) {
   qry = glue("select ir.individual_redd_id, rh.redd_shape_description as redd_shape, ",
              "rd.dewatered_type_description as dewatered_type, ",
@@ -62,43 +62,59 @@ get_dewatered_type = function(pool) {
   return(dewatered_type_list)
 }
 
-# #========================================================
-# # Insert callback
-# #========================================================
-#
-# # Define the insert callback
-# redd_encounter_insert = function(new_redd_encounter_values) {
-#   new_insert_values = new_redd_encounter_values
-#   # Pull out data
-#   survey_event_id = new_insert_values$survey_event_id
-#   redd_location_id = new_insert_values$redd_location_id
-#   redd_status_id = new_insert_values$redd_status_id
-#   redd_encounter_datetime = new_insert_values$redd_encounter_datetime
-#   redd_count = new_insert_values$redd_count
-#   comment_text = new_insert_values$comment_text
-#   if (is.na(comment_text) | comment_text == "") { comment_text = NA }
-#   created_by = new_insert_values$created_by
-#   # Checkout a connection
-#   con = poolCheckout(pool)
-#   insert_result = dbSendStatement(
-#     con, glue_sql("INSERT INTO redd_encounter (",
-#                   "survey_event_id, ",
-#                   "redd_location_id, ",
-#                   "redd_status_id, ",
-#                   "redd_encounter_datetime, ",
-#                   "redd_count, ",
-#                   "comment_text, ",
-#                   "created_by) ",
-#                   "VALUES (",
-#                   "?, ?, ?, ?, ?, ?, ?)"))
-#   dbBind(insert_result, list(survey_event_id, redd_location_id,
-#                              redd_status_id, redd_encounter_datetime,
-#                              redd_count, comment_text, created_by))
-#   dbGetRowsAffected(insert_result)
-#   dbClearResult(insert_result)
-#   poolReturn(con)
-# }
-#
+#========================================================
+# Insert callback
+#========================================================
+
+# Define the insert callback
+individual_redd_insert = function(new_individual_redd_values) {
+  new_insert_values = new_individual_redd_values
+  # Pull out data
+  redd_encounter_id = new_insert_values$redd_encounter_id
+  redd_shape_id = new_insert_values$redd_shape_id
+  redd_dewatered_type_id = new_insert_values$redd_dewatered_type_id
+  percent_redd_visible = new_insert_values$pct_visible
+  redd_length_measure_meter = new_insert_values$redd_length_m
+  redd_width_measure_meter = new_insert_values$redd_width_m
+  redd_depth_measure_meter = new_insert_values$redd_depth_m
+  tailspill_height_measure_meter = new_insert_values$tailspill_height_m
+  percent_redd_superimposed = new_insert_values$pct_superimposed
+  percent_redd_degraded = new_insert_values$pct_degraded
+  superimposed_redd_name = new_insert_values$superimposed_redd_name
+  comment_text = new_insert_values$individual_redd_comment
+  if (is.na(superimposed_redd_name) | superimposed_redd_name == "") { superimposed_redd_name = NA }
+  if (is.na(comment_text) | comment_text == "") { comment_text = NA }
+  created_by = new_insert_values$created_by
+  # Checkout a connection
+  con = poolCheckout(pool)
+  insert_result = dbSendStatement(
+    con, glue_sql("INSERT INTO individual_redd (",
+                  "redd_encounter_id, ",
+                  "redd_shape_id, ",
+                  "redd_dewatered_type_id, ",
+                  "percent_redd_visible, ",
+                  "redd_length_measure_meter, ",
+                  "redd_width_measure_meter, ",
+                  "redd_depth_measure_meter, ",
+                  "tailspill_height_measure_meter, ",
+                  "percent_redd_superimposed, ",
+                  "percent_redd_degraded, ",
+                  "superimposed_redd_name, ",
+                  "comment_text, ",
+                  "created_by) ",
+                  "VALUES (",
+                  "?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)"))
+  dbBind(insert_result, list(redd_encounter_id, redd_shape_id, redd_dewatered_type_id,
+                             percent_redd_visible, redd_length_measure_meter,
+                             redd_width_measure_meter, redd_depth_measure_meter,
+                             tailspill_height_measure_meter, percent_redd_superimposed,
+                             percent_redd_degraded, superimposed_redd_name,
+                             comment_text, created_by))
+  dbGetRowsAffected(insert_result)
+  dbClearResult(insert_result)
+  poolReturn(con)
+}
+
 # #========================================================
 # # Edit update callback
 # #========================================================

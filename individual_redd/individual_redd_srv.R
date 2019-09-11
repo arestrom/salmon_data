@@ -53,173 +53,185 @@ output$individual_redds = renderDT({
 # Create surveys DT proxy object
 individual_redd_dt_proxy = dataTableProxy(outputId = "individual_redds")
 
-# #========================================================
-# # Collect encounter values from selected row for later use
-# #========================================================
-#
-# # Create reactive to collect input values for update and delete actions
-# selected_redd_encounter_data = reactive({
-#   req(input$redd_encounters_rows_selected)
-#   redd_encounter_data = get_redd_encounter(pool, selected_survey_event_data()$survey_event_id)
-#   redd_encounter_row = input$redd_encounters_rows_selected
-#   selected_redd_encounter = tibble(redd_encounter_id = redd_encounter_data$redd_encounter_id[redd_encounter_row],
-#                                    redd_encounter_time = redd_encounter_data$redd_encounter_time[redd_encounter_row],
-#                                    redd_status = redd_encounter_data$redd_status[redd_encounter_row],
-#                                    redd_count = redd_encounter_data$redd_count[redd_encounter_row],
-#                                    redd_name = redd_encounter_data$redd_name[redd_encounter_row],
-#                                    redd_comment = redd_encounter_data$redd_comment[redd_encounter_row],
-#                                    created_date = redd_encounter_data$created_date[redd_encounter_row],
-#                                    created_by = redd_encounter_data$created_by[redd_encounter_row],
-#                                    modified_date = redd_encounter_data$modified_date[redd_encounter_row],
-#                                    modified_by = redd_encounter_data$modified_by[redd_encounter_row])
-#   return(selected_redd_encounter)
-# })
-#
-# #========================================================
-# # Update event select inputs to values in selected row
-# #========================================================
-#
-# # Update all input values to values in selected row
-# observeEvent(input$redd_encounters_rows_selected, {
-#   sredat = selected_redd_encounter_data()
-#   updateTimeInput(session, "redd_encounter_time_select", value = sredat$redd_encounter_time)
-#   updateSelectizeInput(session, "redd_status_select", selected = sredat$redd_status)
-#   updateNumericInput(session, "redd_count_input", value = sredat$redd_count)
-#   updateSelectizeInput(session, "redd_name_select", selected = sredat$redd_name)
-#   updateTextAreaInput(session, "redd_comment_input", value = sredat$redd_comment)
-# })
-#
-# #========================================================
-# # Insert operations: reactives, observers and modals
-# #========================================================
-#
-# # Create reactive to collect input values for insert actions
-# redd_encounter_create = reactive({
-#   # Survey date
-#   survey_date = selected_survey_data()$survey_date
-#   # Survey_event_id
-#   survey_event_id_input = selected_survey_event_data()$survey_event_id
-#   # Redd encounter time
-#   redd_encounter_dt = format(input$redd_encounter_time_select)
-#   if (nchar(redd_encounter_dt) < 16) { redd_encounter_dt = NA_character_ }
-#   redd_encounter_dt = as.POSIXct(redd_encounter_dt)
-#   # Redd status
-#   redd_status_input = input$redd_status_select
-#   if ( redd_status_input == "" ) {
-#     redd_status_id = NA
-#   } else {
-#     redd_status_vals = get_redd_status(pool)
-#     redd_status_id = redd_status_vals %>%
-#       filter(redd_status == redd_status_input) %>%
-#       pull(redd_status_id)
-#   }
-#   # Redd name, location_id
-#   redd_name_input = input$redd_name_select
-#   if ( redd_name_input == "" ) {
-#     redd_location_id = NA
-#   } else {
-#     redd_name_vals = get_redd_name(pool, survey_event_id_input)
-#     redd_location_id = redd_name_vals %>%
-#       filter(redd_name == redd_name_input) %>%
-#       pull(redd_location_id)
-#   }
-#   new_redd_encounter = tibble(survey_event_id = survey_event_id_input,
-#                               survey_date = survey_date,
-#                               # Need to create full datetime values below modal
-#                               redd_encounter_dt = redd_encounter_dt,
-#                               redd_status = redd_status_input,
-#                               redd_status_id = redd_status_id,
-#                               redd_count = input$redd_count_input,
-#                               redd_name = redd_name_input,
-#                               redd_location_id = redd_location_id,
-#                               redd_comment = input$redd_comment_input,
-#                               created_dt = lubridate::with_tz(Sys.time(), "UTC"),
-#                               created_by = Sys.getenv("USERNAME"))
-#   return(new_redd_encounter)
-# })
-#
-# # Generate values to show in modal
-# output$redd_encounter_modal_insert_vals = renderDT({
-#   redd_encounter_modal_in_vals = redd_encounter_create() %>%
-#     mutate(redd_encounter_dt = format(redd_encounter_dt, "%H:%M")) %>%
-#     select(redd_encounter_dt, redd_status, redd_count,
-#            redd_name, redd_comment)
-#   # Generate table
-#   datatable(redd_encounter_modal_in_vals,
-#             rownames = FALSE,
-#             options = list(dom = 't',
-#                            scrollX = T,
-#                            ordering = FALSE,
-#                            initComplete = JS(
-#                              "function(settings, json) {",
-#                              "$(this.api().table().header()).css({'background-color': '#9eb3d6'});",
-#                              "}")))
-# })
-#
-# # Modal for new redd encounters. No need for dup flag, multiple rows possible
-# observeEvent(input$redd_enc_add, {
-#   new_redd_encounter_vals = redd_encounter_create()
-#   showModal(
-#     # Verify required fields have data...none can be blank
-#     tags$div(id = "redd_encounter_insert_modal",
-#              if ( is.na(new_redd_encounter_vals$redd_count) |
-#                   is.na(new_redd_encounter_vals$redd_status_id) ) {
-#                modalDialog (
-#                  size = "m",
-#                  title = "Warning",
-#                  paste0("Values are required for redd_status and redd_count"),
-#                  easyClose = TRUE,
-#                  footer = NULL
-#                )
-#                # Write to DB
-#              } else {
-#                modalDialog (
-#                  size = 'l',
-#                  title = glue("Insert new redd data to the database?"),
-#                  fluidPage (
-#                    DT::DTOutput("redd_encounter_modal_insert_vals"),
-#                    br(),
-#                    br(),
-#                    actionButton("insert_redd_encounter", "Insert redd data")
-#                  ),
-#                  easyClose = TRUE,
-#                  footer = NULL
-#                )
-#              }
-#     ))
-# })
-#
-# # Reactive to hold values actually inserted
-# redd_encounter_insert_vals = reactive({
-#   new_redd_enc_values = redd_encounter_create() %>%
-#     mutate(redd_encounter_datetime = case_when(
-#       is.na(redd_encounter_dt) ~ as.POSIXct(NA),
-#       !is.na(redd_encounter_dt) ~ as.POSIXct(paste0(format(survey_date), " ",
-#                                                     format(redd_encounter_dt, "%H:%M")),
-#                                              tz = "America/Los_Angeles"))) %>%
-#     select(survey_event_id, redd_location_id, redd_status_id, redd_encounter_datetime,
-#            redd_count, comment_text = redd_comment, created_by)
-#   return(new_redd_enc_values)
-# })
-#
-# # Update DB and reload DT
-# observeEvent(input$insert_redd_encounter, {
-#   redd_encounter_insert(redd_encounter_insert_vals())
-#   removeModal()
-#   post_redd_encounter_insert_vals = get_redd_encounter(pool, selected_survey_event_data()$survey_event_id) %>%
-#     select(redd_encounter_dt, redd_status, redd_count, redd_name, redd_comment,
-#            created_dt, created_by, modified_dt, modified_by)
-#   replaceData(redd_encounter_dt_proxy, post_redd_encounter_insert_vals)
-# })
-#
-# # Update DB and reload DT
-# observeEvent(input$insert_redd_location, {
-#   post_redd_location_insert_encounter_vals = get_redd_encounter(pool, selected_survey_event_data()$survey_event_id) %>%
-#     select(redd_encounter_dt, redd_status, redd_count, redd_name, redd_comment,
-#            created_dt, created_by, modified_dt, modified_by)
-#   replaceData(redd_encounter_dt_proxy, post_redd_location_insert_encounter_vals)
-# }, priority = -1)
-#
+#========================================================
+# Collect individual_redd values from selected row for later use
+#========================================================
+
+# Create reactive to collect input values for update and delete actions
+selected_individual_redd_data = reactive({
+  req(input$individual_redds_rows_selected)
+  individual_redd_data = get_individual_redd(pool, selected_redd_encounter_data()$redd_encounter_id)
+  individual_redd_row = input$individual_redds_rows_selected
+  selected_individual_redd = tibble(individual_redd_id = individual_redd_data$individual_redd_id[individual_redd_row],
+                                    redd_shape = individual_redd_data$redd_shape[individual_redd_row],
+                                    dewatered_type = individual_redd_data$dewatered_type[individual_redd_row],
+                                    pct_visible = individual_redd_data$pct_visible[individual_redd_row],
+                                    redd_length_m = individual_redd_data$redd_length_m[individual_redd_row],
+                                    redd_width_m = individual_redd_data$redd_width_m[individual_redd_row],
+                                    redd_depth_m = individual_redd_data$redd_depth_m[individual_redd_row],
+                                    tailspill_height_m = individual_redd_data$tailspill_height_m[individual_redd_row],
+                                    pct_superimposed = individual_redd_data$pct_superimposed[individual_redd_row],
+                                    pct_degraded = individual_redd_data$pct_degraded[individual_redd_row],
+                                    superimposed_redd_name = individual_redd_data$superimposed_redd_name[individual_redd_row],
+                                    individual_redd_comment = individual_redd_data$individual_redd_comment[individual_redd_row],
+                                    created_date = individual_redd_data$created_date[individual_redd_row],
+                                    created_by = individual_redd_data$created_by[individual_redd_row],
+                                    modified_date = individual_redd_data$modified_date[individual_redd_row],
+                                    modified_by = individual_redd_data$modified_by[individual_redd_row])
+  return(selected_individual_redd)
+})
+
+#========================================================
+# Update select inputs to values in selected row
+#========================================================
+
+# Update all input values to values in selected row
+observeEvent(input$individual_redds_rows_selected, {
+  sirdat = selected_individual_redd_data()
+  updateSelectizeInput(session, "redd_shape_select", selected = sirdat$redd_shape)
+  updateSelectizeInput(session, "dewatered_type_select", selected = sirdat$dewatered_type)
+  updateNumericInput(session, "pct_visible_input", value = sirdat$pct_visible)
+  updateNumericInput(session, "redd_length_input", value = sirdat$redd_length)
+  updateNumericInput(session, "redd_width_input", value = sirdat$redd_width)
+  updateNumericInput(session, "redd_depth_input", value = sirdat$redd_depth)
+  updateNumericInput(session, "tailspill_height_input", value = sirdat$tailspill_height)
+  updateNumericInput(session, "pct_superimposed_input", value = sirdat$pct_superimposed)
+  updateNumericInput(session, "pct_degraded_input", value = sirdat$pct_degraded)
+  updateTextInput(session, "superimposed_redd_name", value = sirdat$superimposed_redd_name)
+  updateTextAreaInput(session, "ind_redd_comment_input", value = sirdat$ind_redd_comment)
+})
+
+#========================================================
+# Insert operations: reactives, observers and modals
+#========================================================
+
+# Disable "New" button if a row of comments already exists
+observe({
+  input$insert_individual_redd
+  ind_redd_data = get_individual_redd(pool, selected_redd_encounter_data()$redd_encounter_id)
+  if (nrow(ind_redd_data) >= 1L) {
+    shinyjs::disable("ind_redd_add")
+  } else {
+    shinyjs::enable("ind_redd_add")
+  }
+})
+
+# Create reactive to collect input values for insert actions
+individual_redd_create = reactive({
+  # Redd_encounter_id
+  redd_encounter_id_input = selected_redd_encounter_data()$redd_encounter_id
+  # Redd shape
+  redd_shape_input = input$redd_shape_select
+  if ( redd_shape_input == "" ) {
+    redd_shape_id = NA
+  } else {
+    redd_shape_vals = get_redd_shape(pool)
+    redd_shape_id = redd_shape_vals %>%
+      filter(redd_shape == redd_shape_input) %>%
+      pull(redd_shape_id)
+  }
+  # Dewatered_type
+  dewatered_type_input = input$dewatered_type_select
+  if ( dewatered_type_input == "" ) {
+    redd_dewatered_type_id = NA
+  } else {
+    dewatered_type_vals = get_dewatered_type(pool)
+    redd_dewatered_type_id = dewatered_type_vals %>%
+      filter(dewatered_type == dewatered_type_input) %>%
+      pull(redd_dewatered_type_id)
+  }
+  new_individual_redd = tibble(redd_encounter_id = redd_encounter_id_input,
+                               redd_shape = redd_shape_input,
+                               redd_shape_id = redd_shape_id,
+                               dewatered_type = dewatered_type_input,
+                               redd_dewatered_type_id = redd_dewatered_type_id,
+                               pct_visible = input$pct_visible_input,
+                               redd_length_m = input$redd_length_input,
+                               redd_width_m = input$redd_width_input,
+                               redd_depth_m = input$redd_depth_input,
+                               tailspill_height_m = input$tailspill_height_input,
+                               pct_superimposed = input$pct_superimposed_input,
+                               pct_degraded = input$pct_degraded_input,
+                               superimposed_redd_name = input$superimposed_redd_name_input,
+                               individual_redd_comment = input$ind_redd_comment_input,
+                               created_dt = lubridate::with_tz(Sys.time(), "UTC"),
+                               created_by = Sys.getenv("USERNAME"))
+  return(new_individual_redd)
+})
+
+# Generate values to show in modal
+output$individual_redd_modal_insert_vals = renderDT({
+  individual_redd_modal_in_vals = individual_redd_create() %>%
+    select(redd_shape, dewatered_type, pct_visible, redd_length_m, redd_width_m,
+           redd_depth_m, tailspill_height_m, pct_superimposed, pct_degraded,
+           superimposed_redd_name, individual_redd_comment)
+  # Generate table
+  datatable(individual_redd_modal_in_vals,
+            rownames = FALSE,
+            options = list(dom = 't',
+                           scrollX = T,
+                           ordering = FALSE,
+                           initComplete = JS(
+                             "function(settings, json) {",
+                             "$(this.api().table().header()).css({'background-color': '#9eb3d6'});",
+                             "}")))
+})
+
+# Modal for new individual_redds. Need dup flag
+observeEvent(input$ind_redd_add, {
+  new_individual_redd_vals = individual_redd_create()
+  showModal(
+    # Verify required fields have data...none can be blank
+    tags$div(id = "individual_redd_insert_modal",
+             if ( is.na(new_individual_redd_vals$redd_shape) ) {
+               modalDialog (
+                 size = "m",
+                 title = "Warning",
+                 paste0("A value is required for redd_shape"),
+                 easyClose = TRUE,
+                 footer = NULL
+               )
+               # Write to DB
+             } else {
+               modalDialog (
+                 size = 'l',
+                 title = glue("Insert new individual redd data to the database?"),
+                 fluidPage (
+                   DT::DTOutput("individual_redd_modal_insert_vals"),
+                   br(),
+                   br(),
+                   actionButton("insert_individual_redd", "Insert individual redd")
+                 ),
+                 easyClose = TRUE,
+                 footer = NULL
+               )
+             }
+    ))
+})
+
+# Reactive to hold values actually inserted
+individual_redd_insert_vals = reactive({
+  new_ind_redd_values = individual_redd_create() %>%
+    select(redd_encounter_id, redd_shape_id, redd_dewatered_type_id,
+           pct_visible, redd_length_m, redd_width_m, redd_depth_m,
+           tailspill_height_m, pct_superimposed, pct_degraded,
+           superimposed_redd_name, individual_redd_comment, created_by)
+  return(new_ind_redd_values)
+})
+
+# Update DB and reload DT
+observeEvent(input$insert_individual_redd, {
+  individual_redd_insert(individual_redd_insert_vals())
+  removeModal()
+  post_individual_redd_insert_vals = get_individual_redd(pool, selected_redd_encounter_data()$redd_encounter_id) %>%
+    select(redd_shape, dewatered_type, pct_visible, redd_length_m,
+           redd_width_m, redd_depth_m, tailspill_height_m,
+           pct_superimposed, pct_degraded, superimposed_redd_name,
+           individual_redd_comment, created_dt, created_by,
+           modified_dt, modified_by)
+  replaceData(individual_redd_dt_proxy, post_individual_redd_insert_vals)
+})
+
 # #========================================================
 # # Edit operations: reactives, observers and modals
 # #========================================================
