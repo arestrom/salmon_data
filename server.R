@@ -18,6 +18,7 @@ server = function(input, output, session) {
   source("redd_location/redd_location_srv.R", local = TRUE)
   source("individual_redd/individual_redd_srv.R", local = TRUE)
   source("redd_substrate/redd_substrate_srv.R", local = TRUE)
+  source("fish_location/fish_location_srv.R", local = TRUE)
 
   # # close the R session when Chrome closes
   # session$onSessionEnded(function() {

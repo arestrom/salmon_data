@@ -139,6 +139,8 @@ source("individual_redd/individual_redd_ui.R")
 source("individual_redd/individual_redd_global.R")
 source("redd_substrate/redd_substrate_ui.R")
 source("redd_substrate/redd_substrate_global.R")
+source("fish_location/fish_location_ui.R")
+source("fish_location/fish_location_global.R")
 
 # Define globals ================================================================
 
