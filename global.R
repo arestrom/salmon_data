@@ -81,6 +81,7 @@
 # 21. Need to add code to edit modals to make sure all
 #     required fields have values entered. See fish_location.
 #     Or use validate...need?
+# 22. Inspect Phils front-end for comparison.
 #
 # AS 2019-07-15
 #==============================================================
