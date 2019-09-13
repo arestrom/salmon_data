@@ -133,3 +133,31 @@ observe({
                        choices = updated_rm_list,
                        selected = updated_rm_list[1])
 })
+
+#========================================================
+# Get centroid of selected stream for fish_map & redd_map
+#========================================================
+
+# Get centroid of stream for setting view of fish_map
+selected_stream_centroid = reactive({
+  req(input$stream_select)
+  stream_centroid_coords = get_stream_centroid(waterbody_id())
+  return(stream_centroid_coords)
+})
+
+#========================================================
+# Get wria for location insert, redds and fish
+#========================================================
+
+# Reactive to pull out wria_id
+wria_id = reactive({
+  req(input$wria_select)
+  get_streams(pool, chosen_wria = input$wria_select) %>%
+    st_drop_geometry() %>%
+    mutate(wria_id = tolower(wria_id)) %>%
+    select(wria_id) %>%
+    distinct() %>%
+    pull(wria_id)
+})
+
+

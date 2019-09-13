@@ -70,11 +70,17 @@
 #     add code to look for overlapping segments in scripts to
 #     upload all geometry.
 # 17. Dump bs_modal in favor of shiny modal in dashboard_ui
-# 18. Add input$delete observe to all shinyjs disable code
+# 18. Add input$delete observers to all shinyjs disable code
 #     See example in redd_substrate_srv code.
 # 19. Check that select inputs are ordered optimally. Use
 #     example code in redd_substrate_global as example to
 #     order by levels.
+# 20. If tracking of individual_carcass over time is needed,
+#     we can add fish_name_select to fish_encounter ui. Set
+#     up similar to redd-tracking in redd_encounter/location.
+# 21. Need to add code to edit modals to make sure all
+#     required fields have values entered. See fish_location.
+#     Or use validate...need?
 #
 # AS 2019-07-15
 #==============================================================

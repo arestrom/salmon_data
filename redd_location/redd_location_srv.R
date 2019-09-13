@@ -94,17 +94,6 @@ observeEvent(input$redd_locations_rows_selected, {
   updateTextAreaInput(session, "location_description_input", value = srldat$location_description)
 })
 
-#========================================================
-# Get centroid of selected stream for redd_map
-#========================================================
-
-# Get centroid of stream for setting view of redd_map
-selected_stream_centroid = reactive({
-  req(input$stream_select)
-  stream_centroid_coords = get_stream_centroid(waterbody_id())
-  return(stream_centroid_coords)
-})
-
 #================================================================
 # Get either selected redd coordinates or default stream centroid
 #================================================================
@@ -346,17 +335,6 @@ observeEvent(input$redd_loc_add, {
                )
              }
     ))
-})
-
-# Reactive to pull out wria_id
-wria_id = reactive({
-  req(input$wria_select)
-  get_streams(pool, chosen_wria = input$wria_select) %>%
-    st_drop_geometry() %>%
-    mutate(wria_id = tolower(wria_id)) %>%
-    select(wria_id) %>%
-    distinct() %>%
-    pull(wria_id)
 })
 
 # Reactive to hold values actually inserted
