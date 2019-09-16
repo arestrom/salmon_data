@@ -20,9 +20,8 @@ dash_rightsidebar = rightSidebar(
                  choices = NULL,
                  selected = NULL,
                  width = "100%"),
-  div(id = "map_modal_button",
-      bs_button(label = "or use map", button_type = "primary") %>%
-        bs_attach_modal(id_modal = "map_modal")),
+  actionButton(inputId = "show_map_stream", label = "or use map",
+               class = "map_button", width = "100%"),
   br(),
   br(),
   br(),

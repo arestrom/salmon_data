@@ -1,7 +1,7 @@
 # Get streams in wria
 wria_streams = reactive({
   req(input$wria_select)
-  get_streams(pool, chosen_wria = input$wria_select) %>%
+  get_streams(chosen_wria = input$wria_select) %>%
     mutate(stream_label = if_else(is.na(stream_name) & !is.na(waterbody_name),
                                   waterbody_name, stream_name)) %>%
     mutate(stream_label = paste0(stream_name, ": ", llid)) %>%
@@ -55,22 +55,22 @@ output$stream_map <- renderLeaflet({
   m
 })
 
-# # Display the map modal to select stream
-# observeEvent(input$show_map_stream, {
-#   showModal(
-#     tags$div(id = "map_modal",
-#              modalDialog (
-#                size = 'l',
-#                title = NULL,
-#                fluidPage (
-#                  leafletOutput("stream_map", height = "700px")
-#                ),
-#                easyClose = TRUE,
-#                footer = NULL
-#              )
-#     )
-#   )
-# })
+# Display the map modal to select stream
+observeEvent(input$show_map_stream, {
+  showModal(
+    tags$div(id = "map_stream_modal",
+             modalDialog (
+               size = 'l',
+               title = "Click on stream to select",
+               fluidPage (
+                 leafletOutput("stream_map", height = "700px")
+               ),
+               easyClose = TRUE,
+               footer = NULL
+             )
+    )
+  )
+})
 
 # selected stream reactive value
 selected_stream <- reactiveValues(map_stream = NULL)
@@ -108,7 +108,7 @@ waterbody_id = reactive({
 # Get list of river mile end_points for waterbody_id
 rm_list = reactive({
   wb_id = waterbody_id()
-  stream_rms = get_end_points(pool, waterbody_id())
+  stream_rms = get_end_points(waterbody_id())
   return(stream_rms)
 })
 
@@ -152,7 +152,7 @@ selected_stream_centroid = reactive({
 # Reactive to pull out wria_id
 wria_id = reactive({
   req(input$wria_select)
-  get_streams(pool, chosen_wria = input$wria_select) %>%
+  get_streams(chosen_wria = input$wria_select) %>%
     st_drop_geometry() %>%
     mutate(wria_id = tolower(wria_id)) %>%
     select(wria_id) %>%

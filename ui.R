@@ -5,7 +5,6 @@ ui = dashboardPagePlus(
   rightsidebar = dash_rightsidebar,
   body = dashboardBody(
     includeCSS("www/salmon_data.css"),
-    map_modal,
     fluidRow(
       br(),
       br(),
