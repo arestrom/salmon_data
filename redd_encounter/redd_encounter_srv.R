@@ -372,13 +372,21 @@ output$redd_encounter_modal_delete_vals = renderDT({
                              "}")))
 })
 
+# Reactive to hold dependencies
+redd_encounter_dependencies = reactive({
+  redd_encounter_id = selected_redd_encounter_data()$redd_encounter_id
+  redd_enc_dep = get_redd_encounter_dependencies(redd_encounter_id)
+  print(redd_enc_dep)
+  return(redd_enc_dep)
+})
+
 observeEvent(input$redd_enc_delete, {
   redd_encounter_id = selected_redd_encounter_data()$redd_encounter_id
-  redd_encounter_dependencies = get_redd_encounter_dependencies(redd_encounter_id)
-  table_names = paste0(names(redd_encounter_dependencies), collapse = ", ")
+  redd_enc_dependencies = redd_encounter_dependencies()
+  table_names = paste0(paste0("'", names(redd_enc_dependencies), "'"), collapse = ", ")
   showModal(
     tags$div(id = "redd_encounter_delete_modal",
-             if ( ncol(redd_encounter_dependencies) > 0L ) {
+             if ( ncol(redd_enc_dependencies) > 0L ) {
                modalDialog (
                  size = "m",
                  title = "Warning",

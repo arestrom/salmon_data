@@ -141,16 +141,19 @@ redd_encounter_update = function(redd_encounter_edit_values) {
 # Identify fish_encounter dependencies prior to delete
 get_redd_encounter_dependencies = function(redd_encounter_id) {
   qry = glue("select ",
+             "count(loc.location_id) as location, ",
              "count(ir.individual_redd_id) as individual_redd, ",
              "count(rc.redd_confidence_id) as redd_confidence, ",
              "count(rs.redd_substrate_id) as redd_substrate ",
              "from redd_encounter as rd ",
+             "left join location as loc on rd.redd_location_id = loc.location_id ",
              "left join individual_redd as ir on rd.redd_encounter_id = ir.redd_encounter_id ",
              "left join redd_confidence as rc on rd.redd_encounter_id = rc.redd_encounter_id ",
              "left join redd_substrate as rs on rd.redd_encounter_id = rs.redd_encounter_id ",
              "where rd.redd_encounter_id = '{redd_encounter_id}'")
   con = poolCheckout(pool)
   redd_encounter_dependents = DBI::dbGetQuery(pool, qry)
+  poolReturn(con)
   has_entries = function(x) any(x > 0L)
   redd_encounter_dependents = redd_encounter_dependents %>%
     select_if(has_entries)

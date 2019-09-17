@@ -28,7 +28,7 @@ output$redd_locations = renderDT({
   redd_location_title = glue("{selected_survey_event_data()$species} redd locations for {input$stream_select} on ",
                              "{selected_survey_data()$survey_date} from river mile {selected_survey_data()$up_rm} ",
                              "to {selected_survey_data()$lo_rm}")
-  redd_location_data = get_redd_location(pool, selected_redd_encounter_data()$redd_encounter_id) %>%
+  redd_location_data = get_redd_location(selected_redd_encounter_data()$redd_encounter_id) %>%
     select(redd_name, channel_type, orientation_type, latitude,
            longitude, horiz_accuracy, location_description,
            created_dt, created_by, modified_dt, modified_by)
@@ -59,7 +59,7 @@ redd_location_dt_proxy = dataTableProxy(outputId = "redd_locations")
 # Create reactive to collect input values for update and delete actions
 selected_redd_location_data = reactive({
   req(input$redd_locations_rows_selected)
-  redd_location_data = get_redd_location(pool, selected_redd_encounter_data()$redd_encounter_id)
+  redd_location_data = get_redd_location(selected_redd_encounter_data()$redd_encounter_id)
   redd_location_row = input$redd_locations_rows_selected
   selected_redd_location = tibble(redd_location_id = redd_location_data$redd_location_id[redd_location_row],
                                   location_coordinates_id = redd_location_data$location_coordinates_id[redd_location_row],
@@ -181,6 +181,7 @@ marker_data = reactive({
 
 # Get dataframe of updated locations
 output$redd_coordinates = renderUI({
+  input$redd_map_marker_click
   if ( length(input$redd_map_marker_click) == 0L ) {
   HTML("Drag marker to edit location. Click on marker to set coordinates")
 } else {
@@ -236,7 +237,7 @@ observeEvent(input$capture_redd_loc, {
 # Disable "New" button if a row of comments already exists
 observe({
   input$insert_redd_location
-  redd_loc_data = get_redd_location(pool, selected_redd_encounter_data()$redd_encounter_id)
+  redd_loc_data = get_redd_location(selected_redd_encounter_data()$redd_encounter_id)
   if (nrow(redd_loc_data) >= 1L) {
     shinyjs::disable("redd_loc_add")
   } else {
@@ -354,7 +355,7 @@ redd_location_insert_vals = reactive({
 observeEvent(input$insert_redd_location, {
   redd_location_insert(redd_location_insert_vals())
   removeModal()
-  post_redd_location_insert_vals = get_redd_location(pool, selected_redd_encounter_data()$redd_encounter_id) %>%
+  post_redd_location_insert_vals = get_redd_location(selected_redd_encounter_data()$redd_encounter_id) %>%
     select(redd_name, channel_type, orientation_type, latitude,
            longitude, horiz_accuracy, location_description,
            created_dt, created_by, modified_dt, modified_by)
@@ -473,7 +474,7 @@ observeEvent(input$redd_loc_edit, {
 observeEvent(input$save_redd_loc_edits, {
   redd_location_update(redd_location_edit())
   removeModal()
-  post_redd_location_edit_vals = get_redd_location(pool, selected_redd_encounter_data()$redd_encounter_id) %>%
+  post_redd_location_edit_vals = get_redd_location(selected_redd_encounter_data()$redd_encounter_id) %>%
     select(redd_name, channel_type, orientation_type, latitude,
            longitude, horiz_accuracy, location_description,
            created_dt, created_by, modified_dt, modified_by)
@@ -487,7 +488,7 @@ observeEvent(input$save_redd_loc_edits, {
 # Generate values to show in modal
 output$redd_location_modal_delete_vals = renderDT({
   redd_location_modal_del_id = selected_redd_location_data()$redd_location_id
-  redd_location_modal_del_vals = get_redd_location(pool, selected_redd_encounter_data()$redd_encounter_id) %>%
+  redd_location_modal_del_vals = get_redd_location(selected_redd_encounter_data()$redd_encounter_id) %>%
     filter(redd_location_id == redd_location_modal_del_id) %>%
     select(redd_name, channel_type, orientation_type, latitude,
            longitude, horiz_accuracy, location_description)
@@ -503,22 +504,39 @@ output$redd_location_modal_delete_vals = renderDT({
                              "}")))
 })
 
+# Reactive to hold dependencies
+redd_location_dependencies = reactive({
+  redd_location_id = selected_redd_location_data()$redd_location_id
+  redd_loc_dep = get_redd_location_dependencies(redd_location_id)
+  return(redd_loc_dep)
+})
+
 observeEvent(input$redd_loc_delete, {
   redd_location_id = selected_redd_location_data()$redd_location_id
+  redd_loc_dependencies = redd_location_dependencies()
+  table_names = paste0(paste0("'", names(redd_loc_dependencies), "'"), collapse = ", ")
+  redd_nm = selected_redd_coords()$redd_name
+  # Customize the delete message depending on if other entries are linked to redd_name
+  if (ncol(redd_loc_dependencies) > 1L | redd_loc_dependencies$redd_encounter[1] > 1L) {
+    delete_msg = glue("Other entries in {table_names} are linked to redd_name: '{redd_nm}'., ",
+                      "Only the link to the redd location will be deleted.")
+  } else {
+    delete_msg = "Are you sure you want to delete this redd location data from the database?"
+  }
   showModal(
     tags$div(id = "redd_location_delete_modal",
-             if ( length(redd_location_id) == 0 ) {
+             if ( !length(input$redd_locations_rows_selected) == 1 ) {
                modalDialog (
                  size = "m",
                  title = "Warning",
-                 glue("Please select a row to delete!"),
+                 paste("Please select a row to edit!"),
                  easyClose = TRUE,
                  footer = NULL
                )
              } else {
                modalDialog (
                  size = 'l',
-                 title = "Are you sure you want to delete this redd location data from the database?",
+                 title = delete_msg,
                  fluidPage (
                    DT::DTOutput("redd_location_modal_delete_vals"),
                    br(),
@@ -534,9 +552,11 @@ observeEvent(input$redd_loc_delete, {
 
 # Update DB and reload DT
 observeEvent(input$delete_redd_location, {
-  redd_location_delete(selected_redd_location_data(), selected_redd_encounter_data())
+  redd_location_delete(redd_location_dependencies(),
+                       selected_redd_location_data(),
+                       selected_redd_encounter_data())
   removeModal()
-  redd_locations_after_delete = get_redd_location(pool, selected_redd_encounter_data()$redd_encounter_id) %>%
+  redd_locations_after_delete = get_redd_location(selected_redd_encounter_data()$redd_encounter_id) %>%
     select(redd_name, channel_type, orientation_type, latitude,
            longitude, horiz_accuracy, location_description,
            created_dt, created_by, modified_dt, modified_by)
