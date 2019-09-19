@@ -185,6 +185,34 @@ redd_location_insert = function(new_redd_location_values) {
   poolReturn(con)
 }
 
+#==============================================================
+# Identify redd location surveys prior to update or delete
+#==============================================================
+
+# Identify fish_encounter dependencies prior to delete
+get_redd_location_surveys = function(redd_location_id) {
+  qry = glue("select s.survey_datetime as survey_date, ",
+             "s.observer_last_name as observer, ",
+             "re.redd_count, mt.media_type_code as media_type, ",
+             "ot.observation_type_name as other_observation_type ",
+             "from location as loc ",
+             "left join redd_encounter as re on loc.location_id = re.redd_location_id ",
+             "left join survey_event as se on re.survey_event_id = se.survey_event_id ",
+             "left join survey as s on se.survey_id = s.survey_id ",
+             "left join media_location as ml on loc.location_id = ml.location_id ",
+             "left join media_type_lut as mt on ml.media_type_id = mt.media_type_id ",
+             "left join other_observation as oo on loc.location_id = oo.observation_location_id ",
+             "left join observation_type_lut as ot on oo.observation_type_id = ot.observation_type_id ",
+             "where loc.location_id = '{redd_location_id}'")
+  con = poolCheckout(pool)
+  redd_loc_surveys = DBI::dbGetQuery(con, qry)
+  poolReturn(con)
+  redd_loc_surveys = redd_loc_surveys %>%
+    mutate(survey_date = with_tz(survey_date, tzone = "America/Los_Angeles")) %>%
+    mutate(survey_date = format(survey_date, "%m/%d/%Y"))
+  return(redd_loc_surveys)
+}
+
 #========================================================
 # Edit location callback
 #========================================================
@@ -236,9 +264,9 @@ redd_location_update = function(redd_location_edit_values) {
   poolReturn(con)
 }
 
-#========================================================
+#==============================================================
 # Identify redd location dependencies prior to delete
-#========================================================
+#==============================================================
 
 # Identify fish_encounter dependencies prior to delete
 get_redd_location_dependencies = function(redd_location_id) {

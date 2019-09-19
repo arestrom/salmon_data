@@ -401,6 +401,33 @@ fish_location_edit = reactive({
   return(edit_fish_location)
 })
 
+dependent_fish_location_surveys = reactive({
+  fish_loc_id = selected_fish_location_data()$fish_location_id
+  fish_loc_srv = get_fish_location_surveys(fish_loc_id)
+  return(fish_loc_srv)
+})
+
+# Generate values to show check modal
+output$fish_loc_surveys = renderDT({
+  fish_loc_srv = dependent_fish_location_surveys()
+  fish_location_warning = glue("WARNING: All  carcasses, photo's, or observations linked to this ",
+                               "fish location are shown below. Please verify that all data below ",
+                               "should be updated to the new values!")
+  # Generate table
+  datatable(fish_loc_srv,
+            rownames = FALSE,
+            options = list(dom = 't',
+                           scrollX = T,
+                           ordering = FALSE,
+                           initComplete = JS(
+                             "function(settings, json) {",
+                             "$(this.api().table().header()).css({'background-color': '#9eb3d6'});",
+                             "}")),
+            caption = htmltools::tags$caption(
+              style = 'caption-side: top; text-align: left; color: blue; width: auto;',
+              htmltools::em(htmltools::strong(fish_location_warning))))
+})
+
 # Generate values to show in modal
 output$fish_location_modal_update_vals = renderDT({
   fish_location_modal_up_vals = fish_location_edit() %>%
@@ -458,6 +485,8 @@ observeEvent(input$fish_loc_edit, {
                  fluidPage (
                    DT::DTOutput("fish_location_modal_update_vals"),
                    br(),
+                   DT::DTOutput("fish_loc_surveys"),
+                   br(),
                    br(),
                    actionButton("save_fish_loc_edits", "Save changes")
                  ),
@@ -502,8 +531,24 @@ output$fish_location_modal_delete_vals = renderDT({
                              "}")))
 })
 
+# Reactive to hold dependencies
+fish_location_dependencies = reactive({
+  fish_location_id = selected_fish_location_data()$fish_location_id
+  fish_loc_dep = get_fish_location_dependencies(fish_location_id)
+  return(fish_loc_dep)
+})
+
 observeEvent(input$fish_loc_delete, {
   fish_location_id = selected_fish_location_data()$fish_location_id
+  fish_loc_dependencies = fish_location_dependencies()
+  table_names = paste0(paste0("'", names(fish_loc_dependencies), "'"), collapse = ", ")
+  # Customize the delete message depending on if other entries are linked to location
+  if (ncol(fish_loc_dependencies) > 1L | fish_loc_dependencies$fish_encounter[1] > 1L) {
+    fish_delete_msg = glue("Other entries in {table_names} are linked to this location. ",
+                           "Only the link to the fish location will be deleted.")
+  } else {
+    fish_delete_msg = "Are you sure you want to delete this fish location data from the database?"
+  }
   showModal(
     tags$div(id = "fish_location_delete_modal",
              if ( length(fish_location_id) == 0 ) {
@@ -517,7 +562,7 @@ observeEvent(input$fish_loc_delete, {
              } else {
                modalDialog (
                  size = 'l',
-                 title = "Are you sure you want to delete this fish location data from the database?",
+                 title = fish_delete_msg,
                  fluidPage (
                    DT::DTOutput("fish_location_modal_delete_vals"),
                    br(),
@@ -533,7 +578,9 @@ observeEvent(input$fish_loc_delete, {
 
 # Update DB and reload DT
 observeEvent(input$delete_fish_location, {
-  fish_location_delete(selected_fish_location_data(), selected_fish_encounter_data())
+  fish_location_delete(fish_location_dependencies(),
+                       selected_fish_location_data(),
+                       selected_fish_encounter_data())
   removeModal()
   fish_locations_after_delete = get_fish_location(pool, selected_fish_encounter_data()$fish_encounter_id) %>%
     select(fish_name, channel_type, orientation_type, latitude,

@@ -403,6 +403,33 @@ redd_location_edit = reactive({
   return(edit_redd_location)
 })
 
+dependent_redd_location_surveys = reactive({
+  redd_loc_id = selected_redd_location_data()$redd_location_id
+  redd_loc_srv = get_redd_location_surveys(redd_loc_id)
+  return(redd_loc_srv)
+})
+
+# Generate values to show check modal
+output$redd_loc_surveys = renderDT({
+  redd_loc_srv = dependent_redd_location_surveys()
+  redd_location_warning = glue("WARNING: All previous redds, photo's, or observations linked to this ",
+                               "redd location are shown below. Please verify that all data below ",
+                               "should be updated to the new values!")
+  # Generate table
+  datatable(redd_loc_srv,
+            rownames = FALSE,
+            options = list(dom = 't',
+                           scrollX = T,
+                           ordering = FALSE,
+                           initComplete = JS(
+                             "function(settings, json) {",
+                             "$(this.api().table().header()).css({'background-color': '#9eb3d6'});",
+                             "}")),
+            caption = htmltools::tags$caption(
+              style = 'caption-side: top; text-align: left; color: blue; width: auto;',
+              htmltools::em(htmltools::strong(redd_location_warning))))
+})
+
 # Generate values to show in modal
 output$redd_location_modal_update_vals = renderDT({
   redd_location_modal_up_vals = redd_location_edit() %>%
@@ -459,6 +486,8 @@ observeEvent(input$redd_loc_edit, {
                  title = "Update redd location data to these new values?",
                  fluidPage (
                    DT::DTOutput("redd_location_modal_update_vals"),
+                   br(),
+                   DT::DTOutput("redd_loc_surveys"),
                    br(),
                    br(),
                    actionButton("save_redd_loc_edits", "Save changes")
@@ -518,10 +547,10 @@ observeEvent(input$redd_loc_delete, {
   redd_nm = selected_redd_coords()$redd_name
   # Customize the delete message depending on if other entries are linked to redd_name
   if (ncol(redd_loc_dependencies) > 1L | redd_loc_dependencies$redd_encounter[1] > 1L) {
-    delete_msg = glue("Other entries in {table_names} are linked to redd_name: '{redd_nm}'., ",
-                      "Only the link to the redd location will be deleted.")
+    redd_delete_msg = glue("Other entries in {table_names} are linked to redd_name: '{redd_nm}'. ",
+                           "Only the link to the redd location will be deleted.")
   } else {
-    delete_msg = "Are you sure you want to delete this redd location data from the database?"
+    redd_delete_msg = "Are you sure you want to delete this redd location data from the database?"
   }
   showModal(
     tags$div(id = "redd_location_delete_modal",
@@ -536,7 +565,7 @@ observeEvent(input$redd_loc_delete, {
              } else {
                modalDialog (
                  size = 'l',
-                 title = delete_msg,
+                 title = redd_delete_msg,
                  fluidPage (
                    DT::DTOutput("redd_location_modal_delete_vals"),
                    br(),

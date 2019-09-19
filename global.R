@@ -82,6 +82,8 @@
 #     required fields have values entered. See fish_location.
 #     Or use validate...need?
 # 22. Inspect Phils front-end for comparison.
+# 23. Wrap all database operations in transactions before
+#     porting to the fish.spawning_ground schema.
 #
 # AS 2019-07-15
 #==============================================================
