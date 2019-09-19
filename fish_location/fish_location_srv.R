@@ -4,7 +4,7 @@
 #========================================================
 
 output$fish_channel_type_select = renderUI({
-  channel_type_list = get_fish_channel_type(pool)$channel_type
+  channel_type_list = get_fish_channel_type()$channel_type
   channel_type_list = c("", channel_type_list)
   selectizeInput("fish_channel_type_select", label = "channel_type",
                  choices = channel_type_list, selected = NULL,
@@ -12,7 +12,7 @@ output$fish_channel_type_select = renderUI({
 })
 
 output$fish_orientation_type_select = renderUI({
-  orientation_type_list = get_fish_orientation_type(pool)$orientation_type
+  orientation_type_list = get_fish_orientation_type()$orientation_type
   orientation_type_list = c("", orientation_type_list)
   selectizeInput("fish_orientation_type_select", label = "orientation_type",
                  choices = orientation_type_list, selected = NULL,
@@ -28,7 +28,7 @@ output$fish_locations = renderDT({
   fish_location_title = glue("{selected_survey_event_data()$species} fish locations for {input$stream_select} on ",
                              "{selected_survey_data()$survey_date} from river mile {selected_survey_data()$up_rm} ",
                              "to {selected_survey_data()$lo_rm}")
-  fish_location_data = get_fish_location(pool, selected_fish_encounter_data()$fish_encounter_id) %>%
+  fish_location_data = get_fish_location(selected_fish_encounter_data()$fish_encounter_id) %>%
     select(fish_name, channel_type, orientation_type, latitude,
            longitude, horiz_accuracy, location_description,
            created_dt, created_by, modified_dt, modified_by)
@@ -59,7 +59,7 @@ fish_location_dt_proxy = dataTableProxy(outputId = "fish_locations")
 # Create reactive to collect input values for update and delete actions
 selected_fish_location_data = reactive({
   req(input$fish_locations_rows_selected)
-  fish_location_data = get_fish_location(pool, selected_fish_encounter_data()$fish_encounter_id)
+  fish_location_data = get_fish_location(selected_fish_encounter_data()$fish_encounter_id)
   fish_location_row = input$fish_locations_rows_selected
   selected_fish_location = tibble(fish_location_id = fish_location_data$fish_location_id[fish_location_row],
                                   location_coordinates_id = fish_location_data$location_coordinates_id[fish_location_row],
@@ -105,7 +105,7 @@ selected_fish_coords = reactive({
   center_lat = selected_stream_centroid()$center_lat
   center_lon = selected_stream_centroid()$center_lon
   # Get location_coordinates data should be nrow == 0 if no coordiinates present
-  fish_coords = get_fish_coordinates(pool, selected_fish_encounter_data()$fish_encounter_id)
+  fish_coords = get_fish_coordinates(selected_fish_encounter_data()$fish_encounter_id)
   if ( nrow(fish_coords) == 0 ) {
     fish_lat = center_lat
     fish_lon = center_lon
@@ -237,7 +237,7 @@ observeEvent(input$capture_fish_loc, {
 observe({
   input$insert_fish_location
   input$delete_fish_location
-  fish_loc_data = get_fish_location(pool, selected_fish_encounter_data()$fish_encounter_id)
+  fish_loc_data = get_fish_location(selected_fish_encounter_data()$fish_encounter_id)
   if (nrow(fish_loc_data) >= 1L) {
     shinyjs::disable("fish_loc_add")
   } else {
@@ -254,7 +254,7 @@ fish_location_create = reactive({
   if ( fish_channel_type_input == "" ) {
     stream_channel_type_id = NA
   } else {
-    fish_channel_type_vals = get_fish_channel_type(pool)
+    fish_channel_type_vals = get_fish_channel_type()
     stream_channel_type_id = fish_channel_type_vals %>%
       filter(channel_type == fish_channel_type_input) %>%
       pull(stream_channel_type_id)
@@ -264,7 +264,7 @@ fish_location_create = reactive({
   if ( fish_orientation_type_input == "" ) {
     location_orientation_type_id = NA
   } else {
-    fish_orientation_type_vals = get_fish_orientation_type(pool)
+    fish_orientation_type_vals = get_fish_orientation_type()
     location_orientation_type_id = fish_orientation_type_vals %>%
       filter(orientation_type == fish_orientation_type_input) %>%
       pull(location_orientation_type_id)
@@ -353,7 +353,7 @@ fish_location_insert_vals = reactive({
 observeEvent(input$insert_fish_location, {
   fish_location_insert(fish_location_insert_vals())
   removeModal()
-  post_fish_location_insert_vals = get_fish_location(pool, selected_fish_encounter_data()$fish_encounter_id) %>%
+  post_fish_location_insert_vals = get_fish_location(selected_fish_encounter_data()$fish_encounter_id) %>%
     select(fish_name, channel_type, orientation_type, latitude,
            longitude, horiz_accuracy, location_description,
            created_dt, created_by, modified_dt, modified_by)
@@ -371,7 +371,7 @@ fish_location_edit = reactive({
   if ( fish_channel_type_input == "" ) {
     stream_channel_type_id = NA
   } else {
-    fish_channel_type_vals = get_fish_channel_type(pool)
+    fish_channel_type_vals = get_fish_channel_type()
     stream_channel_type_id = fish_channel_type_vals %>%
       filter(channel_type == fish_channel_type_input) %>%
       pull(stream_channel_type_id)
@@ -381,7 +381,7 @@ fish_location_edit = reactive({
   if ( fish_orientation_type_input == "" ) {
     location_orientation_type_id = NA
   } else {
-    fish_orientation_type_vals = get_fish_orientation_type(pool)
+    fish_orientation_type_vals = get_fish_orientation_type()
     location_orientation_type_id = fish_orientation_type_vals %>%
       filter(orientation_type == fish_orientation_type_input) %>%
       pull(location_orientation_type_id)
@@ -501,7 +501,7 @@ observeEvent(input$fish_loc_edit, {
 observeEvent(input$save_fish_loc_edits, {
   fish_location_update(fish_location_edit())
   removeModal()
-  post_fish_location_edit_vals = get_fish_location(pool, selected_fish_encounter_data()$fish_encounter_id) %>%
+  post_fish_location_edit_vals = get_fish_location(selected_fish_encounter_data()$fish_encounter_id) %>%
     select(fish_name, channel_type, orientation_type, latitude,
            longitude, horiz_accuracy, location_description,
            created_dt, created_by, modified_dt, modified_by)
@@ -515,7 +515,7 @@ observeEvent(input$save_fish_loc_edits, {
 # Generate values to show in modal
 output$fish_location_modal_delete_vals = renderDT({
   fish_location_modal_del_id = selected_fish_location_data()$fish_location_id
-  fish_location_modal_del_vals = get_fish_location(pool, selected_fish_encounter_data()$fish_encounter_id) %>%
+  fish_location_modal_del_vals = get_fish_location(selected_fish_encounter_data()$fish_encounter_id) %>%
     filter(fish_location_id == fish_location_modal_del_id) %>%
     select(fish_name, channel_type, orientation_type, latitude,
            longitude, horiz_accuracy, location_description)
@@ -582,7 +582,7 @@ observeEvent(input$delete_fish_location, {
                        selected_fish_location_data(),
                        selected_fish_encounter_data())
   removeModal()
-  fish_locations_after_delete = get_fish_location(pool, selected_fish_encounter_data()$fish_encounter_id) %>%
+  fish_locations_after_delete = get_fish_location(selected_fish_encounter_data()$fish_encounter_id) %>%
     select(fish_name, channel_type, orientation_type, latitude,
            longitude, horiz_accuracy, location_description,
            created_dt, created_by, modified_dt, modified_by)

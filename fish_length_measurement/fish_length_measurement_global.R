@@ -1,6 +1,6 @@
 
 # Main fish_encounter query
-get_length_measurements = function(pool, individual_fish_id) {
+get_length_measurements = function(individual_fish_id) {
   qry = glue("select flm.fish_length_measurement_id, ",
              "mt.length_type_description as length_type, ",
              "flm.length_measurement_centimeter as length_cm, ",
@@ -9,7 +9,9 @@ get_length_measurements = function(pool, individual_fish_id) {
              "from fish_length_measurement as flm ",
              "inner join fish_length_measurement_type_lut as mt on flm.fish_length_measurement_type_id = mt.fish_length_measurement_type_id ",
              "where flm.individual_fish_id = '{individual_fish_id}'")
-  length_measurements = DBI::dbGetQuery(pool, qry)
+  con = poolCheckout(pool)
+  length_measurements = DBI::dbGetQuery(con, qry)
+  poolReturn(con)
   length_measurements = length_measurements %>%
     mutate(fish_length_measurement_id = tolower(fish_length_measurement_id)) %>%
     mutate(created_date = with_tz(created_date, tzone = "America/Los_Angeles")) %>%
@@ -27,14 +29,16 @@ get_length_measurements = function(pool, individual_fish_id) {
 #==========================================================================
 
 # Length type
-get_length_type = function(pool) {
+get_length_type = function() {
   qry = glue("select fish_length_measurement_type_id, length_type_description as length_type ",
              "from fish_length_measurement_type_lut ",
              "where obsolete_datetime is null")
-  length_type_list = DBI::dbGetQuery(pool, qry) %>%
+  con = poolCheckout(pool)
+  length_type_list = DBI::dbGetQuery(con, qry) %>%
     mutate(fish_length_measurement_type_id = tolower(fish_length_measurement_type_id)) %>%
     arrange(length_type) %>%
     select(fish_length_measurement_type_id, length_type)
+  poolReturn(con)
   return(length_type_list)
 }
 

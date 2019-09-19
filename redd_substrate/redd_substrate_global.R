@@ -1,6 +1,6 @@
 
 # Main individual_redd query
-get_redd_substrate = function(pool, redd_encounter_id) {
+get_redd_substrate = function(redd_encounter_id) {
   qry = glue("select rs.redd_substrate_id, sl.substrate_level_short_description as substrate_level, ",
              "st.substrate_type_description as substrate_type, ",
              "rs.substrate_percent as substrate_pct, ",
@@ -10,7 +10,9 @@ get_redd_substrate = function(pool, redd_encounter_id) {
              "left join substrate_level_lut as sl on rs.substrate_level_id = sl.substrate_level_id ",
              "left join substrate_type_lut as st on rs.substrate_type_id = st.substrate_type_id ",
              "where rs.redd_encounter_id = '{redd_encounter_id}'")
-  redd_substrate = DBI::dbGetQuery(pool, qry)
+  con = poolCheckout(pool)
+  redd_substrate = DBI::dbGetQuery(con, qry)
+  poolReturn(con)
   redd_substrate = redd_substrate %>%
     mutate(redd_substrate_id = tolower(redd_substrate_id)) %>%
     mutate(created_date = with_tz(created_date, tzone = "America/Los_Angeles")) %>%
@@ -29,26 +31,30 @@ get_redd_substrate = function(pool, redd_encounter_id) {
 #==========================================================================
 
 # Redd shape
-get_substrate_level = function(pool) {
+get_substrate_level = function() {
   qry = glue("select substrate_level_id, substrate_level_short_description as substrate_level ",
              "from substrate_level_lut ",
              "where obsolete_datetime is null")
-  substrate_level_list = DBI::dbGetQuery(pool, qry) %>%
+  con = poolCheckout(pool)
+  substrate_level_list = DBI::dbGetQuery(con, qry) %>%
     mutate(substrate_level_id = tolower(substrate_level_id)) %>%
     arrange(factor(substrate_level, levels = c("Primary", "Secondary", "Tertiary", "Quaternary"))) %>%
     select(substrate_level_id, substrate_level)
+  poolReturn(con)
   return(substrate_level_list)
 }
 
 # Substrate type
-get_substrate_type = function(pool) {
+get_substrate_type = function() {
   qry = glue("select substrate_type_id, substrate_type_description as substrate_type ",
              "from substrate_type_lut ",
              "where obsolete_datetime is null")
-  substrate_type_list = DBI::dbGetQuery(pool, qry) %>%
+  con = poolCheckout(pool)
+  substrate_type_list = DBI::dbGetQuery(con, qry) %>%
     mutate(substrate_type_id = tolower(substrate_type_id)) %>%
     arrange(substrate_type) %>%
     select(substrate_type_id, substrate_type)
+  poolReturn(con)
   return(substrate_type_list)
 }
 

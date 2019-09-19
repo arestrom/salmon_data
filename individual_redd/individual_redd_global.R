@@ -1,6 +1,6 @@
 
 # Main individual_redd query
-get_individual_redd = function(pool, redd_encounter_id) {
+get_individual_redd = function(redd_encounter_id) {
   qry = glue("select ir.individual_redd_id, rh.redd_shape_description as redd_shape, ",
              "rd.dewatered_type_description as dewatered_type, ",
              "ir.percent_redd_visible as pct_visible, ",
@@ -18,7 +18,9 @@ get_individual_redd = function(pool, redd_encounter_id) {
              "left join redd_shape_lut as rh on ir.redd_shape_id = rh.redd_shape_id ",
              "left join redd_dewatered_type_lut as rd on ir.redd_dewatered_type_id = rd.redd_dewatered_type_id ",
              "where ir.redd_encounter_id = '{redd_encounter_id}'")
-  individual_redds = DBI::dbGetQuery(pool, qry)
+  con = poolCheckout(pool)
+  individual_redds = DBI::dbGetQuery(con, qry)
+  poolReturn(con)
   individual_redds = individual_redds %>%
     mutate(individual_redd_id = tolower(individual_redd_id)) %>%
     mutate(created_date = with_tz(created_date, tzone = "America/Los_Angeles")) %>%
@@ -39,26 +41,30 @@ get_individual_redd = function(pool, redd_encounter_id) {
 #==========================================================================
 
 # Redd shape
-get_redd_shape = function(pool) {
+get_redd_shape = function() {
   qry = glue("select redd_shape_id, redd_shape_description as redd_shape ",
              "from redd_shape_lut ",
              "where obsolete_datetime is null")
-  redd_shape_list = DBI::dbGetQuery(pool, qry) %>%
+  con = poolCheckout(pool)
+  redd_shape_list = DBI::dbGetQuery(con, qry) %>%
     mutate(redd_shape_id = tolower(redd_shape_id)) %>%
     arrange(redd_shape) %>%
     select(redd_shape_id, redd_shape)
+  poolReturn(con)
   return(redd_shape_list)
 }
 
 # Dewatered type
-get_dewatered_type = function(pool) {
+get_dewatered_type = function() {
   qry = glue("select redd_dewatered_type_id, dewatered_type_description as dewatered_type ",
              "from redd_dewatered_type_lut ",
              "where obsolete_datetime is null")
-  dewatered_type_list = DBI::dbGetQuery(pool, qry) %>%
+  con = poolCheckout(pool)
+  dewatered_type_list = DBI::dbGetQuery(con, qry) %>%
     mutate(redd_dewatered_type_id = tolower(redd_dewatered_type_id)) %>%
     arrange(dewatered_type) %>%
     select(redd_dewatered_type_id, dewatered_type)
+  poolReturn(con)
   return(dewatered_type_list)
 }
 

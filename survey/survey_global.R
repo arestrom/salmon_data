@@ -1,5 +1,5 @@
 # Function to get header data...use multiselect for year
-get_surveys = function(pool, waterbody_id, survey_years) {
+get_surveys = function(waterbody_id, survey_years) {
   qry = glue("select s.survey_id, s.survey_datetime as survey_date,  ",
              "ds.data_source_code, du.data_source_unit_name as data_unit, ",
              "sm.survey_method_code as survey_method, ",
@@ -28,7 +28,9 @@ get_surveys = function(pool, waterbody_id, survey_years) {
              "inner join incomplete_survey_type_lut as ics on s.incomplete_survey_type_id = ics.incomplete_survey_type_id ",
              "where date_part('year', survey_datetime) in ({survey_years}) ",
              "and (locu.waterbody_id = '{waterbody_id}' or locl.waterbody_id = '{waterbody_id}')")
-  surveys = DBI::dbGetQuery(pool, qry)
+  con = poolCheckout(pool)
+  surveys = DBI::dbGetQuery(con, qry)
+  poolReturn(con)
   surveys = surveys %>%
     mutate(survey_id = tolower(survey_id)) %>%
     mutate(upper_location_id = tolower(upper_location_id)) %>%
@@ -58,50 +60,58 @@ get_surveys = function(pool, waterbody_id, survey_years) {
 #==========================================================================
 
 # Data source
-get_data_source = function(pool) {
+get_data_source = function() {
   qry = glue("select data_source_id, data_source_code ",
              "from data_source_lut ",
              "where obsolete_datetime is null")
-  data_source = DBI::dbGetQuery(pool, qry) %>%
+  con = poolCheckout(pool)
+  data_source = DBI::dbGetQuery(con, qry) %>%
     mutate(data_source_id = tolower(data_source_id)) %>%
     arrange(data_source_code) %>%
     select(data_source_id, data_source_code)
+  poolReturn(con)
   return(data_source)
 }
 
 # Survey method
-get_survey_method = function(pool) {
+get_survey_method = function() {
   qry = glue("select survey_method_id, survey_method_code as survey_method ",
              "from survey_method_lut ",
              "where obsolete_datetime is null")
-  survey_method_list = DBI::dbGetQuery(pool, qry) %>%
+  con = poolCheckout(pool)
+  survey_method_list = DBI::dbGetQuery(con, qry) %>%
     mutate(survey_method_id = tolower(survey_method_id)) %>%
     arrange(survey_method) %>%
     select(survey_method_id, survey_method)
+  poolReturn(con)
   return(survey_method_list)
 }
 
 # Data review
-get_data_review = function(pool) {
+get_data_review = function() {
   qry = glue("select data_review_status_id, data_review_status_description as data_review ",
              "from data_review_status_lut ",
              "where obsolete_datetime is null")
-  data_review_list = DBI::dbGetQuery(pool, qry) %>%
+  con = poolCheckout(pool)
+  data_review_list = DBI::dbGetQuery(con, qry) %>%
     mutate(data_review_status_id = tolower(data_review_status_id)) %>%
     arrange(data_review) %>%
     select(data_review_status_id, data_review)
+  poolReturn(con)
   return(data_review_list)
 }
 
 # Completion status
-get_completion_status = function(pool) {
+get_completion_status = function() {
   qry = glue("select survey_completion_status_id, completion_status_description as completion ",
              "from survey_completion_status_lut ",
              "where obsolete_datetime is null")
-  completion_list = DBI::dbGetQuery(pool, qry) %>%
+  con = poolCheckout(pool)
+  completion_list = DBI::dbGetQuery(con, qry) %>%
     mutate(survey_completion_status_id = tolower(survey_completion_status_id)) %>%
     arrange(completion) %>%
     select(survey_completion_status_id, completion)
+  poolReturn(con)
   return(completion_list)
 }
 

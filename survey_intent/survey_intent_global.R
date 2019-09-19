@@ -1,5 +1,5 @@
 # Main survey intent query
-get_survey_intent = function(pool, survey_id) {
+get_survey_intent = function(survey_id) {
   qry = glue("select si.survey_intent_id, sp.common_name as species, ",
              "ct.count_type_code as count_type, si.created_datetime as created_date, ",
              "si.created_by, si.modified_datetime as modified_date, si.modified_by ",
@@ -7,7 +7,9 @@ get_survey_intent = function(pool, survey_id) {
              "left join species_lut as sp on si.species_id = sp.species_id ",
              "left join count_type_lut as ct on si.count_type_id = ct.count_type_id ",
              "where si.survey_id = '{survey_id}'")
-  survey_intents = DBI::dbGetQuery(pool, qry)
+  con = poolCheckout(pool)
+  survey_intents = DBI::dbGetQuery(con, qry)
+  poolReturn(con)
   survey_intents = survey_intents %>%
     mutate(survey_intent_id = tolower(survey_intent_id)) %>%
     mutate(created_date = with_tz(created_date, tzone = "America/Los_Angeles")) %>%
@@ -25,26 +27,30 @@ get_survey_intent = function(pool, survey_id) {
 #==========================================================================
 
 # Area surveyed
-get_intent_species = function(pool) {
+get_intent_species = function() {
   qry = glue("select species_id, common_name as species ",
              "from species_lut ",
              "where obsolete_datetime is null")
-  species_list = DBI::dbGetQuery(pool, qry) %>%
+  con = poolCheckout(pool)
+  species_list = DBI::dbGetQuery(con, qry) %>%
     mutate(species_id = tolower(species_id)) %>%
     arrange(species) %>%
     select(species_id, species)
+  poolReturn(con)
   return(species_list)
 }
 
 # Abundance
-get_count_type = function(pool) {
+get_count_type = function() {
   qry = glue("select count_type_id, count_type_code as count_type ",
              "from count_type_lut ",
              "where obsolete_datetime is null")
-  count_type_list = DBI::dbGetQuery(pool, qry) %>%
+  con = poolCheckout(pool)
+  count_type_list = DBI::dbGetQuery(con, qry) %>%
     mutate(count_type_id = tolower(count_type_id)) %>%
     arrange(count_type) %>%
     select(count_type_id, count_type)
+  poolReturn(con)
   return(count_type_list)
 }
 

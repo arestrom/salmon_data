@@ -4,7 +4,6 @@
 
 # Create the Shiny server
 server = function(input, output, session) {
-  # WRIA-Stream code
   source("dashboard/wria_stream_srv.R", local = TRUE)
   source("survey/survey_srv.R", local = TRUE)
   source("survey_comment/survey_comment_srv.R", local = TRUE)
@@ -20,7 +19,7 @@ server = function(input, output, session) {
   source("redd_substrate/redd_substrate_srv.R", local = TRUE)
   source("fish_location/fish_location_srv.R", local = TRUE)
 
-  # # close the R session when Chrome closes
+  # # close the R session when Chrome closes...for standalone
   # session$onSessionEnded(function() {
   #   stopApp()
   #   q("no")

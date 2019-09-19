@@ -3,7 +3,7 @@
 #========================================================
 
 output$length_type_select = renderUI({
-  length_type_list = get_length_type(pool)$length_type
+  length_type_list = get_length_type()$length_type
   length_type_list = c("", length_type_list)
   selectizeInput("length_type_select", label = "length_type",
                  choices = length_type_list, selected = "Fork length",
@@ -19,7 +19,7 @@ output$length_measurements = renderDT({
   length_measurements_title = glue("{selected_survey_event_data()$species} data for {input$stream_select} on ",
                                "{selected_survey_data()$survey_date} from river mile {selected_survey_data()$up_rm} ",
                                "to {selected_survey_data()$lo_rm}")
-  length_measurement_data = get_length_measurements(pool, selected_individual_fish_data()$individual_fish_id) %>%
+  length_measurement_data = get_length_measurements(selected_individual_fish_data()$individual_fish_id) %>%
     select(length_type, length_cm, created_dt, created_by, modified_dt, modified_by)
 
   # Generate table
@@ -48,7 +48,7 @@ length_measurement_dt_proxy = dataTableProxy(outputId = "length_measurements")
 # Create reactive to collect input values for update and delete actions
 selected_length_measurement_data = reactive({
   req(input$length_measurements_rows_selected)
-  length_measurement_data = get_length_measurements(pool, selected_individual_fish_data()$individual_fish_id)
+  length_measurement_data = get_length_measurements(selected_individual_fish_data()$individual_fish_id)
   length_measurement_row = input$length_measurements_rows_selected
   selected_length_measurement = tibble(fish_length_measurement_id = length_measurement_data$fish_length_measurement_id[length_measurement_row],
                                        length_type = length_measurement_data$length_type[length_measurement_row],
@@ -84,7 +84,7 @@ length_measurement_create = reactive({
   if ( length_type_input == "" ) {
     fish_length_measurement_type_id = NA
   } else {
-    fish_length_vals = get_length_type(pool)
+    fish_length_vals = get_length_type()
     fish_length_measurement_type_id = fish_length_vals %>%
       filter(length_type == length_type_input) %>%
       pull(fish_length_measurement_type_id)
@@ -117,7 +117,7 @@ output$lengh_measurement_modal_insert_vals = renderDT({
 # Modal for new intents. Need a dup flag, multiple rows possible
 observeEvent(input$fish_meas_add, {
   new_length_measurement_vals = length_measurement_create()
-  existing_length_measurement_vals = get_length_measurements(pool, selected_individual_fish_data()$individual_fish_id)
+  existing_length_measurement_vals = get_length_measurements(selected_individual_fish_data()$individual_fish_id)
   dup_length_type_flag = dup_length_type(new_length_measurement_vals, existing_length_measurement_vals)
   showModal(
     # Verify required fields have data...none can be blank
@@ -169,7 +169,7 @@ length_measurement_insert_vals = reactive({
 observeEvent(input$insert_length_measurements, {
   length_measurement_insert(length_measurement_insert_vals())
   removeModal()
-  post_length_measurement_insert_vals = get_length_measurements(pool, selected_individual_fish_data()$individual_fish_id) %>%
+  post_length_measurement_insert_vals = get_length_measurements(selected_individual_fish_data()$individual_fish_id) %>%
     select(length_type, length_cm, created_dt, created_by, modified_dt, modified_by)
   replaceData(length_measurement_dt_proxy, post_length_measurement_insert_vals)
 })
@@ -185,7 +185,7 @@ length_measurement_edit = reactive({
   if ( length_type_input == "" ) {
     fish_length_measurement_type_id = NA
   } else {
-    fish_length_vals = get_length_type(pool)
+    fish_length_vals = get_length_type()
     fish_length_measurement_type_id = fish_length_vals %>%
       filter(length_type == length_type_input) %>%
       pull(fish_length_measurement_type_id)
@@ -273,7 +273,7 @@ observeEvent(input$fish_meas_edit, {
 observeEvent(input$save_length_meas_edits, {
   length_measurement_update(length_measurement_edit())
   removeModal()
-  post_length_measurement_edit_vals = get_length_measurements(pool, selected_individual_fish_data()$individual_fish_id) %>%
+  post_length_measurement_edit_vals = get_length_measurements(selected_individual_fish_data()$individual_fish_id) %>%
     select(length_type, length_cm, created_dt, created_by, modified_dt, modified_by)
   replaceData(length_measurement_dt_proxy, post_length_measurement_edit_vals)
 })
@@ -285,7 +285,7 @@ observeEvent(input$save_length_meas_edits, {
 # Generate values to show in modal
 output$length_measurement_modal_delete_vals = renderDT({
   length_measurement_modal_del_id = selected_length_measurement_data()$fish_length_measurement_id
-  length_measurement_modal_del_vals = get_length_measurements(pool, selected_individual_fish_data()$individual_fish_id) %>%
+  length_measurement_modal_del_vals = get_length_measurements(selected_individual_fish_data()$individual_fish_id) %>%
     filter(fish_length_measurement_id == length_measurement_modal_del_id) %>%
     select(length_type, length_cm)
   # Generate table
@@ -333,7 +333,7 @@ observeEvent(input$fish_meas_delete, {
 observeEvent(input$delete_length_measurements, {
   length_measurement_delete(selected_length_measurement_data())
   removeModal()
-  length_measurement_after_delete = get_length_measurements(pool, selected_individual_fish_data()$individual_fish_id) %>%
+  length_measurement_after_delete = get_length_measurements(selected_individual_fish_data()$individual_fish_id) %>%
     select(length_type, length_cm, created_dt, created_by, modified_dt, modified_by)
   replaceData(length_measurement_dt_proxy, length_measurement_after_delete)
 })

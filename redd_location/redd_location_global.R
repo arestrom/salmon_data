@@ -44,7 +44,7 @@ get_redd_location = function(redd_encounter_id) {
 #==========================================================================
 
 # Redd_coordinates query
-get_redd_coordinates = function(pool, redd_encounter_id) {
+get_redd_coordinates = function(redd_encounter_id) {
   qry = glue("select lc.location_id as redd_location_id, ",
              "lc.location_coordinates_id, ",
              "st_x(st_transform(lc.geom, 4326)) as longitude, ",
@@ -56,7 +56,9 @@ get_redd_coordinates = function(pool, redd_encounter_id) {
              "inner join location as loc on rd.redd_location_id = loc.location_id ",
              "inner join location_coordinates as lc on loc.location_id = lc.location_id ",
              "where rd.redd_encounter_id = '{redd_encounter_id}'")
-  redd_coordinates = DBI::dbGetQuery(pool, qry)
+  con = poolCheckout(pool)
+  redd_coordinates = DBI::dbGetQuery(con, qry)
+  poolReturn(con)
   redd_coordinates = redd_coordinates %>%
     mutate(redd_location_id = tolower(redd_location_id)) %>%
     mutate(location_coordinates_id = tolower(location_coordinates_id)) %>%
@@ -79,26 +81,30 @@ get_redd_coordinates = function(pool, redd_encounter_id) {
 #==========================================================================
 
 # Redd status
-get_channel_type = function(pool) {
+get_channel_type = function() {
   qry = glue("select stream_channel_type_id, channel_type_description as channel_type ",
              "from stream_channel_type_lut ",
              "where obsolete_datetime is null")
-  channel_type_list = DBI::dbGetQuery(pool, qry) %>%
+  con = poolCheckout(pool)
+  channel_type_list = DBI::dbGetQuery(con, qry) %>%
     mutate(stream_channel_type_id = tolower(stream_channel_type_id)) %>%
     arrange(channel_type) %>%
     select(stream_channel_type_id, channel_type)
+  poolReturn(con)
   return(channel_type_list)
 }
 
 # Redd status
-get_orientation_type = function(pool) {
+get_orientation_type = function() {
   qry = glue("select location_orientation_type_id, orientation_type_description as orientation_type ",
              "from location_orientation_type_lut ",
              "where obsolete_datetime is null")
-  orientation_type_list = DBI::dbGetQuery(pool, qry) %>%
+  con = poolCheckout(pool)
+  orientation_type_list = DBI::dbGetQuery(con, qry) %>%
     mutate(location_orientation_type_id = tolower(location_orientation_type_id)) %>%
     arrange(orientation_type) %>%
     select(location_orientation_type_id, orientation_type)
+  poolReturn(con)
   return(orientation_type_list)
 }
 

@@ -1,28 +1,28 @@
 
 # Server side inputs
 output$survey_method_select = renderUI({
-  survey_method_list = get_survey_method(pool)$survey_method
+  survey_method_list = get_survey_method()$survey_method
   selectizeInput("survey_method_select", label = "survey_method",
                  choices = survey_method_list, selected = "Foot",
                  width = "115px")
 })
 
 output$data_source_select = renderUI({
-  data_source_list = get_data_source(pool)$data_source_code
+  data_source_list = get_data_source()$data_source_code
   selectizeInput("data_source_select", label = "data_source",
                  choices = data_source_list, selected = "WDFW",
                  width = "100px")
 })
 
 output$data_review_select = renderUI({
-  data_review_list = get_data_review(pool)$data_review
+  data_review_list = get_data_review()$data_review
   selectizeInput("data_review_select", label = "data_review",
                  choices = data_review_list, selected = data_review_list[1],
                  width = "115px")
 })
 
 output$completion_select = renderUI({
-  completion_list = get_completion_status(pool)$completion
+  completion_list = get_completion_status()$completion
   selectizeInput("completion_select", label = "completed?",
                  choices = completion_list, selected = completion_list[1],
                  width = "150px")
@@ -31,7 +31,7 @@ output$completion_select = renderUI({
 # Primary DT datatable for database
 output$surveys = renderDT({
   survey_title = glue("Surveys for {input$stream_select} in {year_vals()}")
-  survey_data = get_surveys(pool, waterbody_id(), year_vals()) %>%
+  survey_data = get_surveys(waterbody_id(), year_vals()) %>%
     mutate(start_time = start_time_dt, end_time = end_time_dt) %>%
     select(survey_dt = survey_date_dt, survey_method, up_rm,
            lo_rm, start_time, end_time, observer, submitter,
@@ -65,7 +65,7 @@ survey_dt_proxy = dataTableProxy(outputId = "surveys")
 # Create reactive to collect input values for update and delete actions
 selected_survey_data = reactive({
   req(input$surveys_rows_selected)
-  surveys = get_surveys(pool, waterbody_id(), year_vals())
+  surveys = get_surveys(waterbody_id(), year_vals())
   survey_row = input$surveys_rows_selected
   selected_survey = tibble(survey_id = surveys$survey_id[survey_row],
                            survey_date = surveys$survey_date[survey_row],
@@ -120,7 +120,7 @@ survey_create = reactive({
   if (data_source_input == "" ) {
     data_source_id = NA
   } else {
-    data_source_vals = get_data_source(pool)
+    data_source_vals = get_data_source()
     data_source_id = data_source_vals %>%
       filter(data_source_code == data_source_input) %>%
       pull(data_source_id)
@@ -130,7 +130,7 @@ survey_create = reactive({
   if (survey_method_input == "" ) {
     survey_method_id = NA
   } else {
-    survey_method_vals = get_survey_method(pool)
+    survey_method_vals = get_survey_method()
     survey_method_id = survey_method_vals %>%
       filter(survey_method == survey_method_input) %>%
       pull(survey_method_id)
@@ -140,7 +140,7 @@ survey_create = reactive({
   if ( data_review_input == "" ) {
     data_review_status_id = NA
   } else {
-    data_review_vals = get_data_review(pool)
+    data_review_vals = get_data_review()
     data_review_status_id = data_review_vals %>%
       filter(data_review == data_review_input) %>%
       pull(data_review_status_id)
@@ -175,7 +175,7 @@ survey_create = reactive({
   if (completion_input == "" ) {
     survey_completion_status_id = NA
   } else {
-    completion_vals = get_completion_status(pool)
+    completion_vals = get_completion_status()
     survey_completion_status_id = completion_vals %>%
       filter(completion == completion_input) %>%
       pull(survey_completion_status_id)
@@ -226,7 +226,7 @@ output$survey_modal_insert_vals = renderDT({
 
 observeEvent(input$survey_add, {
   new_survey_vals = survey_create()
-  existing_survey_vals = get_surveys(pool, waterbody_id(), year_vals()) %>%
+  existing_survey_vals = get_surveys(waterbody_id(), year_vals()) %>%
     mutate(up_rm = as.character(up_rm)) %>%
     mutate(lo_rm = as.character(lo_rm)) %>%
     select(survey_dt = survey_date, survey_method, up_rm, lo_rm,
@@ -303,7 +303,7 @@ survey_insert_vals = reactive({
 observeEvent(input$insert_survey, {
   survey_insert(survey_insert_vals())
   removeModal()
-  post_insert_vals = get_surveys(pool, waterbody_id(), year_vals()) %>%
+  post_insert_vals = get_surveys(waterbody_id(), year_vals()) %>%
     mutate(start_time = start_time_dt, end_time = end_time_dt) %>%
     select(survey_dt = survey_date_dt, survey_method, up_rm,
            lo_rm, start_time, end_time, observer, submitter,
@@ -319,19 +319,19 @@ observeEvent(input$insert_survey, {
 # Create reactive to collect input values for edit actions
 survey_edit = reactive({
   # Data source
-  data_source_vals = get_data_source(pool)
+  data_source_vals = get_data_source()
   data_source_input = input$data_source_select
   data_source_id = data_source_vals %>%
     filter(data_source_code == data_source_input) %>%
     pull(data_source_id)
   # Survey method
-  survey_method_vals = get_survey_method(pool)
+  survey_method_vals = get_survey_method()
   survey_method_input = input$survey_method_select
   survey_method_id = survey_method_vals %>%
     filter(survey_method == survey_method_input) %>%
     pull(survey_method_id)
   # Data review
-  data_review_vals = get_data_review(pool)
+  data_review_vals = get_data_review()
   data_review_input = input$data_review_select
   data_review_status_id = data_review_vals %>%
     filter(data_review == data_review_input) %>%
@@ -347,7 +347,7 @@ survey_edit = reactive({
     filter(rm_label == lo_rm_input) %>%
     pull(location_id)
   # Data source
-  completion_vals = get_completion_status(pool)
+  completion_vals = get_completion_status()
   completion_input = input$completion_select
   survey_completion_status_id = completion_vals %>%
     filter(completion == completion_input) %>%
@@ -460,7 +460,7 @@ observeEvent(input$survey_edit, {
 observeEvent(input$save_edits, {
   survey_update(survey_edit())
   removeModal()
-  post_edit_vals = get_surveys(pool, waterbody_id(), year_vals()) %>%
+  post_edit_vals = get_surveys(waterbody_id(), year_vals()) %>%
     mutate(start_time = start_time_dt, end_time = end_time_dt) %>%
     select(survey_dt = survey_date_dt, survey_method, up_rm,
            lo_rm, start_time, end_time, observer, submitter,
@@ -476,7 +476,7 @@ observeEvent(input$save_edits, {
 # Generate values to show in modal
 output$survey_modal_delete_vals = renderDT({
   survey_modal_del_id = selected_survey_data()$survey_id
-  survey_modal_del_vals = get_surveys(pool, waterbody_id(), year_vals()) %>%
+  survey_modal_del_vals = get_surveys(waterbody_id(), year_vals()) %>%
     filter(survey_id == survey_modal_del_id) %>%
     mutate(start_time = start_time_dt, end_time = end_time_dt) %>%
     select(survey_dt = survey_date_dt, survey_method, up_rm,
@@ -538,7 +538,7 @@ observeEvent(input$survey_delete, {
 observeEvent(input$delete_survey, {
   survey_delete(selected_survey_data())
   removeModal()
-  surveys_after_delete = get_surveys(pool, waterbody_id(), year_vals()) %>%
+  surveys_after_delete = get_surveys(waterbody_id(), year_vals()) %>%
     mutate(start_time = start_time_dt, end_time = end_time_dt) %>%
     select(survey_dt = survey_date_dt, survey_method, up_rm,
            lo_rm, start_time, end_time, observer, submitter,

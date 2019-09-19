@@ -1,6 +1,6 @@
 
 # Main redd_encounter query
-get_fish_location = function(pool, fish_encounter_id) {
+get_fish_location = function(fish_encounter_id) {
   qry = glue("select loc.location_id as fish_location_id, ",
              "lc.location_coordinates_id, ",
              "loc.location_name as fish_name, ",
@@ -18,7 +18,9 @@ get_fish_location = function(pool, fish_encounter_id) {
              "left join stream_channel_type_lut as sc on loc.stream_channel_type_id = sc.stream_channel_type_id ",
              "left join location_orientation_type_lut as lo on loc.location_orientation_type_id = lo.location_orientation_type_id ",
              "where fe.fish_encounter_id = '{fish_encounter_id}'")
-  fish_locations = DBI::dbGetQuery(pool, qry)
+  con = poolCheckout(pool)
+  fish_locations = DBI::dbGetQuery(con, qry)
+  poolReturn(con)
   fish_locations = fish_locations %>%
     mutate(fish_location_id = tolower(fish_location_id)) %>%
     mutate(location_coordinates_id = tolower(location_coordinates_id)) %>%
@@ -42,7 +44,7 @@ get_fish_location = function(pool, fish_encounter_id) {
 #==========================================================================
 
 # Redd_coordinates query
-get_fish_coordinates = function(pool, fish_encounter_id) {
+get_fish_coordinates = function(fish_encounter_id) {
   qry = glue("select lc.location_id as fish_location_id, ",
              "lc.location_coordinates_id, ",
              "st_x(st_transform(lc.geom, 4326)) as longitude, ",
@@ -54,7 +56,9 @@ get_fish_coordinates = function(pool, fish_encounter_id) {
              "inner join location as loc on fe.fish_location_id = loc.location_id ",
              "inner join location_coordinates as lc on loc.location_id = lc.location_id ",
              "where fe.fish_encounter_id = '{fish_encounter_id}'")
-  fish_coordinates = DBI::dbGetQuery(pool, qry)
+  con = poolCheckout(pool)
+  fish_coordinates = DBI::dbGetQuery(con, qry)
+  poolReturn(con)
   fish_coordinates = fish_coordinates %>%
     mutate(fish_location_id = tolower(fish_location_id)) %>%
     mutate(location_coordinates_id = tolower(location_coordinates_id)) %>%
@@ -77,26 +81,30 @@ get_fish_coordinates = function(pool, fish_encounter_id) {
 #==========================================================================
 
 # Redd status
-get_fish_channel_type = function(pool) {
+get_fish_channel_type = function() {
   qry = glue("select stream_channel_type_id, channel_type_description as channel_type ",
              "from stream_channel_type_lut ",
              "where obsolete_datetime is null")
-  channel_type_list = DBI::dbGetQuery(pool, qry) %>%
+  con = poolCheckout(pool)
+  channel_type_list = DBI::dbGetQuery(con, qry) %>%
     mutate(stream_channel_type_id = tolower(stream_channel_type_id)) %>%
     arrange(channel_type) %>%
     select(stream_channel_type_id, channel_type)
+  poolReturn(con)
   return(channel_type_list)
 }
 
 # Redd status
-get_fish_orientation_type = function(pool) {
+get_fish_orientation_type = function() {
   qry = glue("select location_orientation_type_id, orientation_type_description as orientation_type ",
              "from location_orientation_type_lut ",
              "where obsolete_datetime is null")
-  orientation_type_list = DBI::dbGetQuery(pool, qry) %>%
+  con = poolCheckout(pool)
+  orientation_type_list = DBI::dbGetQuery(con, qry) %>%
     mutate(location_orientation_type_id = tolower(location_orientation_type_id)) %>%
     arrange(orientation_type) %>%
     select(location_orientation_type_id, orientation_type)
+  poolReturn(con)
   return(orientation_type_list)
 }
 

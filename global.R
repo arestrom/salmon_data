@@ -49,43 +49,42 @@
 #     Adding req to selected_survey_comment_data reactive kills
 #     the modal response. But removing req from others causes
 #     errors to occur in reactives below.
-# 11. For fish_location...wait till I figure out redd_location
-#     first, then go back and add fish_location screen. Maybe
-#     use map_edit module.
-# 12. Getting crash when accordians down to ind_fish are open
-#     and I select a field above that does not contain data
-#     in fields below. May need some req statements in lower
-#     accordian fields. May also just have been some weird
-#     data...now deleted. Cannot recreate crash....
-# 13. Need to use ulid as a unique id for location_coordinates_temp
+# 11. Need to use ulid as a unique id for location_coordinates_temp
 #     table. Need to avoid possiblity of any clash.
-# 14. May want to eliminate all cases of "pool" as an argument
+# 12. May want to eliminate all cases of "pool" as an argument
 #     in any global functions. Just call check out and check in.
-# 15. Need to dump and reload all lakes data...using new layer
+# 13. Need to dump and reload all lakes data...using new layer
 #     Dale is creating for me. Look for intersecting polygons
 #     before uploading and dump any duplicates. Dale's layer
 #     is omitting the marshland.
-# 16. Need to scan all existing stream geometry for overlapping
+# 14. Need to scan all existing stream geometry for overlapping
 #     segments...then dump those and reset sequences. Need to
 #     add code to look for overlapping segments in scripts to
 #     upload all geometry.
-# 17. Dump bs_modal in favor of shiny modal in dashboard_ui
-# 18. Add input$delete observers to all shinyjs disable code
+# 15. Add input$delete observers to all shinyjs disable code
 #     See example in redd_substrate_srv code.
-# 19. Check that select inputs are ordered optimally. Use
+# 16. Check that select inputs are ordered optimally. Use
 #     example code in redd_substrate_global as example to
 #     order by levels.
-# 20. If tracking of individual_carcass over time is needed,
+# 17. If tracking of individual_carcass over time is needed,
 #     we can add fish_name_select to fish_encounter ui. Set
 #     up similar to redd-tracking in redd_encounter/location.
-# 21. Need to add code to edit modals to make sure all
+# 18. Need to add code to edit modals to make sure all
 #     required fields have values entered. See fish_location.
 #     Or use validate...need?
-# 22. Inspect Phils front-end for comparison.
-# 23. Wrap all database operations in transactions before
+# 19. Inspect Phils front-end for comparison.
+# 20. Wrap all database operations in transactions before
 #     porting to the fish.spawning_ground schema.
+#     See examples in dbWithTransactions() DBI docs.
+# 21. In survey code...add incomplete_survey_type and
+#     data_source_unit lut values as selects
+# 22. Add code to limit the number of possible length
+#     measurements to the number of items in length_type
+#     lut list.
+# 23. Verify all screens...especially edit, do not remove
+#     required values by backspacing and updating.
 #
-# AS 2019-07-15
+# AS 2019-09-19
 #==============================================================
 
 # Load libraries

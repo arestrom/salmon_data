@@ -1,6 +1,6 @@
 
 # Main redd_encounter query
-get_redd_encounter = function(pool, survey_event_id) {
+get_redd_encounter = function(survey_event_id) {
   qry = glue("select rd.redd_encounter_id, rd.redd_encounter_datetime as redd_encounter_time, ",
              "rd.redd_count, rs.redd_status_short_description as redd_status, ",
              "loc.location_name as redd_name, rd.comment_text as redd_comment, ",
@@ -10,7 +10,9 @@ get_redd_encounter = function(pool, survey_event_id) {
              "inner join redd_status_lut as rs on rd.redd_status_id = rs.redd_status_id ",
              "left join location as loc on rd.redd_location_id = loc.location_id ",
              "where rd.survey_event_id = '{survey_event_id}'")
-  redd_encounters = DBI::dbGetQuery(pool, qry)
+  con = poolCheckout(pool)
+  redd_encounters = DBI::dbGetQuery(con, qry)
+  poolReturn(con)
   redd_encounters = redd_encounters %>%
     mutate(redd_encounter_id = tolower(redd_encounter_id)) %>%
     mutate(redd_encounter_time = with_tz(redd_encounter_time, tzone = "America/Los_Angeles")) %>%
@@ -33,29 +35,33 @@ get_redd_encounter = function(pool, survey_event_id) {
 #==========================================================================
 
 # Redd status
-get_redd_name = function(pool, survey_event_id) {
+get_redd_name = function(survey_event_id) {
   qry = glue("select loc.location_id as redd_location_id, loc.location_name as redd_name ",
              "from redd_encounter as rd ",
              "inner join location as loc on rd.redd_location_id = loc.location_id ",
              "where rd.survey_event_id = '{survey_event_id}' and loc.location_name is not null")
-  redd_name_list = DBI::dbGetQuery(pool, qry) %>%
+  con = poolCheckout(pool)
+  redd_name_list = DBI::dbGetQuery(con, qry) %>%
     mutate(redd_location_id = tolower(redd_location_id)) %>%
     arrange(redd_name) %>%
     select(redd_location_id, redd_name)
+  poolReturn(con)
   return(redd_name_list)
 }
 
 # Redd status
-get_redd_status = function(pool) {
+get_redd_status = function() {
   qry = glue("select redd_status_id, redd_status_short_description as redd_status ",
              "from redd_status_lut ",
              "where obsolete_datetime is null")
-  redd_status_list = DBI::dbGetQuery(pool, qry) %>%
+  con = poolCheckout(pool)
+  redd_status_list = DBI::dbGetQuery(con, qry) %>%
     mutate(redd_status_id = tolower(redd_status_id)) %>%
     mutate(redd_status = if_else(redd_status == "Combined visible redds",
                                  "Visible new and old redds combined", redd_status)) %>%
     arrange(redd_status) %>%
     select(redd_status_id, redd_status)
+  poolReturn(con)
   return(redd_status_list)
 }
 

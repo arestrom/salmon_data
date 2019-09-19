@@ -4,7 +4,7 @@
 #========================================================
 
 output$channel_type_select = renderUI({
-  channel_type_list = get_channel_type(pool)$channel_type
+  channel_type_list = get_channel_type()$channel_type
   channel_type_list = c("", channel_type_list)
   selectizeInput("channel_type_select", label = "channel_type",
                  choices = channel_type_list, selected = NULL,
@@ -12,7 +12,7 @@ output$channel_type_select = renderUI({
 })
 
 output$orientation_type_select = renderUI({
-  orientation_type_list = get_orientation_type(pool)$orientation_type
+  orientation_type_list = get_orientation_type()$orientation_type
   orientation_type_list = c("", orientation_type_list)
   selectizeInput("orientation_type_select", label = "orientation_type",
                  choices = orientation_type_list, selected = NULL,
@@ -105,7 +105,7 @@ selected_redd_coords = reactive({
   center_lat = selected_stream_centroid()$center_lat
   center_lon = selected_stream_centroid()$center_lon
   # Get location_coordinates data should be nrow == 0 if no coordiinates present
-  redd_coords = get_redd_coordinates(pool, selected_redd_encounter_data()$redd_encounter_id)
+  redd_coords = get_redd_coordinates(selected_redd_encounter_data()$redd_encounter_id)
   if ( nrow(redd_coords) == 0 ) {
     redd_lat = center_lat
     redd_lon = center_lon
@@ -254,7 +254,7 @@ redd_location_create = reactive({
   if ( channel_type_input == "" ) {
     stream_channel_type_id = NA
   } else {
-    channel_type_vals = get_channel_type(pool)
+    channel_type_vals = get_channel_type()
     stream_channel_type_id = channel_type_vals %>%
       filter(channel_type == channel_type_input) %>%
       pull(stream_channel_type_id)
@@ -264,7 +264,7 @@ redd_location_create = reactive({
   if ( orientation_type_input == "" ) {
     location_orientation_type_id = NA
   } else {
-    orientation_type_vals = get_orientation_type(pool)
+    orientation_type_vals = get_orientation_type()
     location_orientation_type_id = orientation_type_vals %>%
       filter(orientation_type == orientation_type_input) %>%
       pull(location_orientation_type_id)
@@ -373,7 +373,7 @@ redd_location_edit = reactive({
   if ( channel_type_input == "" ) {
     stream_channel_type_id = NA
   } else {
-    channel_type_vals = get_channel_type(pool)
+    channel_type_vals = get_channel_type()
     stream_channel_type_id = channel_type_vals %>%
       filter(channel_type == channel_type_input) %>%
       pull(stream_channel_type_id)
@@ -383,7 +383,7 @@ redd_location_edit = reactive({
   if ( orientation_type_input == "" ) {
     location_orientation_type_id = NA
   } else {
-    orientation_type_vals = get_orientation_type(pool)
+    orientation_type_vals = get_orientation_type()
     location_orientation_type_id = orientation_type_vals %>%
       filter(orientation_type == orientation_type_input) %>%
       pull(location_orientation_type_id)

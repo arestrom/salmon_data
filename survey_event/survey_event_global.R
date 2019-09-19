@@ -1,5 +1,5 @@
 # Main survey intent query
-get_survey_event = function(pool, survey_id) {
+get_survey_event = function(survey_id) {
   qry = glue("select se.survey_event_id, sp.common_name as species, ",
              "sd.survey_design_type_code as survey_design, ",
              "cw.detection_method_description as cwt_detect_method, ",
@@ -14,7 +14,9 @@ get_survey_event = function(pool, survey_id) {
              "left join cwt_detection_method_lut as cw on se.cwt_detection_method_id = cw.cwt_detection_method_id ",
              "left join run_lut as rn on se.run_id = rn.run_id ",
              "where se.survey_id = '{survey_id}'")
-  survey_events = DBI::dbGetQuery(pool, qry)
+  con = poolCheckout(pool)
+  survey_events = DBI::dbGetQuery(con, qry)
+  poolReturn(con)
   survey_events = survey_events %>%
     mutate(survey_event_id = tolower(survey_event_id)) %>%
     mutate(created_date = with_tz(created_date, tzone = "America/Los_Angeles")) %>%
@@ -33,50 +35,58 @@ get_survey_event = function(pool, survey_id) {
 #==========================================================================
 
 # Species
-get_event_species = function(pool) {
+get_event_species = function() {
   qry = glue("select species_id, common_name as species ",
              "from species_lut ",
              "where obsolete_datetime is null")
-  species_list = DBI::dbGetQuery(pool, qry) %>%
+  con = poolCheckout(pool)
+  species_list = DBI::dbGetQuery(con, qry) %>%
     mutate(species_id = tolower(species_id)) %>%
     arrange(species) %>%
     select(species_id, species)
+  poolReturn(con)
   return(species_list)
 }
 
 # Survey design
-get_survey_design = function(pool) {
+get_survey_design = function() {
   qry = glue("select survey_design_type_id, survey_design_type_code as survey_design ",
              "from survey_design_type_lut ",
              "where obsolete_datetime is null")
-  survey_design_list = DBI::dbGetQuery(pool, qry) %>%
+  con = poolCheckout(pool)
+  survey_design_list = DBI::dbGetQuery(con, qry) %>%
     mutate(survey_design_type_id = tolower(survey_design_type_id)) %>%
     arrange(survey_design) %>%
     select(survey_design_type_id, survey_design)
+  poolReturn(con)
   return(survey_design_list)
 }
 
 # Survey design
-get_cwt_detect_method = function(pool) {
+get_cwt_detect_method = function() {
   qry = glue("select cwt_detection_method_id, detection_method_description as cwt_detect_method ",
              "from cwt_detection_method_lut ",
              "where obsolete_datetime is null")
-  cwt_detect_method_list = DBI::dbGetQuery(pool, qry) %>%
+  con = poolCheckout(pool)
+  cwt_detect_method_list = DBI::dbGetQuery(con, qry) %>%
     mutate(cwt_detection_method_id = tolower(cwt_detection_method_id)) %>%
     arrange(cwt_detect_method) %>%
     select(cwt_detection_method_id, cwt_detect_method)
+  poolReturn(con)
   return(cwt_detect_method_list)
 }
 
 # Run type
-get_run = function(pool) {
+get_run = function() {
   qry = glue("select run_id, run_short_description as run ",
              "from run_lut ",
              "where obsolete_datetime is null")
-  run_list = DBI::dbGetQuery(pool, qry) %>%
+  con = poolCheckout(pool)
+  run_list = DBI::dbGetQuery(con, qry) %>%
     mutate(run_id = tolower(run_id)) %>%
     arrange(run) %>%
     select(run_id, run)
+  poolReturn(con)
   return(run_list)
 }
 

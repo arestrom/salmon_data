@@ -1,6 +1,6 @@
 
 # Main waterbody measurements query
-get_waterbody_meas = function(pool, survey_id) {
+get_waterbody_meas = function(survey_id) {
   qry = glue("select wb.waterbody_measurement_id, wc.clarity_type_short_description as clarity_type, ",
              "wb.water_clarity_meter as clarity_meter, wb.stream_flow_measurement_cfs as flow_cfs, ",
              "s.survey_datetime as survey_date, wb.start_water_temperature_celsius as start_temperature, ",
@@ -13,7 +13,9 @@ get_waterbody_meas = function(pool, survey_id) {
              "inner join survey as s on wb.survey_id = s.survey_id ",
              "left join water_clarity_type_lut as wc on wb.water_clarity_type_id = wc.water_clarity_type_id ",
              "where wb.survey_id = '{survey_id}'")
+  con = poolCheckout(pool)
   waterbody_measure = DBI::dbGetQuery(pool, qry)
+  poolReturn(con)
   waterbody_measure = waterbody_measure %>%
     mutate(waterbody_measurement_id = tolower(waterbody_measurement_id)) %>%
     mutate(survey_date = with_tz(survey_date, tzone = "America/Los_Angeles")) %>%
@@ -38,14 +40,16 @@ get_waterbody_meas = function(pool, survey_id) {
 #==========================================================================
 
 # Water clarity type
-get_clarity_type = function(pool) {
+get_clarity_type = function() {
   qry = glue("select water_clarity_type_id, clarity_type_short_description as clarity_type ",
              "from water_clarity_type_lut ",
              "where obsolete_datetime is null")
-  clarity_type_list = DBI::dbGetQuery(pool, qry) %>%
+  con = poolCheckout(pool)
+  clarity_type_list = DBI::dbGetQuery(con, qry) %>%
     mutate(water_clarity_type_id = tolower(water_clarity_type_id)) %>%
     arrange(clarity_type) %>%
     select(water_clarity_type_id, clarity_type)
+  poolReturn(con)
   return(clarity_type_list)
 }
 
