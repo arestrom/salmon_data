@@ -83,6 +83,14 @@
 #     lut list.
 # 23. Verify all screens...especially edit, do not remove
 #     required values by backspacing and updating.
+# 24. Enable preloader:
+#     https://cran.r-project.org/web/packages/shinydashboardPlus/vignettes/css-preloader.html
+# 25. Change select for year in rightsidebar to
+#     shinywidgets pickerSelect multiple.
+# 26. Need css for radius on textInput boxes
+# 27. Get rid of extra channel and orientation lut function
+#     for fish in fish_location_global.R. Can reuse
+#     function from redd_location.
 #
 # AS 2019-09-19
 #==============================================================
@@ -148,6 +156,8 @@ source("redd_substrate/redd_substrate_ui.R")
 source("redd_substrate/redd_substrate_global.R")
 source("fish_location/fish_location_ui.R")
 source("fish_location/fish_location_global.R")
+source("reach_point/reach_point_ui.R")
+source("reach_point/reach_point_global.R")
 
 # Define globals ================================================================
 
