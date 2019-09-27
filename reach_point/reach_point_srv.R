@@ -372,141 +372,143 @@ observeEvent(input$insert_reach_point, {
 # Edit operations: reactives, observers and modals
 #========================================================
 
-# # Create reactive to collect input values for insert actions
-# fish_location_edit = reactive({
-#   # Channel type
-#   fish_channel_type_input = input$fish_channel_type_select
-#   if ( fish_channel_type_input == "" ) {
-#     stream_channel_type_id = NA
-#   } else {
-#     fish_channel_type_vals = get_fish_channel_type()
-#     stream_channel_type_id = fish_channel_type_vals %>%
-#       filter(channel_type == fish_channel_type_input) %>%
-#       pull(stream_channel_type_id)
-#   }
-#   # Orientation type
-#   fish_orientation_type_input = input$fish_orientation_type_select
-#   if ( fish_orientation_type_input == "" ) {
-#     location_orientation_type_id = NA
-#   } else {
-#     fish_orientation_type_vals = get_fish_orientation_type()
-#     location_orientation_type_id = fish_orientation_type_vals %>%
-#       filter(orientation_type == fish_orientation_type_input) %>%
-#       pull(location_orientation_type_id)
-#   }
-#   edit_fish_location = tibble(fish_location_id = selected_fish_location_data()$fish_location_id,
-#                               fish_name = input$fish_name_input,
-#                               channel_type = fish_channel_type_input,
-#                               stream_channel_type_id = stream_channel_type_id,
-#                               orientation_type = fish_orientation_type_input,
-#                               location_orientation_type_id = location_orientation_type_id,
-#                               latitude = input$fish_latitude_input,
-#                               longitude = input$fish_longitude_input,
-#                               horiz_accuracy = input$fish_horiz_accuracy_input,
-#                               location_description = input$fish_location_description_input,
-#                               modified_dt = lubridate::with_tz(Sys.time(), "UTC"),
-#                               modified_by = Sys.getenv("USERNAME"))
-#   return(edit_fish_location)
-# })
+# Create reactive to collect input values for insert actions
+reach_point_edit = reactive({
+  # Location type
+  reach_point_type_input = input$reach_point_type_select
+  if ( reach_point_type_input == "" ) {
+    location_type_id = NA
+  } else {
+    reach_point_type_vals = get_location_type()
+    location_type_id = reach_point_type_vals %>%
+      filter(reach_point_type == reach_point_type_input) %>%
+      pull(location_type_id)
+  }
+  edit_reach_point = tibble(location_id = selected_reach_point_data()$location_id,
+                            river_mile = input$river_mile_input,
+                            reach_point_type = reach_point_type_input,
+                            location_type_id = location_type_id,
+                            reach_point_code = input$reach_point_code_input,
+                            reach_point_name = input$reach_point_name_input,
+                            latitude = input$reach_point_latitude_input,
+                            longitude = input$reach_point_longitude_input,
+                            horiz_accuracy = input$reach_point_horiz_accuracy_input,
+                            reach_point_description = input$reach_point_description_input,
+                            modified_dt = lubridate::with_tz(Sys.time(), "UTC"),
+                            modified_by = Sys.getenv("USERNAME"))
+  return(edit_reach_point)
+})
 
-# dependent_fish_location_surveys = reactive({
-#   fish_loc_id = selected_fish_location_data()$fish_location_id
-#   fish_loc_srv = get_fish_location_surveys(fish_loc_id)
-#   return(fish_loc_srv)
-# })
-#
-# # Generate values to show check modal
-# output$fish_loc_surveys = renderDT({
-#   fish_loc_srv = dependent_fish_location_surveys()
-#   fish_location_warning = glue("WARNING: All  carcasses, photo's, or observations linked to this ",
-#                                "fish location are shown below. Please verify that all data below ",
-#                                "should be updated to the new values!")
-#   # Generate table
-#   datatable(fish_loc_srv,
-#             rownames = FALSE,
-#             options = list(dom = 't',
-#                            scrollX = T,
-#                            ordering = FALSE,
-#                            initComplete = JS(
-#                              "function(settings, json) {",
-#                              "$(this.api().table().header()).css({'background-color': '#9eb3d6'});",
-#                              "}")),
-#             caption = htmltools::tags$caption(
-#               style = 'caption-side: top; text-align: left; color: blue; width: auto;',
-#               htmltools::em(htmltools::strong(fish_location_warning))))
-# })
-#
-# # Generate values to show in modal
-# output$fish_location_modal_update_vals = renderDT({
-#   fish_location_modal_up_vals = fish_location_edit() %>%
-#     select(fish_name, channel_type, orientation_type, latitude,
-#            longitude, horiz_accuracy, location_description)
-#   # Generate table
-#   datatable(fish_location_modal_up_vals,
-#             rownames = FALSE,
-#             options = list(dom = 't',
-#                            scrollX = T,
-#                            ordering = FALSE,
-#                            initComplete = JS(
-#                              "function(settings, json) {",
-#                              "$(this.api().table().header()).css({'background-color': '#9eb3d6'});",
-#                              "}")))
-# })
-#
-# # Edit modal
-# observeEvent(input$fish_loc_edit, {
-#   old_fish_location_vals = selected_fish_location_data() %>%
-#     mutate(latitude = round(latitude, 6)) %>%
-#     mutate(longitude = round(longitude, 6)) %>%
-#     select(fish_name, channel_type, orientation_type, latitude,
-#            longitude, horiz_accuracy, location_description)
-#   old_fish_location_vals[] = lapply(old_fish_location_vals, remisc::set_na)
-#   new_fish_location_vals = fish_location_edit() %>%
-#     mutate(horiz_accuracy = as.numeric(horiz_accuracy)) %>%
-#     mutate(latitude = round(latitude, 6)) %>%
-#     mutate(longitude = round(longitude, 6)) %>%
-#     select(fish_name, channel_type, orientation_type, latitude,
-#            longitude, horiz_accuracy, location_description)
-#   new_fish_location_vals[] = lapply(new_fish_location_vals, remisc::set_na)
-#   showModal(
-#     tags$div(id = "fish_location_update_modal",
-#              if ( !length(input$fish_locations_rows_selected) == 1 ) {
-#                modalDialog (
-#                  size = "m",
-#                  title = "Warning",
-#                  paste("Please select a row to edit!"),
-#                  easyClose = TRUE,
-#                  footer = NULL
-#                )
-#              } else if ( isTRUE(all_equal(old_fish_location_vals, new_fish_location_vals)) ) {
-#                modalDialog (
-#                  size = "m",
-#                  title = "Warning",
-#                  paste("Please change at least one value!"),
-#                  easyClose = TRUE,
-#                  footer = NULL
-#                )
-#              } else {
-#                modalDialog (
-#                  size = 'l',
-#                  title = "Update fish location data to these new values?",
-#                  fluidPage (
-#                    DT::DTOutput("fish_location_modal_update_vals"),
-#                    br(),
-#                    DT::DTOutput("fish_loc_surveys"),
-#                    br(),
-#                    br(),
-#                    actionButton("save_fish_loc_edits", "Save changes")
-#                  ),
-#                  easyClose = TRUE,
-#                  footer = NULL
-#                )
-#              }
-#     ))
-# })
-#
+dependent_reach_point_surveys = reactive({
+  location_id = selected_reach_point_data()$location_id
+  reach_point_srv = get_reach_point_surveys(location_id)
+  return(reach_point_srv)
+})
+
+# Generate values to show check modal
+output$reach_point_edit_surveys = renderDT({
+  reach_pt_edit_srv = dependent_reach_point_surveys()
+  reach_point_edit_dt_msg = glue("WARNING: All surveys linked to this reach point are shown below. ",
+                                 "Please verify that all surveys should be updated to the new values!")
+  # Generate table
+  datatable(reach_pt_edit_srv,
+            rownames = FALSE,
+            options = list(dom = 'ltp',
+                           pageLength = 10,
+                           lengthMenu = c(10, 25, 50),
+                           scrollX = T,
+                           ordering = FALSE,
+                           initComplete = JS(
+                             "function(settings, json) {",
+                             "$(this.api().table().header()).css({'background-color': '#9eb3d6'});",
+                             "}")),
+            caption = htmltools::tags$caption(
+              style = 'caption-side: top; text-align: left; color: blue; width: auto;',
+              htmltools::em(htmltools::strong(reach_point_edit_dt_msg))))
+})
+
+# Generate values to show in modal
+output$reach_point_modal_update_vals = renderDT({
+  reach_point_modal_edit_id = selected_reach_point_data()$location_id
+  reach_point_modal_edit_vals = get_reach_point(waterbody_id()) %>%
+    filter(location_id == reach_point_modal_edit_id) %>%
+    select(river_mile, reach_point_code, reach_point_name, latitude,
+           longitude, horiz_accuracy, reach_point_description)
+  # Generate table
+  datatable(reach_point_modal_edit_vals,
+            rownames = FALSE,
+            options = list(dom = 't',
+                           scrollX = T,
+                           ordering = FALSE,
+                           initComplete = JS(
+                             "function(settings, json) {",
+                             "$(this.api().table().header()).css({'background-color': '#9eb3d6'});",
+                             "}")))
+})
+
+
+
+# NEED CODE TO CHECK FOR OLD SURVEYS > 1 year old. Dissallow edits in that case
+# Require data manager to handle edits to reach points
+
+
+
+
+# Edit modal
+observeEvent(input$reach_point_edit, {
+  old_reach_point_vals = selected_reach_point_data() %>%
+    mutate(latitude = round(latitude, 6)) %>%
+    mutate(longitude = round(longitude, 6)) %>%
+    select(river_mile, reach_point_code, reach_point_name, latitude,
+           longitude, horiz_accuracy, reach_point_description)
+  old_reach_point_vals[] = lapply(old_reach_point_vals, remisc::set_na)
+  new_reach_point_vals = reach_point_edit() %>%
+    mutate(horiz_accuracy = as.numeric(horiz_accuracy)) %>%
+    mutate(latitude = round(latitude, 6)) %>%
+    mutate(longitude = round(longitude, 6)) %>%
+    select(river_mile, reach_point_code, reach_point_name, latitude,
+           longitude, horiz_accuracy, reach_point_description)
+  new_reach_point_vals[] = lapply(new_reach_point_vals, remisc::set_na)
+  showModal(
+    tags$div(id = "reach_point_update_modal",
+             if ( !length(input$reach_points_rows_selected) == 1 ) {
+               modalDialog (
+                 size = "m",
+                 title = "Warning",
+                 paste("Please select a row to edit!"),
+                 easyClose = TRUE,
+                 footer = NULL
+               )
+             } else if ( isTRUE(all_equal(old_reach_point_vals, new_reach_point_vals)) ) {
+               modalDialog (
+                 size = "m",
+                 title = "Warning",
+                 paste("Please change at least one value!"),
+                 easyClose = TRUE,
+                 footer = NULL
+               )
+             } else {
+               modalDialog (
+                 size = 'l',
+                 title = "Update reach point data to these new values?",
+                 fluidPage (
+                   DT::DTOutput("reach_point_modal_update_vals"),
+                   br(),
+                   br(),
+                   DT::DTOutput("reach_point_edit_surveys"),
+                   br(),
+                   br(),
+                   actionButton("save_reach_point_edits", "Save changes")
+                 ),
+                 easyClose = TRUE,
+                 footer = NULL
+               )
+             }
+    ))
+})
+
 # # Update DB and reload DT
-# observeEvent(input$save_fish_loc_edits, {
+# observeEvent(input$save_reach_point_edits, {
 #   fish_location_update(fish_location_edit())
 #   removeModal()
 #   post_fish_location_edit_vals = get_fish_location(selected_fish_encounter_data()$fish_encounter_id) %>%
@@ -547,18 +549,12 @@ reach_point_dependencies = reactive({
   return(reach_point_dep)
 })
 
-dependent_reach_point_surveys = reactive({
-  location_id = selected_reach_point_data()$location_id
-  reach_point_srv = get_reach_point_surveys(location_id)
-  return(reach_point_srv)
-})
-
 # Generate values to show check modal
 output$reach_point_delete_surveys = renderDT({
-  reach_pt_srv = dependent_reach_point_surveys()
-  reach_point_dt_msg = glue("All surveys below need to be reassigned to a different reach end point!")
+  reach_pt_del_srv = dependent_reach_point_surveys()
+  reach_point_del_dt_msg = glue("All surveys below need to be reassigned to a different reach end point!")
   # Generate table
-  datatable(reach_pt_srv,
+  datatable(reach_pt_del_srv,
             rownames = FALSE,
             options = list(dom = 'ltp',
                            pageLength = 10,
@@ -571,7 +567,7 @@ output$reach_point_delete_surveys = renderDT({
                              "}")),
             caption = htmltools::tags$caption(
               style = 'caption-side: top; text-align: left; color: blue; width: auto;',
-              htmltools::em(htmltools::strong(reach_point_dt_msg))))
+              htmltools::em(htmltools::strong(reach_point_del_dt_msg))))
 })
 
 observeEvent(input$reach_point_delete, {
