@@ -451,7 +451,7 @@ output$reach_point_modal_update_vals = renderDT({
 # NEED CODE TO CHECK FOR OLD SURVEYS > 1 year old. Dissallow edits in that case
 # Require data manager to handle edits to reach points
 
-
+# Comparison code not working when all fields filled in
 
 
 # Edit modal
