@@ -126,34 +126,29 @@ reach_point_insert = function(new_reach_point_values) {
   poolReturn(con)
 }
 
-# #==============================================================
-# # Identify fish location surveys prior to update or delete
-# #==============================================================
-#
-# # Identify fish_encounter dependencies prior to delete
-# get_fish_location_surveys = function(fish_location_id) {
-#   qry = glue("select s.survey_datetime as survey_date, ",
-#              "s.observer_last_name as observer, ",
-#              "fe.fish_count, mt.media_type_code as media_type, ",
-#              "ot.observation_type_name as other_observation_type ",
-#              "from location as loc ",
-#              "left join fish_encounter as fe on loc.location_id = fe.fish_location_id ",
-#              "left join survey_event as se on fe.survey_event_id = se.survey_event_id ",
-#              "left join survey as s on se.survey_id = s.survey_id ",
-#              "left join media_location as ml on loc.location_id = ml.location_id ",
-#              "left join media_type_lut as mt on ml.media_type_id = mt.media_type_id ",
-#              "left join other_observation as oo on loc.location_id = oo.observation_location_id ",
-#              "left join observation_type_lut as ot on oo.observation_type_id = ot.observation_type_id ",
-#              "where loc.location_id = '{fish_location_id}'")
-#   con = poolCheckout(pool)
-#   fish_loc_surveys = DBI::dbGetQuery(con, qry)
-#   poolReturn(con)
-#   fish_loc_surveys = fish_loc_surveys %>%
-#     mutate(survey_date = with_tz(survey_date, tzone = "America/Los_Angeles")) %>%
-#     mutate(survey_date = format(survey_date, "%m/%d/%Y"))
-#   return(fish_loc_surveys)
-# }
-#
+#==============================================================
+# Identify reach_point surveys prior to update or delete
+#==============================================================
+
+# Identify reach_point dependencies prior to delete
+get_reach_point_surveys = function(location_id) {
+  qry = glue("select s.survey_datetime as survey_date, ",
+             "locu.river_mile_measure as upper_river_mile, ",
+             "locl.river_mile_measure as lower_river_mile, ",
+             "s.observer_last_name as observer ",
+             "from survey as s ",
+             "left join location as locu on s.upper_end_point_id = locu.location_id ",
+             "left join location as locl on s.lower_end_point_id = locl.location_id ",
+             "where locu.location_id = '{location_id}' or locl.location_id = '{location_id}'")
+  con = poolCheckout(pool)
+  reach_point_surveys = DBI::dbGetQuery(con, qry)
+  poolReturn(con)
+  reach_point_surveys = reach_point_surveys %>%
+    mutate(survey_date = with_tz(survey_date, tzone = "America/Los_Angeles")) %>%
+    mutate(survey_date = format(survey_date, "%m/%d/%Y"))
+  return(reach_point_surveys)
+}
+
 # #========================================================
 # # Edit location callback
 # #========================================================
@@ -205,65 +200,56 @@ reach_point_insert = function(new_reach_point_values) {
 #   poolReturn(con)
 # }
 #
-# #========================================================
-# # Identify fish location dependencies prior to delete
-# #========================================================
-#
-# # Identify fish_encounter dependencies prior to delete
-# get_fish_location_dependencies = function(fish_location_id) {
-#   qry = glue("select ",
-#              "count(fe.fish_encounter_id) as fish_encounter, ",
-#              "count(ml.media_location_id) as media_location, ",
-#              "count(oo.other_observation_id) as other_observation ",
-#              "from location as loc ",
-#              "left join fish_encounter as fe on loc.location_id = fe.fish_location_id ",
-#              "left join media_location as ml on loc.location_id = ml.location_id ",
-#              "left join other_observation as oo on loc.location_id = oo.observation_location_id ",
-#              "where loc.location_id = '{fish_location_id}'")
-#   con = poolCheckout(pool)
-#   fish_location_dependents = DBI::dbGetQuery(con, qry)
-#   poolReturn(con)
-#   has_entries = function(x) any(x > 0L)
-#   fish_location_dependents = fish_location_dependents %>%
-#     select_if(has_entries)
-#   return(fish_location_dependents)
-# }
-#
-# #========================================================
-# # Delete callback
-# #========================================================
-#
-# # Define delete callback
-# fish_location_delete = function(location_dependencies, delete_values, encounter_values) {
-#   fish_location_id = delete_values$fish_location_id
-#   fish_encounter_id = encounter_values$fish_encounter_id
-#   if ( ncol(location_dependencies) > 1L | location_dependencies$fish_encounter[1] > 1L) {
-#     con = poolCheckout(pool)
-#     update_result = dbSendStatement(
-#       con, glue_sql("UPDATE fish_encounter SET fish_location_id = NULL ",
-#                     "WHERE fish_encounter_id = ?"))
-#     dbBind(update_result, list(fish_encounter_id))
-#     dbGetRowsAffected(update_result)
-#     dbClearResult(update_result)
-#     poolReturn(con)
-#   } else {
-#     con = poolCheckout(pool)
-#     update_result = dbSendStatement(
-#       con, glue_sql("UPDATE fish_encounter SET fish_location_id = NULL ",
-#                     "WHERE fish_encounter_id = ?"))
-#     dbBind(update_result, list(fish_encounter_id))
-#     dbGetRowsAffected(update_result)
-#     dbClearResult(update_result)
-#     delete_result_one = dbSendStatement(
-#       con, glue_sql("DELETE FROM location_coordinates WHERE location_id = ?"))
-#     dbBind(delete_result_one, list(fish_location_id))
-#     dbGetRowsAffected(delete_result_one)
-#     dbClearResult(delete_result_one)
-#     delete_result_two = dbSendStatement(
-#       con, glue_sql("DELETE FROM location WHERE location_id = ?"))
-#     dbBind(delete_result_two, list(fish_location_id))
-#     dbGetRowsAffected(delete_result_two)
-#     dbClearResult(delete_result_two)
-#     poolReturn(con)
-#   }
-# }
+#========================================================
+# Identify reach_point dependencies prior to delete
+#========================================================
+
+# Identify fish_encounter dependencies prior to delete
+get_reach_point_dependencies = function(location_id) {
+  qry = glue("select ",
+             "count(fb.fish_barrier_id) as fish_barrier, ",
+             "count(fce.fish_capture_event_id) as fish_capture_event, ",
+             "count(fe.fish_encounter_id) as fish_encounter, ",
+             "count(ml.media_location_id) as media_location, ",
+             "count(oo.other_observation_id) as other_observation, ",
+             "count(rd.redd_encounter_id) as redd_encounter, ",
+             "count(s.survey_id) as survey ",
+             "from location as loc ",
+             "left join fish_barrier as fb on loc.location_id = fb.barrier_location_id ",
+             "left join fish_capture_event as fce on loc.location_id = fce.disposition_location_id ",
+             "left join fish_encounter as fe on loc.location_id = fe.fish_location_id ",
+             "left join media_location as ml on loc.location_id = ml.location_id ",
+             "left join other_observation as oo on loc.location_id = oo.observation_location_id ",
+             "left join redd_encounter as rd on loc.location_id = rd.redd_location_id ",
+             "left join survey as s on loc.location_id = s.upper_end_point_id ",
+             "where loc.location_id = '{location_id}'")
+  con = poolCheckout(pool)
+  reach_point_dependents = DBI::dbGetQuery(con, qry)
+  poolReturn(con)
+  has_entries = function(x) any(x > 0L)
+  reach_point_dependents = reach_point_dependents %>%
+    select_if(has_entries)
+  return(reach_point_dependents)
+}
+
+#========================================================
+# Delete callback
+#========================================================
+
+# Define delete callback
+reach_point_delete = function(delete_values) {
+  location_id = delete_values$location_id
+  # Checkout a connection
+  con = poolCheckout(pool)
+  delete_result_one = dbSendStatement(
+    con, glue_sql("DELETE FROM location_coordinates WHERE location_id = ?"))
+  dbBind(delete_result_one, list(location_id))
+  dbGetRowsAffected(delete_result_one)
+  dbClearResult(delete_result_one)
+  delete_result_two = dbSendStatement(
+    con, glue_sql("DELETE FROM location WHERE location_id = ?"))
+  dbBind(delete_result_two, list(location_id))
+  dbGetRowsAffected(delete_result_two)
+  dbClearResult(delete_result_two)
+  poolReturn(con)
+}

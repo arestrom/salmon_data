@@ -877,6 +877,37 @@ observeEvent(input$redd_loc_map, {
   redd_map_proxy
 })
 
+get_reach_point_dependencies = function(location_id) {
+  qry = glue("select ",
+             "count(fb.fish_barrier_id) as fish_barrier, ",
+             "count(fce.fish_capture_event_id) as fish_capture_event, ",
+             "count(fe.fish_encounter_id) as fish_encounter, ",
+             "count(ml.media_location_id) as media_location, ",
+             "count(oo.other_observation_id) as other_observation, ",
+             "count(rd.redd_encounter_id) as redd_encounter, ",
+             "count(s.survey_id) as survey ",
+             "from location as loc ",
+             "left join fish_barrier as fb on loc.location_id = fb.barrier_location_id ",
+             "left join fish_capture_event as fce on loc.location_id = fce.disposition_location_id ",
+             "left join fish_encounter as fe on loc.location_id = fe.fish_location_id ",
+             "left join media_location as ml on loc.location_id = ml.location_id ",
+             "left join other_observation as oo on loc.location_id = oo.observation_location_id ",
+             "left join redd_encounter as rd on loc.location_id = rd.redd_location_id ",
+             "left join survey as s on loc.location_id = s.upper_end_point_id ",
+             "where loc.location_id = '{location_id}'")
+  con = poolCheckout(pool)
+  reach_point_dependents = DBI::dbGetQuery(con, qry)
+  poolReturn(con)
+  has_entries = function(x) any(x > 0L)
+  reach_point_dependents = reach_point_dependents %>%
+    select_if(has_entries)
+  return(reach_point_dependents)
+}
+
+
+
+
+
 
 
 

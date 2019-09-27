@@ -7,7 +7,7 @@ reach_point_ui = tags$div(
   actionButton(inputId = "reach_point_add", label = "New", class = "new_button"),
   actionButton(inputId = "reach_point_edit", label = "Edit", class = "edit_button"),
   actionButton(inputId = "reach_point_delete", label = "Delete", class = "delete_button"),
-  actionButton(inputId = "reach_point_map", label = "Use map", class = "map_button"),
+  actionButton(inputId = "use_reach_point_map", label = "Use map", class = "map_button"),
   br(),
   br(),
   numericInput(inputId = "river_mile_input", label = "rive_mile", value = NULL,

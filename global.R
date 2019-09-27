@@ -95,6 +95,10 @@
 #     multiple edits to point on reach_point_map
 #     without having to update either lat-lon inputs
 #     or selecting a different row in DT.
+# 29. For editing reach points...only allow editing coordinates
+#     for one year previous. Otherwise send request to data manager.
+#     Can also suggest adding new point with one decimal difference
+#     in river_mile. Then leave historical data alone.
 #
 # AS 2019-09-19
 #==============================================================

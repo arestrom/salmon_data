@@ -200,7 +200,7 @@ output$reach_point_coordinates = renderUI({
 })
 
 # Modal for new reach points...add or edit a point...write coordinates to lat, lon
-observeEvent(input$reach_point_map, {
+observeEvent(input$use_reach_point_map, {
   showModal(
     # Verify required fields have data...none can be blank
     tags$div(id = "reach_point_map_modal",
@@ -368,10 +368,10 @@ observeEvent(input$insert_reach_point, {
   replaceData(reach_point_dt_proxy, post_reach_point_insert_vals)
 }, priority = 9999)
 
-# #========================================================
-# # Edit operations: reactives, observers and modals
-# #========================================================
-#
+#========================================================
+# Edit operations: reactives, observers and modals
+#========================================================
+
 # # Create reactive to collect input values for insert actions
 # fish_location_edit = reactive({
 #   # Channel type
@@ -408,7 +408,7 @@ observeEvent(input$insert_reach_point, {
 #                               modified_by = Sys.getenv("USERNAME"))
 #   return(edit_fish_location)
 # })
-#
+
 # dependent_fish_location_surveys = reactive({
 #   fish_loc_id = selected_fish_location_data()$fish_location_id
 #   fish_loc_srv = get_fish_location_surveys(fish_loc_id)
@@ -516,83 +516,117 @@ observeEvent(input$insert_reach_point, {
 #   replaceData(fish_location_dt_proxy, post_fish_location_edit_vals)
 # }, priority = 9999)
 #
-# #========================================================
-# # Delete operations: reactives, observers and modals
-# #========================================================
-#
-# # Generate values to show in modal
-# output$fish_location_modal_delete_vals = renderDT({
-#   fish_location_modal_del_id = selected_fish_location_data()$fish_location_id
-#   fish_location_modal_del_vals = get_fish_location(selected_fish_encounter_data()$fish_encounter_id) %>%
-#     filter(fish_location_id == fish_location_modal_del_id) %>%
-#     select(fish_name, channel_type, orientation_type, latitude,
-#            longitude, horiz_accuracy, location_description)
-#   # Generate table
-#   datatable(fish_location_modal_del_vals,
-#             rownames = FALSE,
-#             options = list(dom = 't',
-#                            scrollX = T,
-#                            ordering = FALSE,
-#                            initComplete = JS(
-#                              "function(settings, json) {",
-#                              "$(this.api().table().header()).css({'background-color': '#9eb3d6'});",
-#                              "}")))
-# })
-#
-# # Reactive to hold dependencies
-# fish_location_dependencies = reactive({
-#   fish_location_id = selected_fish_location_data()$fish_location_id
-#   fish_loc_dep = get_fish_location_dependencies(fish_location_id)
-#   return(fish_loc_dep)
-# })
-#
-# observeEvent(input$fish_loc_delete, {
-#   fish_location_id = selected_fish_location_data()$fish_location_id
-#   fish_loc_dependencies = fish_location_dependencies()
-#   table_names = paste0(paste0("'", names(fish_loc_dependencies), "'"), collapse = ", ")
-#   # Customize the delete message depending on if other entries are linked to location
-#   if (ncol(fish_loc_dependencies) > 1L | fish_loc_dependencies$fish_encounter[1] > 1L) {
-#     fish_delete_msg = glue("Other entries in {table_names} are linked to this location. ",
-#                            "Only the link to the fish location will be deleted.")
-#   } else {
-#     fish_delete_msg = "Are you sure you want to delete this fish location data from the database?"
-#   }
-#   showModal(
-#     tags$div(id = "fish_location_delete_modal",
-#              if ( length(fish_location_id) == 0 ) {
-#                modalDialog (
-#                  size = "m",
-#                  title = "Warning",
-#                  glue("Please select a row to delete!"),
-#                  easyClose = TRUE,
-#                  footer = NULL
-#                )
-#              } else {
-#                modalDialog (
-#                  size = 'l',
-#                  title = fish_delete_msg,
-#                  fluidPage (
-#                    DT::DTOutput("fish_location_modal_delete_vals"),
-#                    br(),
-#                    br(),
-#                    actionButton("delete_fish_location", "Delete location data")
-#                  ),
-#                  easyClose = TRUE,
-#                  footer = NULL
-#                )
-#              }
-#     ))
-# })
-#
-# # Update DB and reload DT
-# observeEvent(input$delete_fish_location, {
-#   fish_location_delete(fish_location_dependencies(),
-#                        selected_fish_location_data(),
-#                        selected_fish_encounter_data())
-#   removeModal()
-#   fish_locations_after_delete = get_fish_location(selected_fish_encounter_data()$fish_encounter_id) %>%
-#     select(fish_name, channel_type, orientation_type, latitude,
-#            longitude, horiz_accuracy, location_description,
-#            created_dt, created_by, modified_dt, modified_by)
-#   replaceData(fish_location_dt_proxy, fish_locations_after_delete)
-# }, priority = 9999)
+#========================================================
+# Delete operations: reactives, observers and modals
+#========================================================
+
+# Generate values to show in modal
+output$reach_point_modal_delete_vals = renderDT({
+  reach_point_modal_del_id = selected_reach_point_data()$location_id
+  reach_point_modal_del_vals = get_reach_point(waterbody_id()) %>%
+    filter(location_id == reach_point_modal_del_id) %>%
+    select(river_mile, reach_point_code, reach_point_name, latitude,
+           longitude, horiz_accuracy, reach_point_description)
+  # Generate table
+  datatable(reach_point_modal_del_vals,
+            rownames = FALSE,
+            options = list(dom = 't',
+                           scrollX = T,
+                           ordering = FALSE,
+                           initComplete = JS(
+                             "function(settings, json) {",
+                             "$(this.api().table().header()).css({'background-color': '#9eb3d6'});",
+                             "}")))
+})
+
+# Reactive to hold dependencies
+reach_point_dependencies = reactive({
+  location_id = selected_reach_point_data()$location_id
+  reach_point_dep = get_reach_point_dependencies(location_id)
+  print(reach_point_dep)
+  return(reach_point_dep)
+})
+
+dependent_reach_point_surveys = reactive({
+  location_id = selected_reach_point_data()$location_id
+  reach_point_srv = get_reach_point_surveys(location_id)
+  return(reach_point_srv)
+})
+
+# Generate values to show check modal
+output$reach_point_delete_surveys = renderDT({
+  reach_pt_srv = dependent_reach_point_surveys()
+  reach_point_dt_msg = glue("All surveys below need to be reassigned to a different reach end point!")
+  # Generate table
+  datatable(reach_pt_srv,
+            rownames = FALSE,
+            options = list(dom = 'ltp',
+                           pageLength = 10,
+                           lengthMenu = c(10, 25, 50),
+                           scrollX = T,
+                           ordering = FALSE,
+                           initComplete = JS(
+                             "function(settings, json) {",
+                             "$(this.api().table().header()).css({'background-color': '#9eb3d6'});",
+                             "}")),
+            caption = htmltools::tags$caption(
+              style = 'caption-side: top; text-align: left; color: blue; width: auto;',
+              htmltools::em(htmltools::strong(reach_point_dt_msg))))
+})
+
+observeEvent(input$reach_point_delete, {
+  location_id = selected_reach_point_data()$location_id
+  reach_pt_dependencies = reach_point_dependencies()
+  table_names = paste0(paste0("'", names(reach_pt_dependencies), "'"), collapse = ", ")
+  # Customize the delete message depending on if other entries are linked to location
+  if ( ncol(reach_pt_dependencies) > 0L ) {
+    reach_point_delete_msg = glue("Other entries in {table_names} have been assigned to this reach point. ",
+                                  "All entries below must be reassigned to another river mile before the ",
+                                  "point can be deleted.")
+  } else {
+    reach_point_delete_msg = "Are you sure you want to delete this reach_point from the database?"
+  }
+  showModal(
+    tags$div(id = "reach_point_delete_modal",
+             if ( ncol(reach_pt_dependencies) > 0L ) {
+               modalDialog (
+                 size = "m",
+                 title = "Warning",
+                 reach_point_delete_msg,
+                 fluidPage(
+                   br(),
+                   DT::DTOutput(("reach_point_delete_surveys"))
+                 ),
+                 easyClose = TRUE,
+                 footer = NULL
+               )
+             } else {
+               modalDialog (
+                 size = 'l',
+                 title = reach_point_delete_msg,
+                 fluidPage (
+                   DT::DTOutput("reach_point_modal_delete_vals"),
+                   br(),
+                   br(),
+                   actionButton("delete_reach_point", "Delete reach point")
+                 ),
+                 easyClose = TRUE,
+                 footer = NULL
+               )
+             }
+    ))
+})
+
+# Update DB and reload DT
+observeEvent(input$delete_reach_point, {
+  reach_point_delete(selected_reach_point_data())
+  removeModal()
+  reach_points_after_delete = get_reach_point(waterbody_id()) %>%
+    select(river_mile, reach_point_code, reach_point_name, reach_point_type, #channel_type, orientation_type,
+           latitude, longitude, horiz_accuracy, reach_point_description,
+           created_dt, created_by, modified_dt, modified_by)
+  replaceData(reach_point_dt_proxy, reach_points_after_delete)
+}, priority = 9999)
+
+
+
