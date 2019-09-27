@@ -123,7 +123,7 @@ year_vals = reactive({
 observe({
   rm_list()
   updated_rm_list = rm_list()$rm_label
-  updated_rm_list = c(updated_rm_list, "add")
+  #updated_rm_list = c(updated_rm_list, "add")
   # Update upper rm
   updateSelectizeInput(session, "upper_rm_select",
                        choices = updated_rm_list,

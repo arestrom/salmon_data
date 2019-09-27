@@ -94,7 +94,7 @@ selected_reach_point_data = reactive({
 # Update all input values to values in selected row
 observeEvent(input$reach_points_rows_selected, {
   srpdat = selected_reach_point_data()
-  updateNumericInput(session, "river_mile_input", value = srpdat$latitude)
+  updateNumericInput(session, "river_mile_input", value = srpdat$river_mile)
   updateSelectizeInput(session, "reach_point_type_select", selected = srpdat$reach_point_type)
   updateTextInput(session, "reach_point_code_input", value = srpdat$reach_point_code)
   updateTextInput(session, "reach_point_name_input", value = srpdat$reach_point_name)
@@ -106,272 +106,268 @@ observeEvent(input$reach_points_rows_selected, {
   updateTextAreaInput(session, "reach_point_description_input", value = srpdat$reach_point_description)
 })
 
-# #================================================================
-# # Get either selected fish coordinates or default stream centroid
-# #================================================================
-#
-# # Get centroid of stream for setting view of redd_map
-# selected_fish_coords = reactive({
-#   req(input$fish_encounters_rows_selected)
-#   # Get centroid of stream....always available if stream is selected
-#   center_lat = selected_stream_centroid()$center_lat
-#   center_lon = selected_stream_centroid()$center_lon
-#   # Get location_coordinates data should be nrow == 0 if no coordiinates present
-#   fish_coords = get_fish_coordinates(selected_fish_encounter_data()$fish_encounter_id)
-#   if ( nrow(fish_coords) == 0 ) {
-#     fish_lat = center_lat
-#     fish_lon = center_lon
-#     fish_name = "need fish name"
-#   } else {
-#     fish_lat = fish_coords$latitude
-#     fish_lon = fish_coords$longitude
-#     fish_name = selected_fish_location_data()$fish_name
-#   }
-#   fish_coords = tibble(fish_encounter_id = selected_fish_encounter_data()$fish_encounter_id,
-#                        fish_name = fish_name,
-#                        fish_lat = fish_lat,
-#                        fish_lon = fish_lon)
-#   return(fish_coords)
-# })
-#
-# # Output leaflet bidn map....could also use color to indicate species:
-# # See: https://rstudio.github.io/leaflet/markers.html
-# output$fish_map <- renderLeaflet({
-#   fish_loc_data = selected_fish_coords()
-#   fish_lat = fish_loc_data$fish_lat
-#   fish_lon = fish_loc_data$fish_lon
-#   fish_name = fish_loc_data$fish_name
-#   fish_encounter_id = fish_loc_data$fish_encounter_id
-#   m = leaflet() %>%
-#     setView(
-#       lng = selected_stream_centroid()$center_lon,
-#       lat = selected_stream_centroid()$center_lat,
-#       zoom = 14) %>%
-#     # Needed to enable draggable circle-markers
-#     addDrawToolbar(circleOptions = NA,
-#                    circleMarkerOptions = NA,
-#                    markerOptions = NA,
-#                    polygonOptions = NA,
-#                    rectangleOptions = NA,
-#                    polylineOptions = NA) %>%
-#     addPolylines(
-#       data = wria_streams(),
-#       group = "Streams",
-#       weight = 3,
-#       color = "#0000e6",
-#       label = ~stream_label,
-#       layerId = ~stream_label,
-#       labelOptions = labelOptions(noHide = FALSE)) %>%
-#     addCircleMarkers(
-#       lng = fish_lon,
-#       lat = fish_lat,
-#       layerId = fish_encounter_id,
-#       popup = fish_name,
-#       radius = 8,
-#       color = "red",
-#       fillOpacity = 0.5,
-#       stroke = FALSE,
-#       options = markerOptions(draggable = TRUE,
-#                               riseOnHover = TRUE)) %>%
-#     addProviderTiles("Esri.WorldImagery", group = "Esri World Imagery") %>%
-#     addProviderTiles("OpenTopoMap", group = "Open Topo Map") %>%
-#     addLayersControl(position = 'bottomright',
-#                      baseGroups = c("Esri World Imagery", "Open Topo Map"),
-#                      overlayGroups = c("Streams"),
-#                      options = layersControlOptions(collapsed = TRUE))
-#   m
-# })
-#
-# # Create reactive to hold click data
-# fish_marker_data = reactive({
-#   req(input$fish_map_marker_click)
-#   fish_click_data = input$fish_map_marker_click
-#   fish_mark_dat = tibble(latitude = round(as.numeric(fish_click_data$lat), digits = 6),
-#                          longitude = round(as.numeric(fish_click_data$lng), digits = 6))
-#   return(fish_mark_dat)
-# })
-#
-# # Get dataframe of updated locations
-# output$fish_coordinates = renderUI({
-#   if ( length(input$fish_map_marker_click) == 0L ) {
-#     HTML("Drag marker to edit location. Click on marker to set coordinates")
-#   } else {
-#     HTML(glue("Fish location: ", {fish_marker_data()$latitude}, ": ", {fish_marker_data()$longitude}))
-#   }
-# })
-#
-# # Modal for new fish locations...add or edit a point...write coordinates to lat, lon
-# observeEvent(input$fish_loc_map, {
-#   showModal(
-#     # Verify required fields have data...none can be blank
-#     tags$div(id = "fish_location_map_modal",
-#              modalDialog (
-#                size = 'l',
-#                title = glue("Add or edit fish location"),
-#                fluidPage (
-#                  fluidRow(
-#                    column(width = 12,
-#                           leafletOutput("fish_map", height = 500),
-#                           br()
-#                    )
-#                  ),
-#                  fluidRow(
-#                    column(width = 2,
-#                           actionButton("capture_fish_loc", "Capture fish location")),
-#                    column(width = 10,
-#                           htmlOutput("fish_coordinates"))
-#                  )
-#                ),
-#                easyClose = TRUE,
-#                footer = NULL
-#              )
-#     )
-#   )
-# })
-#
-# #======================================================================
-# # Update fish location coordinate inputs to coordinates selected on map
-# #======================================================================
-#
-# # Update all input values to values in selected row
-# observeEvent(input$capture_fish_loc, {
-#   fish_coord_data = fish_marker_data()
-#   updateNumericInput(session, "fish_latitude_input", value = fish_coord_data$latitude)
-#   updateNumericInput(session, "fish_longitude_input", value = fish_coord_data$longitude)
-#   removeModal()
-# })
-#
-# #========================================================
-# # Insert operations: reactives, observers and modals
-# #========================================================
-#
-# # Disable "New" button if a row of coordinates already exists
-# observe({
-#   input$insert_fish_location
-#   input$delete_fish_location
-#   fish_loc_data = get_fish_location(selected_fish_encounter_data()$fish_encounter_id)
-#   if (nrow(fish_loc_data) >= 1L) {
-#     shinyjs::disable("fish_loc_add")
-#   } else {
-#     shinyjs::enable("fish_loc_add")
-#   }
-# })
-#
-# # Create reactive to collect input values for insert actions
-# fish_location_create = reactive({
-#   # fish_encounter_id
-#   fish_encounter_id_input = selected_fish_encounter_data()$fish_encounter_id
-#   # Channel type
-#   fish_channel_type_input = input$fish_channel_type_select
-#   if ( fish_channel_type_input == "" ) {
-#     stream_channel_type_id = NA
-#   } else {
-#     fish_channel_type_vals = get_fish_channel_type()
-#     stream_channel_type_id = fish_channel_type_vals %>%
-#       filter(channel_type == fish_channel_type_input) %>%
-#       pull(stream_channel_type_id)
-#   }
-#   # Orientation type
-#   fish_orientation_type_input = input$fish_orientation_type_select
-#   if ( fish_orientation_type_input == "" ) {
-#     location_orientation_type_id = NA
-#   } else {
-#     fish_orientation_type_vals = get_fish_orientation_type()
-#     location_orientation_type_id = fish_orientation_type_vals %>%
-#       filter(orientation_type == fish_orientation_type_input) %>%
-#       pull(location_orientation_type_id)
-#   }
-#   new_fish_location = tibble(fish_encounter_id = fish_encounter_id_input,
-#                              fish_name = input$fish_name_input,
-#                              channel_type = fish_channel_type_input,
-#                              stream_channel_type_id = stream_channel_type_id,
-#                              orientation_type = fish_orientation_type_input,
-#                              location_orientation_type_id = location_orientation_type_id,
-#                              latitude = input$fish_latitude_input,
-#                              longitude = input$fish_longitude_input,
-#                              horiz_accuracy = input$fish_horiz_accuracy_input,
-#                              location_description = input$fish_location_description_input,
-#                              created_dt = lubridate::with_tz(Sys.time(), "UTC"),
-#                              created_by = Sys.getenv("USERNAME"))
-#   return(new_fish_location)
-# })
-#
-# # Generate values to show in modal
-# output$fish_location_modal_insert_vals = renderDT({
-#   fish_location_modal_in_vals = fish_location_create() %>%
-#     select(fish_name, channel_type, orientation_type, latitude,
-#            longitude, horiz_accuracy, location_description)
-#   # Generate table
-#   datatable(fish_location_modal_in_vals,
-#             rownames = FALSE,
-#             options = list(dom = 't',
-#                            scrollX = T,
-#                            ordering = FALSE,
-#                            initComplete = JS(
-#                              "function(settings, json) {",
-#                              "$(this.api().table().header()).css({'background-color': '#9eb3d6'});",
-#                              "}")))
-# })
-#
-# # Modal for new redd locations
-# observeEvent(input$fish_loc_add, {
-#   new_fish_location_vals = fish_location_create()
-#   showModal(
-#     # Verify required fields have data...none can be blank
-#     tags$div(id = "fish_location_insert_modal",
-#              if ( is.na(new_fish_location_vals$stream_channel_type_id) |
-#                   is.na(new_fish_location_vals$location_orientation_type_id) |
-#                   is.na(new_fish_location_vals$latitude) |
-#                   is.na(new_fish_location_vals$longitude) ) {
-#                modalDialog (
-#                  size = "m",
-#                  title = "Warning",
-#                  paste0("Values are required for channel, orientation, and coordinates"),
-#                  easyClose = TRUE,
-#                  footer = NULL
-#                )
-#                # Write to DB
-#              } else {
-#                modalDialog (
-#                  size = 'l',
-#                  title = glue("Insert new fish location data to the database?"),
-#                  fluidPage (
-#                    DT::DTOutput("fish_location_modal_insert_vals"),
-#                    br(),
-#                    br(),
-#                    actionButton("insert_fish_location", "Insert location")
-#                  ),
-#                  easyClose = TRUE,
-#                  footer = NULL
-#                )
-#              }
-#     ))
-# })
-#
-# # Reactive to hold values actually inserted
-# fish_location_insert_vals = reactive({
-#   new_fish_loc_values = fish_location_create() %>%
-#     mutate(waterbody_id = waterbody_id()) %>%
-#     mutate(wria_id = wria_id()) %>%
-#     mutate(location_type_id = "c8c4020f-36ac-46ec-b158-6d07a3812bc8") %>%     # fish encounter
-#     select(fish_encounter_id, waterbody_id, wria_id, location_type_id,
-#            stream_channel_type_id, location_orientation_type_id,
-#            fish_name, location_description, latitude, longitude,
-#            horiz_accuracy, created_by)
-#   return(new_fish_loc_values)
-# })
-#
-# # Update DB and reload DT
-# observeEvent(input$insert_fish_location, {
-#   fish_location_insert(fish_location_insert_vals())
-#   removeModal()
-#   post_fish_location_insert_vals = get_fish_location(selected_fish_encounter_data()$fish_encounter_id) %>%
-#     select(fish_name, channel_type, orientation_type, latitude,
-#            longitude, horiz_accuracy, location_description,
-#            created_dt, created_by, modified_dt, modified_by)
-#   replaceData(fish_location_dt_proxy, post_fish_location_insert_vals)
-# }, priority = 9999)
-#
+#================================================================
+# Get either selected reach coordinates or default stream centroid
+#================================================================
+
+# Get centroid of stream for setting view of redd_map
+selected_reach_point_coords = reactive({
+  # Get centroid of stream....always available if stream is selected
+  center_lat = selected_stream_centroid()$center_lat
+  center_lon = selected_stream_centroid()$center_lon
+  # Get reach coordinates from inputs if present
+  if ( is.na(input$reach_point_latitude_input) | is.na(input$reach_point_longitude_input) ) {
+    reach_point_lat = center_lat
+    reach_point_lon = center_lon
+    reach_point_name = "need reach name"
+  } else {
+    reach_point_lat = input$reach_point_latitude_input
+    reach_point_lon = input$reach_point_longitude_input
+    reach_point_name = input$reach_point_name_input
+    if ( is.na(reach_point_name) | reach_point_name == "" ) {
+      reach_point_name = "need reach name"
+    }
+  }
+  reach_point_coords = tibble(reach_point_name = reach_point_name,
+                              reach_point_lat = reach_point_lat,
+                              reach_point_lon = reach_point_lon)
+  return(reach_point_coords)
+})
+
+# Output leaflet bidn map....could also use color to indicate species:
+# See: https://rstudio.github.io/leaflet/markers.html
+output$reach_point_map <- renderLeaflet({
+  reach_point_data = selected_reach_point_coords()
+  reach_point_lat = reach_point_data$reach_point_lat
+  reach_point_lon = reach_point_data$reach_point_lon
+  reach_point_name = reach_point_data$reach_point_name
+  m = leaflet() %>%
+    setView(
+      lng = selected_stream_centroid()$center_lon,
+      lat = selected_stream_centroid()$center_lat,
+      zoom = 14) %>%
+    # Needed to enable draggable circle-markers
+    addDrawToolbar(circleOptions = NA,
+                   circleMarkerOptions = NA,
+                   markerOptions = NA,
+                   polygonOptions = NA,
+                   rectangleOptions = NA,
+                   polylineOptions = NA) %>%
+    addPolylines(
+      data = wria_streams(),
+      group = "Streams",
+      weight = 3,
+      color = "#0000e6",
+      label = ~stream_label,
+      layerId = ~stream_label,
+      labelOptions = labelOptions(noHide = FALSE)) %>%
+    addCircleMarkers(
+      lng = reach_point_lon,
+      lat = reach_point_lat,
+      #layerId = fish_encounter_id,
+      popup = reach_point_name,
+      radius = 8,
+      color = "red",
+      fillOpacity = 0.5,
+      stroke = FALSE,
+      options = markerOptions(draggable = TRUE,
+                              riseOnHover = TRUE)) %>%
+    addProviderTiles("Esri.WorldImagery", group = "Esri World Imagery") %>%
+    addProviderTiles("OpenTopoMap", group = "Open Topo Map") %>%
+    addLayersControl(position = 'bottomright',
+                     baseGroups = c("Esri World Imagery", "Open Topo Map"),
+                     overlayGroups = c("Streams"),
+                     options = layersControlOptions(collapsed = TRUE))
+  m
+})
+
+# Create reactive to hold click data
+reach_point_marker_data = reactive({
+  req(input$reach_point_map_marker_click)
+  reach_point_click_data = input$reach_point_map_marker_click
+  reach_point_dat = tibble(latitude = round(as.numeric(reach_point_click_data$lat), digits = 6),
+                           longitude = round(as.numeric(reach_point_click_data$lng), digits = 6))
+  return(reach_point_dat)
+})
+
+# Get dataframe of updated locations
+output$reach_point_coordinates = renderUI({
+  if ( length(input$reach_point_map_marker_click) == 0L ) {
+    HTML("Drag marker to edit reach point. Click on marker to set coordinates")
+  } else {
+    HTML(glue("Reach point coordinates: ", { reach_point_marker_data()$latitude }, ": ", { reach_point_marker_data()$longitude }))
+  }
+})
+
+# Modal for new reach points...add or edit a point...write coordinates to lat, lon
+observeEvent(input$reach_point_map, {
+  showModal(
+    # Verify required fields have data...none can be blank
+    tags$div(id = "reach_point_map_modal",
+             modalDialog (
+               size = 'l',
+               title = glue("Add or edit a reach point"),
+               fluidPage (
+                 fluidRow(
+                   column(width = 12,
+                          leafletOutput("reach_point_map", height = 500),
+                          br()
+                   )
+                 ),
+                 fluidRow(
+                   column(width = 2,
+                          actionButton("capture_reach_point", "Capture reach point")),
+                   column(width = 10,
+                          htmlOutput("reach_point_coordinates"))
+                 )
+               ),
+               easyClose = TRUE,
+               footer = NULL
+             )
+    )
+  )
+})
+
+#======================================================================
+# Update fish location coordinate inputs to coordinates selected on map
+#======================================================================
+
+# Update all input values to values in selected row
+observeEvent(input$capture_reach_point, {
+  reach_point_coord_data = reach_point_marker_data()
+  updateNumericInput(session, "reach_point_latitude_input", value = reach_point_coord_data$latitude)
+  updateNumericInput(session, "reach_point_longitude_input", value = reach_point_coord_data$longitude)
+  removeModal()
+})
+
+#========================================================
+# Insert operations: reactives, observers and modals
+#========================================================
+
+# Create reactive to collect input values for insert actions
+reach_point_create = reactive({
+  # Location type
+  reach_point_type_input = input$reach_point_type_select
+  if ( reach_point_type_input == "" ) {
+    location_type_id = NA
+  } else {
+    reach_point_type_vals = get_location_type()
+    location_type_id = reach_point_type_vals %>%
+      filter(reach_point_type == reach_point_type_input) %>%
+      pull(location_type_id)
+  }
+  new_reach_point = tibble(river_mile = input$river_mile_input,
+                           reach_point_type = reach_point_type_input,
+                           location_type_id = location_type_id,
+                           reach_point_code = input$reach_point_code_input,
+                           reach_point_name = input$reach_point_name_input,
+                           latitude = input$reach_point_latitude_input,
+                           longitude = input$reach_point_longitude_input,
+                           horiz_accuracy = input$reach_point_horiz_accuracy_input,
+                           reach_point_description = input$reach_point_description_input,
+                           created_dt = lubridate::with_tz(Sys.time(), "UTC"),
+                           created_by = Sys.getenv("USERNAME"))
+  return(new_reach_point)
+})
+
+# Generate values to show in modal
+output$reach_point_modal_insert_vals = renderDT({
+  reach_point_modal_in_vals = reach_point_create() %>%
+    select(river_mile, reach_point_code, reach_point_name, latitude,
+           longitude, horiz_accuracy, reach_point_description)
+  # Generate table
+  datatable(reach_point_modal_in_vals,
+            rownames = FALSE,
+            options = list(dom = 't',
+                           scrollX = T,
+                           ordering = FALSE,
+                           initComplete = JS(
+                             "function(settings, json) {",
+                             "$(this.api().table().header()).css({'background-color': '#9eb3d6'});",
+                             "}")))
+})
+
+# Modal for new redd locations
+observeEvent(input$reach_point_add, {
+  new_reach_point_vals = reach_point_create()
+  old_reach_point_vals = get_reach_point(waterbody_id())
+  new_coords = paste0(new_reach_point_vals$latitude, ":", new_reach_point_vals$longitude)
+  old_coords = paste0(old_reach_point_vals$latitude, ":", old_reach_point_vals$longitude)
+  showModal(
+    # Verify required fields have data...none can be blank
+    tags$div(id = "reach_point_insert_modal",
+             if ( is.na(new_reach_point_vals$river_mile) |
+                  is.na(new_reach_point_vals$location_type_id) |
+                  is.na(new_reach_point_vals$latitude) |
+                  is.na(new_reach_point_vals$longitude) ) {
+               modalDialog (
+                 size = "m",
+                 title = "Warning",
+                 paste0("Values are required for river_mile, location_type, and coordinates"),
+                 easyClose = TRUE,
+                 footer = NULL
+               )
+               # Verify no river_miles are duplicated
+             } else if ( new_reach_point_vals$river_mile %in% old_reach_point_vals$river_mile ) {
+               modalDialog (
+                 size = "m",
+                 title = "Warning",
+                 paste0("This river mile point has already been entered"),
+                 easyClose = TRUE,
+                 footer = NULL
+               )
+               # Verify no set of coordinates are duplicated
+             } else if ( new_coords %in% old_coords ) {
+               modalDialog (
+                 size = "m",
+                 title = "Warning",
+                 paste0("This set of coordinates has already been entered"),
+                 easyClose = TRUE,
+                 footer = NULL
+               )
+             } else {
+               # Write to DB
+               modalDialog (
+                 size = 'l',
+                 title = glue("Insert new reach points to the database?"),
+                 fluidPage (
+                   DT::DTOutput("reach_point_modal_insert_vals"),
+                   br(),
+                   br(),
+                   actionButton("insert_reach_point", "Insert reach point")
+                 ),
+                 easyClose = TRUE,
+                 footer = NULL
+               )
+             }
+    ))
+})
+
+# Reactive to hold values actually inserted
+reach_point_insert_vals = reactive({
+  new_reach_point_values = reach_point_create() %>%
+    mutate(waterbody_id = waterbody_id()) %>%
+    mutate(wria_id = wria_id()) %>%
+    mutate(stream_channel_type_id = "713a39a5-8e95-4069-b078-066699c321d8") %>%           # No data
+    mutate(location_orientation_type_id = "eb4652b7-5390-43d4-a98e-60ea54a1d518") %>%     # No data
+    select(waterbody_id, wria_id, location_type_id, stream_channel_type_id,
+           location_orientation_type_id, river_mile, reach_point_code,
+           reach_point_name, reach_point_description, latitude,
+           longitude, horiz_accuracy, created_by)
+  return(new_reach_point_values)
+})
+
+# Update DB and reload DT
+observeEvent(input$insert_reach_point, {
+  reach_point_insert(reach_point_insert_vals())
+  removeModal()
+  post_reach_point_insert_vals = get_reach_point(waterbody_id()) %>%
+    select(river_mile, reach_point_code, reach_point_name, reach_point_type, #channel_type, orientation_type,
+           latitude, longitude, horiz_accuracy, reach_point_description,
+           created_dt, created_by, modified_dt, modified_by)
+  replaceData(reach_point_dt_proxy, post_reach_point_insert_vals)
+}, priority = 9999)
+
 # #========================================================
 # # Edit operations: reactives, observers and modals
 # #========================================================

@@ -17,8 +17,8 @@ get_reach_point = function(waterbody_id) {
              "loc.modified_datetime as modified_date, loc.modified_by ",
              "from location as loc ",
              "left join location_type_lut as lt on loc.location_type_id = lt.location_type_id ",
-             "left join stream_channel_type_lut as sc on loc.stream_channel_type_id = sc.stream_channel_type_id ",
-             "left join location_orientation_type_lut as lo on loc.location_orientation_type_id = lo.location_orientation_type_id ",
+             # "left join stream_channel_type_lut as sc on loc.stream_channel_type_id = sc.stream_channel_type_id ",
+             # "left join location_orientation_type_lut as lo on loc.location_orientation_type_id = lo.location_orientation_type_id ",
              "left join location_coordinates as lc on loc.location_id = lc.location_id ",
              "where loc.waterbody_id = '{waterbody_id}' ",
              "and lt.location_type_description in ('Reach boundary point', 'Section break point')")
@@ -44,43 +44,6 @@ get_reach_point = function(waterbody_id) {
   return(reach_points)
 }
 
-# #==========================================================================
-# # Get just the redd_coordinates
-# #==========================================================================
-#
-# # Redd_coordinates query
-# get_fish_coordinates = function(fish_encounter_id) {
-#   qry = glue("select lc.location_id as fish_location_id, ",
-#              "lc.location_coordinates_id, ",
-#              "st_x(st_transform(lc.geom, 4326)) as longitude, ",
-#              "st_y(st_transform(lc.geom, 4326)) as latitude, ",
-#              "lc.horizontal_accuracy as horiz_accuracy, ",
-#              "lc.created_datetime as created_date, lc.created_by, ",
-#              "lc.modified_datetime as modified_date, lc.modified_by ",
-#              "from fish_encounter as fe ",
-#              "inner join location as loc on fe.fish_location_id = loc.location_id ",
-#              "inner join location_coordinates as lc on loc.location_id = lc.location_id ",
-#              "where fe.fish_encounter_id = '{fish_encounter_id}'")
-#   con = poolCheckout(pool)
-#   fish_coordinates = DBI::dbGetQuery(con, qry)
-#   poolReturn(con)
-#   fish_coordinates = fish_coordinates %>%
-#     mutate(fish_location_id = tolower(fish_location_id)) %>%
-#     mutate(location_coordinates_id = tolower(location_coordinates_id)) %>%
-#     mutate(latitude = round(latitude, 6)) %>%
-#     mutate(longitude = round(longitude, 6)) %>%
-#     mutate(created_date = with_tz(created_date, tzone = "America/Los_Angeles")) %>%
-#     mutate(created_dt = format(created_date, "%m/%d/%Y %H:%M")) %>%
-#     mutate(modified_date = with_tz(modified_date, tzone = "America/Los_Angeles")) %>%
-#     mutate(modified_dt = format(modified_date, "%m/%d/%Y %H:%M")) %>%
-#     select(fish_location_id, location_coordinates_id,
-#            latitude, longitude, horiz_accuracy, created_date,
-#            created_dt, created_by, modified_date, modified_dt,
-#            modified_by) %>%
-#     arrange(created_date)
-#   return(fish_coordinates)
-# }
-
 #==========================================================================
 # Get generic lut input values
 #==========================================================================
@@ -100,73 +63,69 @@ get_location_type = function() {
   return(reach_point_type_list)
 }
 
-# #========================================================
-# # Insert callback
-# #========================================================
-#
-# # Define the insert callback
-# fish_location_insert = function(new_fish_location_values) {
-#   new_insert_values = new_fish_location_values
-#   # Generate location_id
-#   location_id = remisc::get_uuid(1L)
-#   created_by = new_insert_values$created_by
-#   # Pull out location_coordinates table data
-#   horizontal_accuracy = as.numeric(new_insert_values$horiz_accuracy)
-#   latitude = new_insert_values$latitude
-#   longitude = new_insert_values$longitude
-#   # Pull out location table data
-#   waterbody_id = new_insert_values$waterbody_id
-#   wria_id = new_insert_values$wria_id
-#   location_type_id = new_insert_values$location_type_id
-#   stream_channel_type_id = new_insert_values$stream_channel_type_id
-#   location_orientation_type_id = new_insert_values$location_orientation_type_id
-#   location_name = new_insert_values$fish_name
-#   location_description = new_insert_values$location_description
-#   if (is.na(location_name) | location_name == "") { location_name = NA }
-#   if (is.na(location_description) | location_description == "") { location_description = NA }
-#   # Pull out fish_encounter table data
-#   fish_encounter_id = new_insert_values$fish_encounter_id
-#   mod_dt = lubridate::with_tz(Sys.time(), "UTC")
-#   mod_by = Sys.getenv("USERNAME")
-#   # Insert to location table
-#   con = poolCheckout(pool)
-#   insert_loc_result = dbSendStatement(
-#     con, glue_sql("INSERT INTO location (",
-#                   "location_id, ",
-#                   "waterbody_id, ",
-#                   "wria_id, ",
-#                   "location_type_id, ",
-#                   "stream_channel_type_id, ",
-#                   "location_orientation_type_id, ",
-#                   "location_name, ",
-#                   "location_description, ",
-#                   "created_by) ",
-#                   "VALUES (",
-#                   "?, ?, ?, ?, ?, ?, ?, ?, ?)"))
-#   dbBind(insert_loc_result, list(location_id, waterbody_id, wria_id,
-#                                  location_type_id, stream_channel_type_id,
-#                                  location_orientation_type_id, location_name,
-#                                  location_description, created_by))
-#   dbGetRowsAffected(insert_loc_result)
-#   dbClearResult(insert_loc_result)
-#   # Insert coordinates to location_coordinates
-#   qry = glue_sql("INSERT INTO location_coordinates ",
-#                  "(location_id, horizontal_accuracy, geom, created_by) ",
-#                  "VALUES ({location_id}, {horizontal_accuracy}, ",
-#                  "ST_Transform(ST_GeomFromText('POINT({longitude} {latitude})', 4326), 2927), ",
-#                  "{created_by}) ",
-#                  .con = con)
-#   # Checkout a connection
-#   DBI::dbExecute(con, qry)
-#   # Update location_id in redd_encounter table
-#   qry = glue_sql("UPDATE fish_encounter SET fish_location_id = {location_id}, ",
-#                  "modified_datetime = {mod_dt}, modified_by = {mod_by} ",
-#                  "WHERE fish_encounter_id = {fish_encounter_id}", .con = con)
-#   # Checkout a connection
-#   DBI::dbExecute(con, qry)
-#   poolReturn(con)
-# }
-#
+#========================================================
+# Insert callback
+#========================================================
+
+# Define the insert callback
+reach_point_insert = function(new_reach_point_values) {
+  new_insert_values = new_reach_point_values
+  # Generate location_id
+  location_id = remisc::get_uuid(1L)
+  created_by = new_insert_values$created_by
+  # Pull out location_coordinates table data
+  horizontal_accuracy = as.numeric(new_insert_values$horiz_accuracy)
+  latitude = new_insert_values$latitude
+  longitude = new_insert_values$longitude
+  # Pull out location table data
+  waterbody_id = new_insert_values$waterbody_id
+  wria_id = new_insert_values$wria_id
+  location_type_id = new_insert_values$location_type_id
+  stream_channel_type_id = new_insert_values$stream_channel_type_id
+  location_orientation_type_id = new_insert_values$location_orientation_type_id
+  river_mile_measure = new_insert_values$river_mile
+  location_code = new_insert_values$reach_point_code
+  location_name = new_insert_values$reach_point_name
+  location_description = new_insert_values$reach_point_description
+  if (is.na(location_code) | location_code == "") { location_code = NA }
+  if (is.na(location_name) | location_name == "") { location_name = NA }
+  if (is.na(location_description) | location_description == "") { location_description = NA }
+  # Insert to location table
+  con = poolCheckout(pool)
+  insert_rp_result = dbSendStatement(
+    con, glue_sql("INSERT INTO location (",
+                  "location_id, ",
+                  "waterbody_id, ",
+                  "wria_id, ",
+                  "location_type_id, ",
+                  "stream_channel_type_id, ",
+                  "location_orientation_type_id, ",
+                  "river_mile_measure, ",
+                  "location_code, ",
+                  "location_name, ",
+                  "location_description, ",
+                  "created_by) ",
+                  "VALUES (",
+                  "?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)"))
+  dbBind(insert_rp_result, list(location_id, waterbody_id, wria_id,
+                                location_type_id, stream_channel_type_id,
+                                location_orientation_type_id, river_mile_measure,
+                                location_code, location_name,
+                                location_description, created_by))
+  dbGetRowsAffected(insert_rp_result)
+  dbClearResult(insert_rp_result)
+  # Insert coordinates to location_coordinates
+  qry = glue_sql("INSERT INTO location_coordinates ",
+                 "(location_id, horizontal_accuracy, geom, created_by) ",
+                 "VALUES ({location_id}, {horizontal_accuracy}, ",
+                 "ST_Transform(ST_GeomFromText('POINT({longitude} {latitude})', 4326), 2927), ",
+                 "{created_by}) ",
+                 .con = con)
+  # Checkout a connection
+  DBI::dbExecute(con, qry)
+  poolReturn(con)
+}
+
 # #==============================================================
 # # Identify fish location surveys prior to update or delete
 # #==============================================================

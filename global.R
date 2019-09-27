@@ -91,6 +91,10 @@
 # 27. Get rid of extra channel and orientation lut function
 #     for fish in fish_location_global.R. Can reuse
 #     function from redd_location.
+# 28. May want to edit reach_point_srv.R to allow
+#     multiple edits to point on reach_point_map
+#     without having to update either lat-lon inputs
+#     or selecting a different row in DT.
 #
 # AS 2019-09-19
 #==============================================================
