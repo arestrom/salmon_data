@@ -488,9 +488,9 @@ observeEvent(input$reach_point_edit, {
     tags$div(id = "reach_point_update_modal",
              if ( data_manager_flag() == TRUE ) {
                modalDialog (
-                 size = "m",
+                 size = "l",
                  title = "Warning",
-                 paste("Edits would alter historical surveys. Please contact the data manager"),
+                 paste("Edits would alter historical (> one year) as well as recent surveys, as seen below. Please contact the data manager"),
                  fluidPage (
                    br(),
                    br(),
