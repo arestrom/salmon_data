@@ -407,7 +407,8 @@ dependent_reach_point_surveys = reactive({
 
 # Generate values to show check modal
 output$reach_point_edit_surveys = renderDT({
-  reach_pt_edit_srv = dependent_reach_point_surveys()
+  reach_pt_edit_srv = dependent_reach_point_surveys() %>%
+    select(survey_dt, upper_river_mile, lower_river_mile, observer)
   reach_point_edit_dt_msg = glue("WARNING: All surveys linked to this reach point are shown below. ",
                                  "Please verify that all surveys should be updated to the new values!")
   # Generate table
@@ -446,36 +447,55 @@ output$reach_point_modal_update_vals = renderDT({
                              "}")))
 })
 
-
-
-# NEED CODE TO CHECK FOR OLD SURVEYS > 1 year old. Dissallow edits in that case
-# Require data manager to handle edits to reach points
-
-# Comparison code not working when all fields filled in
-
+# Generate flag to indicated if surveys affected by edits are too old and require data manager approval
+data_manager_flag = reactive({
+  chk_surveys = dependent_reach_point_surveys()
+  first_date = as.Date(min(chk_surveys$survey_date))
+  if (nrow(chk_surveys) == 0 ) {
+    dm_flag = FALSE
+  } else if ( nrow(chk_surveys) > 0 & (Sys.Date() - first_date) < 365 ) {
+    dm_flag = FALSE
+  } else if ( nrow(chk_surveys) > 0 & (Sys.Date() - first_date) > 365 ) {
+    dm_flag = TRUE
+  } else {
+    dm_flag = FALSE
+  }
+  print(dm_flag)
+  return(dm_flag)
+})
 
 # Edit modal
 observeEvent(input$reach_point_edit, {
   old_reach_point_vals = selected_reach_point_data() %>%
-    mutate(latitude = round(latitude, 6)) %>%
-    mutate(longitude = round(longitude, 6)) %>%
+    mutate(horiz_accuracy = as.numeric(horiz_accuracy)) %>%
+    mutate(river_mile = as.numeric(river_mile)) %>%
+    mutate(latitude = round(as.numeric(latitude), 6)) %>%
+    mutate(longitude = round(as.numeric(longitude), 6)) %>%
     select(river_mile, reach_point_code, reach_point_name, latitude,
            longitude, horiz_accuracy, reach_point_description)
   old_reach_point_vals[] = lapply(old_reach_point_vals, remisc::set_na)
+  #print(old_reach_point_vals)
   new_reach_point_vals = reach_point_edit() %>%
     mutate(horiz_accuracy = as.numeric(horiz_accuracy)) %>%
-    mutate(latitude = round(latitude, 6)) %>%
-    mutate(longitude = round(longitude, 6)) %>%
+    mutate(river_mile = as.numeric(river_mile)) %>%
+    mutate(latitude = round(as.numeric(latitude), 6)) %>%
+    mutate(longitude = round(as.numeric(longitude), 6)) %>%
     select(river_mile, reach_point_code, reach_point_name, latitude,
            longitude, horiz_accuracy, reach_point_description)
   new_reach_point_vals[] = lapply(new_reach_point_vals, remisc::set_na)
+  #print(new_reach_point_vals)
   showModal(
     tags$div(id = "reach_point_update_modal",
-             if ( !length(input$reach_points_rows_selected) == 1 ) {
+             if ( data_manager_flag() == TRUE ) {
                modalDialog (
                  size = "m",
                  title = "Warning",
-                 paste("Please select a row to edit!"),
+                 paste("Edits would alter historical surveys. Please contact the data manager"),
+                 fluidPage (
+                   br(),
+                   br(),
+                   DT::DTOutput("reach_point_edit_surveys")
+                 ),
                  easyClose = TRUE,
                  footer = NULL
                )

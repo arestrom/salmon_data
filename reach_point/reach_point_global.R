@@ -145,7 +145,7 @@ get_reach_point_surveys = function(location_id) {
   poolReturn(con)
   reach_point_surveys = reach_point_surveys %>%
     mutate(survey_date = with_tz(survey_date, tzone = "America/Los_Angeles")) %>%
-    mutate(survey_date = format(survey_date, "%m/%d/%Y"))
+    mutate(survey_dt = format(survey_date, "%m/%d/%Y"))
   return(reach_point_surveys)
 }
 
