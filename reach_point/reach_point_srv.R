@@ -35,7 +35,7 @@ output$reach_point_type_select = renderUI({
 output$reach_points = renderDT({
   reach_point_title = glue("Reach points for {input$stream_select}")
   reach_point_data = get_reach_point(waterbody_id()) %>%
-    select(river_mile, reach_point_code, reach_point_name, reach_point_type, #channel_type, orientation_type,
+    select(river_mile, reach_point_type, reach_point_code, reach_point_name, #channel_type, orientation_type,
            latitude, longitude, horiz_accuracy, reach_point_description,
            created_dt, created_by, modified_dt, modified_by)
 
@@ -83,7 +83,6 @@ selected_reach_point_data = reactive({
                                 created_by = reach_point_data$created_by[reach_point_row],
                                 modified_date = reach_point_data$modified_date[reach_point_row],
                                 modified_by = reach_point_data$modified_by[reach_point_row])
-  #print(selected_reach_point)
   return(selected_reach_point)
 })
 
@@ -273,8 +272,8 @@ reach_point_create = reactive({
 # Generate values to show in modal
 output$reach_point_modal_insert_vals = renderDT({
   reach_point_modal_in_vals = reach_point_create() %>%
-    select(river_mile, reach_point_code, reach_point_name, latitude,
-           longitude, horiz_accuracy, reach_point_description)
+    select(river_mile, reach_point_type, reach_point_code, reach_point_name, #channel_type, orientation_type,
+           latitude, longitude, horiz_accuracy, reach_point_description)
   # Generate table
   datatable(reach_point_modal_in_vals,
             rownames = FALSE,
@@ -362,7 +361,7 @@ observeEvent(input$insert_reach_point, {
   reach_point_insert(reach_point_insert_vals())
   removeModal()
   post_reach_point_insert_vals = get_reach_point(waterbody_id()) %>%
-    select(river_mile, reach_point_code, reach_point_name, reach_point_type, #channel_type, orientation_type,
+    select(river_mile, reach_point_type, reach_point_code, reach_point_name, #channel_type, orientation_type,
            latitude, longitude, horiz_accuracy, reach_point_description,
            created_dt, created_by, modified_dt, modified_by)
   replaceData(reach_point_dt_proxy, post_reach_point_insert_vals)
@@ -430,11 +429,9 @@ output$reach_point_edit_surveys = renderDT({
 
 # Generate values to show in modal
 output$reach_point_modal_update_vals = renderDT({
-  reach_point_modal_edit_id = selected_reach_point_data()$location_id
-  reach_point_modal_edit_vals = get_reach_point(waterbody_id()) %>%
-    filter(location_id == reach_point_modal_edit_id) %>%
-    select(river_mile, reach_point_code, reach_point_name, latitude,
-           longitude, horiz_accuracy, reach_point_description)
+  reach_point_modal_edit_vals = reach_point_edit() %>%
+    select(river_mile, reach_point_type, reach_point_code, reach_point_name, #channel_type, orientation_type,
+           latitude, longitude, horiz_accuracy, reach_point_description)
   # Generate table
   datatable(reach_point_modal_edit_vals,
             rownames = FALSE,
@@ -450,7 +447,11 @@ output$reach_point_modal_update_vals = renderDT({
 # Generate flag to indicated if surveys affected by edits are too old and require data manager approval
 data_manager_flag = reactive({
   chk_surveys = dependent_reach_point_surveys()
-  first_date = as.Date(min(chk_surveys$survey_date))
+  if ( nrow(chk_surveys) == 0L ) {
+    first_date = Sys.Date()
+  } else {
+    first_date = as.Date(min(chk_surveys$survey_date))
+  }
   if (nrow(chk_surveys) == 0 ) {
     dm_flag = FALSE
   } else if ( nrow(chk_surveys) > 0 & (Sys.Date() - first_date) < 365 ) {
@@ -460,7 +461,6 @@ data_manager_flag = reactive({
   } else {
     dm_flag = FALSE
   }
-  print(dm_flag)
   return(dm_flag)
 })
 
@@ -471,26 +471,24 @@ observeEvent(input$reach_point_edit, {
     mutate(river_mile = as.numeric(river_mile)) %>%
     mutate(latitude = round(as.numeric(latitude), 6)) %>%
     mutate(longitude = round(as.numeric(longitude), 6)) %>%
-    select(river_mile, reach_point_code, reach_point_name, latitude,
-           longitude, horiz_accuracy, reach_point_description)
+    select(river_mile, reach_point_type, reach_point_code, reach_point_name,
+           latitude, longitude, horiz_accuracy, reach_point_description)
   old_reach_point_vals[] = lapply(old_reach_point_vals, remisc::set_na)
-  #print(old_reach_point_vals)
   new_reach_point_vals = reach_point_edit() %>%
     mutate(horiz_accuracy = as.numeric(horiz_accuracy)) %>%
     mutate(river_mile = as.numeric(river_mile)) %>%
     mutate(latitude = round(as.numeric(latitude), 6)) %>%
     mutate(longitude = round(as.numeric(longitude), 6)) %>%
-    select(river_mile, reach_point_code, reach_point_name, latitude,
-           longitude, horiz_accuracy, reach_point_description)
+    select(river_mile, reach_point_type, reach_point_code, reach_point_name,
+           latitude, longitude, horiz_accuracy, reach_point_description)
   new_reach_point_vals[] = lapply(new_reach_point_vals, remisc::set_na)
-  #print(new_reach_point_vals)
   showModal(
     tags$div(id = "reach_point_update_modal",
              if ( data_manager_flag() == TRUE ) {
                modalDialog (
-                 size = "l",
+                 size = "m",
                  title = "Warning",
-                 paste("Edits would alter historical (> one year) as well as recent surveys, as seen below. Please contact the data manager"),
+                 paste("Edits would alter data for both historical and more recent surveys. Please contact the data manager."),
                  fluidPage (
                    br(),
                    br(),
@@ -527,17 +525,17 @@ observeEvent(input$reach_point_edit, {
     ))
 })
 
-# # Update DB and reload DT
-# observeEvent(input$save_reach_point_edits, {
-#   fish_location_update(fish_location_edit())
-#   removeModal()
-#   post_fish_location_edit_vals = get_fish_location(selected_fish_encounter_data()$fish_encounter_id) %>%
-#     select(fish_name, channel_type, orientation_type, latitude,
-#            longitude, horiz_accuracy, location_description,
-#            created_dt, created_by, modified_dt, modified_by)
-#   replaceData(fish_location_dt_proxy, post_fish_location_edit_vals)
-# }, priority = 9999)
-#
+# Update DB and reload DT
+observeEvent(input$save_reach_point_edits, {
+  reach_point_update(reach_point_edit())
+  removeModal()
+  post_reach_point_edit_vals = get_reach_point(waterbody_id()) %>%
+    select(river_mile, reach_point_type, reach_point_code, reach_point_name, #channel_type, orientation_type,
+           latitude, longitude, horiz_accuracy, reach_point_description,
+           created_dt, created_by, modified_dt, modified_by)
+  replaceData(reach_point_dt_proxy, post_reach_point_edit_vals)
+}, priority = 9999)
+
 #========================================================
 # Delete operations: reactives, observers and modals
 #========================================================
@@ -547,8 +545,8 @@ output$reach_point_modal_delete_vals = renderDT({
   reach_point_modal_del_id = selected_reach_point_data()$location_id
   reach_point_modal_del_vals = get_reach_point(waterbody_id()) %>%
     filter(location_id == reach_point_modal_del_id) %>%
-    select(river_mile, reach_point_code, reach_point_name, latitude,
-           longitude, horiz_accuracy, reach_point_description)
+    select(river_mile, reach_point_type, reach_point_code, reach_point_name, #channel_type, orientation_type,
+           latitude, longitude, horiz_accuracy, reach_point_description)
   # Generate table
   datatable(reach_point_modal_del_vals,
             rownames = FALSE,
@@ -565,7 +563,6 @@ output$reach_point_modal_delete_vals = renderDT({
 reach_point_dependencies = reactive({
   location_id = selected_reach_point_data()$location_id
   reach_point_dep = get_reach_point_dependencies(location_id)
-  print(reach_point_dep)
   return(reach_point_dep)
 })
 
@@ -638,7 +635,7 @@ observeEvent(input$delete_reach_point, {
   reach_point_delete(selected_reach_point_data())
   removeModal()
   reach_points_after_delete = get_reach_point(waterbody_id()) %>%
-    select(river_mile, reach_point_code, reach_point_name, reach_point_type, #channel_type, orientation_type,
+    select(river_mile, reach_point_type, reach_point_code, reach_point_name, #channel_type, orientation_type,
            latitude, longitude, horiz_accuracy, reach_point_description,
            created_dt, created_by, modified_dt, modified_by)
   replaceData(reach_point_dt_proxy, reach_points_after_delete)

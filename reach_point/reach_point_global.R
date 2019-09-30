@@ -149,57 +149,60 @@ get_reach_point_surveys = function(location_id) {
   return(reach_point_surveys)
 }
 
-# #========================================================
-# # Edit location callback
-# #========================================================
-#
-# # Define update callback
-# fish_location_update = function(fish_location_edit_values) {
-#   edit_values = fish_location_edit_values
-#   # Pull out data for location table
-#   location_id = edit_values$fish_location_id
-#   stream_channel_type_id = edit_values$stream_channel_type_id
-#   location_orientation_type_id = edit_values$location_orientation_type_id
-#   location_name = edit_values$fish_name
-#   location_description = edit_values$location_description
-#   if (is.na(location_name) | location_name == "") { location_name = NA }
-#   if (is.na(location_description) | location_description == "") { location_description = NA }
-#   mod_dt = lubridate::with_tz(Sys.time(), "UTC")
-#   mod_by = Sys.getenv("USERNAME")
-#   # Pull out data for location_coordinates table
-#   horizontal_accuracy = edit_values$horiz_accuracy
-#   latitude = edit_values$latitude
-#   longitude = edit_values$longitude
-#   # Checkout a connection
-#   con = poolCheckout(pool)
-#   update_result = dbSendStatement(
-#     con, glue_sql("UPDATE location SET ",
-#                   "stream_channel_type_id = ?, ",
-#                   "location_orientation_type_id = ?, ",
-#                   "location_name = ?, ",
-#                   "location_description = ?, ",
-#                   "modified_datetime = ?, ",
-#                   "modified_by = ? ",
-#                   "where location_id = ?"))
-#   dbBind(update_result, list(stream_channel_type_id,
-#                              location_orientation_type_id,
-#                              location_name, location_description,
-#                              mod_dt, mod_by,
-#                              location_id))
-#   dbGetRowsAffected(update_result)
-#   dbClearResult(update_result)
-#   # Update coordinates to location_coordinates
-#   qry = glue_sql("UPDATE location_coordinates ",
-#                  "SET horizontal_accuracy = {horizontal_accuracy}, ",
-#                  "geom = ST_Transform(ST_GeomFromText('POINT({longitude} {latitude})', 4326), 2927), ",
-#                  "modified_datetime = {mod_dt}, modified_by = {mod_by} ",
-#                  "WHERE location_id = {location_id} ",
-#                  .con = con)
-#   # Checkout a connection
-#   DBI::dbExecute(con, qry)
-#   poolReturn(con)
-# }
-#
+#========================================================
+# Edit reach_point callback
+#========================================================
+
+# Define update callback
+reach_point_update = function(reach_point_edit_values) {
+  edit_values = reach_point_edit_values
+  # Pull out data for location table
+  location_id = edit_values$location_id
+  location_type_id = edit_values$location_type_id
+  river_mile_measure = edit_values$river_mile
+  location_code= edit_values$reach_point_code
+  location_name = edit_values$reach_point_name
+  location_description = edit_values$reach_point_description
+  if (is.na(location_code) | location_code == "") { location_code = NA }
+  if (is.na(location_name) | location_name == "") { location_name = NA }
+  if (is.na(location_description) | location_description == "") { location_description = NA }
+  mod_dt = lubridate::with_tz(Sys.time(), "UTC")
+  mod_by = Sys.getenv("USERNAME")
+  # Pull out data for location_coordinates table
+  horizontal_accuracy = edit_values$horiz_accuracy
+  latitude = edit_values$latitude
+  longitude = edit_values$longitude
+  # Checkout a connection
+  con = poolCheckout(pool)
+  update_result = dbSendStatement(
+    con, glue_sql("UPDATE location SET ",
+                  "location_type_id = ?, ",
+                  "river_mile_measure = ?, ",
+                  "location_code = ?, ",
+                  "location_name = ?, ",
+                  "location_description = ?, ",
+                  "modified_datetime = ?, ",
+                  "modified_by = ? ",
+                  "where location_id = ?"))
+  dbBind(update_result, list(location_type_id, river_mile_measure,
+                             location_code, location_name,
+                             location_description,
+                             mod_dt, mod_by,
+                             location_id))
+  dbGetRowsAffected(update_result)
+  dbClearResult(update_result)
+  # Update coordinates to location_coordinates
+  qry = glue_sql("UPDATE location_coordinates ",
+                 "SET horizontal_accuracy = {horizontal_accuracy}, ",
+                 "geom = ST_Transform(ST_GeomFromText('POINT({longitude} {latitude})', 4326), 2927), ",
+                 "modified_datetime = {mod_dt}, modified_by = {mod_by} ",
+                 "WHERE location_id = {location_id} ",
+                 .con = con)
+  # Checkout a connection
+  DBI::dbExecute(con, qry)
+  poolReturn(con)
+}
+
 #========================================================
 # Identify reach_point dependencies prior to delete
 #========================================================
