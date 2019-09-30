@@ -12,7 +12,7 @@ dash_leftsidebar = dashboardSidebar(
     menuItem("Import from file", tabName = "file_import", icon = icon("file-upload")),
     menuItem("Data query", tabName = "data_query", icon = icon("share-square")),
     menuItem("Reports", tabName = "reports", icon = icon("microscope")),
-    menuItem("Map edit", tabName = "map_edit", icon = icon("map-marked-alt")),
+    menuItem("Waterbody edit", tabName = "waterbody_edit", icon = icon("map-marked-alt")),
     menuItem("About", tabName = "about", icon = icon("info-circle"))
   )
 )
