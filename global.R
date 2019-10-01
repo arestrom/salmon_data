@@ -99,6 +99,8 @@
 #     for one year previous. Otherwise send request to data manager.
 #     Can also suggest adding new point with one decimal difference
 #     in river_mile. Then leave historical data alone.
+# 30. Reach point map fails for NF and SF Newaukum Rivers...but
+#     appears to work properly for all others. WHY ???
 #
 # AS 2019-09-19
 #==============================================================
