@@ -31,81 +31,67 @@
 #  1. Add animation to buttons as in dt_editor example.
 #  2. Add validate and need functions to eliminate crashes
 #  3. Make sure users are set up with permissions and dsn's.
-#  4. Need to verify deletions are allowed.
-#  5. Allow map modal to be resizable and draggable.
+#  4. Allow map modal to be resizable and draggable.
 #     Try the shinyjqui package:
 #     https://github.com/nanxstats/awesome-shiny-extensions
-#  6. Need screens to allow entry and edit of RMs and encounters
-#     Start with RMs. Use MapEdit. Trigger using RM == "add".
-#  7. Set data_source order using number of surveys in category.
+#  5. Set data_source order using number of surveys in category.
 #     Can do a query of data to arrange by n, then name.
-#  8. Need to use just one function to get survey data....but
-#     also add and include the other fields needed for display
-#     in time and date slots of DT. DONE !!
-#  9. Add modal screen to validate clarity type is chosen along
+#  6. Add modal screen to validate clarity type is chosen along
 #     with clarity_meter
-# 10. For survey, survey intent and waterbody meas, the modal for
+#  7. For survey, survey intent and waterbody meas, the modal for
 #     no row selected does not fire. Only survey comment works.
 #     Adding req to selected_survey_comment_data reactive kills
 #     the modal response. But removing req from others causes
 #     errors to occur in reactives below.
-# 11. Need to use ulid as a unique id for location_coordinates_temp
-#     table. Need to avoid possiblity of any clash.
-# 12. May want to eliminate all cases of "pool" as an argument
-#     in any global functions. Just call check out and check in.
-# 13. Need to dump and reload all lakes data...using new layer
+#  8. Need to dump and reload all lakes data...using new layer
 #     Dale is creating for me. Look for intersecting polygons
 #     before uploading and dump any duplicates. Dale's layer
 #     is omitting the marshland.
-# 14. Need to scan all existing stream geometry for overlapping
+#  9. Need to scan all existing stream geometry for overlapping
 #     segments...then dump those and reset sequences. Need to
 #     add code to look for overlapping segments in scripts to
-#     upload all geometry.
-# 15. Add input$delete observers to all shinyjs disable code
+#     upload all geometry. Join line segments to one line per llid.
+# 10. Add input$delete observers to all shinyjs disable code
 #     See example in redd_substrate_srv code.
-# 16. Check that select inputs are ordered optimally. Use
+# 11. Check that select inputs are ordered optimally. Use
 #     example code in redd_substrate_global as example to
 #     order by levels.
-# 17. If tracking of individual_carcass over time is needed,
+# 12. If tracking of individual_carcass over time is needed,
 #     we can add fish_name_select to fish_encounter ui. Set
 #     up similar to redd-tracking in redd_encounter/location.
-# 18. Need to add code to edit modals to make sure all
+# 13. Need to add code to edit modals to make sure all
 #     required fields have values entered. See fish_location.
 #     Or use validate...need?
-# 19. Inspect Phils front-end for comparison.
-# 20. Wrap all database operations in transactions before
+# 24. Wrap all database operations in transactions before
 #     porting to the fish.spawning_ground schema.
 #     See examples in dbWithTransactions() DBI docs.
-# 21. In survey code...add incomplete_survey_type and
+# 15. In survey code...add incomplete_survey_type and
 #     data_source_unit lut values as selects
-# 22. Add code to limit the number of possible length
+# 16. Add code to limit the number of possible length
 #     measurements to the number of items in length_type
 #     lut list.
-# 23. Verify all screens...especially edit, do not remove
+# 17. Verify all screens...especially edit, do not remove
 #     required values by backspacing and updating.
-# 24. Enable preloader:
+# 18. Enable preloader:
 #     https://cran.r-project.org/web/packages/shinydashboardPlus/vignettes/css-preloader.html
-# 25. Change select for year in rightsidebar to
+# 19. Change select for year in rightsidebar to
 #     shinywidgets pickerSelect multiple.
-# 26. Need css for radius on textInput boxes
-# 27. Get rid of extra channel and orientation lut function
+# 20. Need css for radius on textInput boxes
+# 21. Get rid of extra channel and orientation lut function
 #     for fish in fish_location_global.R. Can reuse
 #     function from redd_location.
-# 28. May want to edit reach_point_srv.R to allow
+# 22. May want to edit reach_point_srv.R to allow
 #     multiple edits to point on reach_point_map
 #     without having to update either lat-lon inputs
 #     or selecting a different row in DT.
-# 29. For editing reach points...only allow editing coordinates
+# 23. For editing reach points...only allow editing coordinates
 #     for one year previous. Otherwise send request to data manager.
-#     Can also suggest adding new point with one decimal difference
-#     in river_mile. Then leave historical data alone.
-# 30. Reach point map fails for NF and SF Newaukum Rivers...FIXED
-#     Needed to set stream_id as id value in leaflet. Then use label
-#     as selected value in rv.
-# 31. Need req and validate code to make sure survey_id is present
+#     Done....Can also suggest adding new point with one decimal
+#     difference in river_mile. Then leave historical data alone.
+# 24. Need req and validate code to make sure survey_id is present
 #     if accordians are open. Getting multiple query failures.
 #
-# AS 2019-09-19
+# AS 2019-10-04
 #==============================================================
 
 # Load libraries
