@@ -7,7 +7,7 @@ wria_streams = reactive({
     mutate(stream_label = paste0(stream_name, ": ", llid)) %>%
     mutate(waterbody_id = tolower(waterbody_id)) %>%
     st_transform(4326) %>%
-    select(waterbody_id, stream_label, geometry)
+    select(waterbody_id, stream_id, stream_label, geometry)
 })
 
 selected_wria = reactive({
@@ -44,7 +44,7 @@ output$stream_map <- renderLeaflet({
                  weight = 3,
                  color = "#0000e6",
                  label = ~stream_label,
-                 layerId = ~stream_label,
+                 layerId = ~stream_id,
                  labelOptions = labelOptions(noHide = FALSE)) %>%
     addProviderTiles("Esri.WorldImagery", group = "Esri World Imagery") %>%
     addProviderTiles("OpenTopoMap", group = "Open Topo Map") %>%
@@ -82,7 +82,7 @@ observeEvent(input$stream_select, {
 
 # Observer to record polylines map click
 observeEvent(input$stream_map_shape_click, {
-  selected_stream$map_stream = input$stream_map_shape_click$id[[1]]
+  selected_stream$map_stream = input$stream_map_shape_click$stream_label[[1]]
 })
 
 # Update Stream input...Don't use req. If you do, select will stay NULL

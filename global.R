@@ -99,8 +99,11 @@
 #     for one year previous. Otherwise send request to data manager.
 #     Can also suggest adding new point with one decimal difference
 #     in river_mile. Then leave historical data alone.
-# 30. Reach point map fails for NF and SF Newaukum Rivers...but
-#     appears to work properly for all others. WHY ???
+# 30. Reach point map fails for NF and SF Newaukum Rivers...FIXED
+#     Needed to set stream_id as id value in leaflet. Then use label
+#     as selected value in rv.
+# 31. Need req and validate code to make sure survey_id is present
+#     if accordians are open. Getting multiple query failures.
 #
 # AS 2019-09-19
 #==============================================================

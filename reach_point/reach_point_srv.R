@@ -228,7 +228,7 @@ observeEvent(input$use_reach_point_map, {
 })
 
 #======================================================================
-# Update fish location coordinate inputs to coordinates selected on map
+# Update coordinate inputs to coordinates selected on map
 #======================================================================
 
 # Update all input values to values in selected row
