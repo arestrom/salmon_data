@@ -72,22 +72,75 @@ observeEvent(input$show_map_stream, {
   )
 })
 
-# selected stream reactive value
-selected_stream <- reactiveValues(map_stream = NULL)
+# # selected stream reactive value
+# selected_stream <- reactiveValues(map_stream = NULL)
 
-# Observer to record drop-down selection
-observeEvent(input$stream_select, {
-  selected_stream$map_stream = input$stream_select
+# # Observer to record drop-down selection
+# observeEvent(input$stream_select, {
+#   selected_stream$map_stream = input$stream_select
+# })
+
+# # Observer to record polylines map click
+# observeEvent(input$stream_map_shape_click, {
+#   stream_names = wria_streams() %>%
+#     st_drop_geometry() %>%
+#     select(stream_id, stream_label) %>%
+#     distinct()
+#   selected_stream_id = input$stream_map_shape_click$id
+#   selected_stream_label = stream_names %>%
+#     filter(stream_id == selected_stream_id) %>%
+#     pull(stream_label)
+#   selected_stream$map_stream = selected_stream_label
+# })
+
+# # Update Stream input...Don't use req. If you do, select will stay NULL
+# observeEvent(input$stream_map_shape_click, {
+#   updated_stream = selected_stream$map_stream
+#   # Update
+#   updateSelectizeInput(session, "stream_select",
+#                        choices = stream_list(),
+#                        selected = updated_stream)
+# })
+
+# Reactive to record drop-down selection
+selected_input_stream = reactive({
+  stream_label = input$stream_select
+  return(stream_label)
 })
 
-# Observer to record polylines map click
-observeEvent(input$stream_map_shape_click, {
-  selected_stream$map_stream = input$stream_map_shape_click$stream_label[[1]]
+# Reactive to record id of stream_clicked
+selected_map_stream_id = reactive({
+  req(input$show_map_stream)
+  req(input$stream_map_shape_click$id)
+  selected_map_stream_id = input$stream_map_shape_click$id
+  # Set click value to null
+  print(selected_map_stream_id)
+  return(selected_map_stream_id)
+})
+
+# Reactive to record polylines map click
+selected_map_stream = reactive({
+  req(input$stream_map_shape_click)
+  stream_names = wria_streams() %>%
+    st_drop_geometry() %>%
+    select(stream_id, stream_label) %>%
+    distinct()
+  selected_map_stream_id = selected_map_stream_id()
+  selected_map_stream_label = stream_names %>%
+    filter(stream_id == selected_map_stream_id) %>%
+    pull(stream_label)
+  return(selected_map_stream_label)
 })
 
 # Update Stream input...Don't use req. If you do, select will stay NULL
 observe({
-  updated_stream = selected_stream$map_stream[[1]]
+  input$stream_map_shape_click
+  input$stream_select
+  if (is.null(input$stream_map_shape_click$id) ) {
+    updated_stream = selected_input_stream()
+  } else {
+    updated_stream = selected_map_stream()
+  }
   # Update
   updateSelectizeInput(session, "stream_select",
                        choices = stream_list(),
@@ -159,5 +212,9 @@ wria_id = reactive({
     distinct() %>%
     pull(wria_id)
 })
+
+# Try suspend idea
+# https://stackoverflow.com/questions/58034174/resetting-modal-when-closing-it-in-a-shiny-app
+# outputOptions(output, "stream_map", suspendWhenHidden = FALSE)
 
 

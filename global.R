@@ -90,6 +90,10 @@
 #     difference in river_mile. Then leave historical data alone.
 # 24. Need req and validate code to make sure survey_id is present
 #     if accordians are open. Getting multiple query failures.
+# 25. Need to reset modal on close: problem with click_data
+#     staying persistent:
+#     https://stackoverflow.com/questions/26863003/how-to-reset-the-bootstrap-modal-when-it-gets-closed-and-open-it-fresh-again
+#     https://stackoverflow.com/questions/31092005/r-leaflet-and-shiny-how-to-clear-map-click-data
 #
 # AS 2019-10-04
 #==============================================================
