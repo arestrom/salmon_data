@@ -2,10 +2,55 @@ ui = dashboardPagePlus(
   shinyjs::useShinyjs(),
   header = dash_header,
   sidebar = dash_leftsidebar,
-  rightsidebar = dash_rightsidebar,
   body = dashboardBody(
     includeCSS("www/salmon_data.css"),
     tabItems(
+      tabItem(tabName = "wria_stream",
+              fluidRow(
+                br(),
+                br(),
+                boxPlus(
+                  title = "Select location and survey year(s)",
+                  closable = FALSE,
+                  collapsible = TRUE,
+                  solidHeader = FALSE,
+                  width = NULL,
+                  collapsed = FALSE,
+                  enable_sidebar = TRUE,
+                  sidebar_width = 25,
+                  sidebar_start_open = TRUE,
+                  sidebar_content = tags$div(
+                    div(id = "sthd_image", img(src = "steelhead.png", width = "60%")),
+                    br(),
+                    br(),
+                    br(),
+                    br(),
+                    div(id = "wria_text", p("Select WRIA and Stream:")),
+                    selectizeInput(inputId = "wria_select",
+                                   label = NULL,
+                                   choices = wria_list,
+                                   selected = "23 Upper Chehalis",
+                                   width = "100%"),
+                    selectizeInput(inputId = "stream_select",
+                                   label = NULL,
+                                   choices = NULL,
+                                   selected = NULL,
+                                   width = "100%"),
+                    br(),
+                    br(),
+                    div(id = "year_text", p("Select survey year(s):")),
+                    selectizeInput(inputId = "year_select",
+                                   label = NULL,
+                                   multiple = TRUE,
+                                   choices = seq(as.integer(format(Sys.Date(), "%Y")) + 1, 1930L),
+                                   #selected = as.integer(format(Sys.Date(), "%Y")),
+                                   selected = 2017,
+                                   width = "100%")
+                  ),
+                  leafletOutput("stream_map", height = "800px")
+                )
+              )
+      ),
       tabItem(tabName = "data_entry",
               fluidRow(
                 br(),
