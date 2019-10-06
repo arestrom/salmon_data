@@ -48,6 +48,12 @@
   font-weight: bold;
 }
 
+#stream_text {
+  text-align: center;
+  font-size: 0.9em;
+  font-weight: bold;
+}
+
 #year_text {
   text-align: center;
   font-size: 0.9em;

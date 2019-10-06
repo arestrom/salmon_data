@@ -38,7 +38,7 @@ output$stream_map <- renderLeaflet({
   m = leaflet() %>%
     setView(lng = selected_wria()$lon[1],
             lat = selected_wria()$lat[1],
-            zoom = 9) %>%
+            zoom = 10) %>%
     addPolylines(data = wria_streams(),
                  group = "Streams",
                  weight = 3,
@@ -48,7 +48,7 @@ output$stream_map <- renderLeaflet({
                  labelOptions = labelOptions(noHide = FALSE)) %>%
     addProviderTiles("Esri.WorldImagery", group = "Esri World Imagery") %>%
     addProviderTiles("OpenTopoMap", group = "Open Topo Map") %>%
-    addLayersControl(position = 'bottomright',
+    addLayersControl(position = 'bottomleft',
                      baseGroups = c("Esri World Imagery", "Open Topo Map"),
                      overlayGroups = c("Streams"),
                      options = layersControlOptions(collapsed = TRUE))
