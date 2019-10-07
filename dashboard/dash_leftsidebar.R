@@ -5,10 +5,10 @@
 dash_leftsidebar = dashboardSidebar(
   width = 175,
   sidebarMenu(
-    id = "left_sidebar",
+    id = "tabs",
     menuItem("Where and when", tabName = "wria_stream", icon = icon("globe")),
     menuItem("Data entry", tabName = "data_entry", icon = icon("database")),
-    menuItem("Add reach point", tabName = "add_reach_point", icon = icon("map-pin")),
+    menuItem("Add reach point", tabName = "reach_point", icon = icon("map-pin")),
     menuItem("Import from mobile", tabName = "mobile_import", icon = icon("sync-alt")),
     menuItem("Import from file", tabName = "file_import", icon = icon("file-upload")),
     menuItem("Data query", tabName = "data_query", icon = icon("share-square")),

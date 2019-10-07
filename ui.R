@@ -13,16 +13,14 @@ ui = dashboardPagePlus(
                 boxPlus(
                   title = "Select Stream and survey years",
                   closable = FALSE,
-                  collapsible = TRUE,
                   solidHeader = FALSE,
-                  width = NULL,
+                  collapsible = TRUE,
                   collapsed = FALSE,
+                  width = 12,
                   enable_sidebar = TRUE,
                   sidebar_width = 25,
                   sidebar_start_open = TRUE,
-                  sidebar_content = tags$div(
-                    wria_stream_ui
-                  ),
+                  sidebar_content = wria_stream_ui,
                   leafletOutput("stream_map", height = "800px")
                 )
               )
@@ -138,7 +136,7 @@ ui = dashboardPagePlus(
                 )
               )
       ),
-      tabItem(tabName = "add_reach_point",
+      tabItem(tabName = "reach_point",
               fluidRow(
                 br(),
                 br(),

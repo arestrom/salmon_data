@@ -91,9 +91,7 @@
 #     for one year previous. Otherwise send request to data manager.
 #     Done....Can also suggest adding new point with one decimal
 #     difference in river_mile. Then leave historical data alone.
-# 24. Need req and validate code to make sure survey_id is present
-#     if accordians are open. Getting multiple query failures.
-# 25. Find css to narrow sidebar in header boxplus.
+# 24. Find css to narrow sidebar in header boxplus.
 #
 # AS 2019-10-04
 #==============================================================
