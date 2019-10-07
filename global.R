@@ -93,6 +93,7 @@
 #     difference in river_mile. Then leave historical data alone.
 # 24. Need req and validate code to make sure survey_id is present
 #     if accordians are open. Getting multiple query failures.
+# 25. Find css to narrow sidebar in header boxplus.
 #
 # AS 2019-10-04
 #==============================================================
