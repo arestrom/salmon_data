@@ -2,30 +2,27 @@
 # Application to edit data for spawning_ground database
 #
 # Notes:
-#  1. Update portion now works with pool.
-#  2. Very strange error using the pool and dbplyr query for
+#  1. Very strange error using the pool and dbplyr query for
 #     get_beaches(). I had to wrap output with as.data.frame().
 #     I did not get this with the original standard odbc query.
-#     Must be something weird with dbplyr and pool. Each row
-#     of the datatable held all rows.
-#  3. dbplyr does not recognize geometry columns. Need standard
+#     Each row of the datatable held all rows. Probably related
+#     to difference in tibble behavior. See:
+#     https://onunicornsandgenes.blog/2019/10/06/using-r-when-weird-errors-occur-in-packages-that-used-to-work-check-that-youre-not-feeding-them-a-tibble/
+#  2. dbplyr does not recognize geometry columns. Need standard
 #     text query. Can use odbc package + sf and pull out lat lons.
-#  4. For posible use with bs_accordion:
-#     https://stackoverflow.com/questions/53642157/shiny-how-to-detect-which-accordion-elements-is-selected/53649246
-#  5. For automating right sidebar:
-#     https://community.rstudio.com/t/automatic-rightsidebar-popup-when-menuitem-is-clicked-in-shinydashboardplus/16574
-#  6. For DT updates: https://stackoverflow.com/questions/56879672/how-to-replacedata-in-dt-rendered-in-r-shiny-using-the-datatable-function
+#  3. For DT updates: https://stackoverflow.com/questions/56879672/how-to-replacedata-in-dt-rendered-in-r-shiny-using-the-datatable-function
 #     https://dev.to/awwsmm/reactive-datatables-in-r-with-persistent-filters-l26
-#  7. Can not use reactives for pulling data for use in DTs
+#  4. Can not use reactives for pulling data for use in DTs
 #     They do not fire properly to update tables. Just use
 #     query functions from global directly. I tested by just
 #     putting a reactive between functions in beach_data and
-#     got failures right away.
-#  8. Do not use rownames = FALSE in DT. Data will not reload
+#     got failures right away. Probably should do thorough test
+#     of eventReactives.
+#  5. Do not use rownames = FALSE in DT. Data will not reload
 #     when using replaceData() function.
-#  9. For sourcing server code: https://r-bar.net/organize-r-shiny-list-source/
+#  6. For sourcing server code: https://r-bar.net/organize-r-shiny-list-source/
 #                               https://shiny.rstudio.com/articles/scoping.html
-# 10. For wria_stream code to work...needed to use eventReactive(), Solved problem
+#  7. For wria_stream code to work...needed to use eventReactive(), Solved problem
 #     with weird firing of querys and leaked pool.
 #
 #
@@ -33,7 +30,7 @@
 #  1. Add animation to buttons as in dt_editor example.
 #  2. Add validate and need functions to eliminate crashes
 #  3. Make sure users are set up with permissions and dsn's.
-#  4. Allow map modal to be resizable and draggable.
+#  4. Allow map modals to be resizable and draggable.
 #     Try the shinyjqui package:
 #     https://github.com/nanxstats/awesome-shiny-extensions
 #  5. Set data_source order using number of surveys in category.
@@ -76,7 +73,7 @@
 #     required values by backspacing and updating.
 # 18. Enable preloader:
 #     https://cran.r-project.org/web/packages/shinydashboardPlus/vignettes/css-preloader.html
-# 19. Change select for year in rightsidebar to
+# 19. Change select for year in wria_stream_ui.R to
 #     shinywidgets pickerSelect multiple.
 # 20. Need css for radius on textInput boxes
 # 21. Get rid of extra channel and orientation lut function
@@ -123,7 +120,6 @@ options("connectionObserver" = NULL)
 #reactlogShow()
 
 # Read .rds data
-#wria_list = readRDS("www/wria_list.rds")
 wria_polys = readRDS("www/wria_polys.rds")
 
 # Read content definitions of data-entry screens
