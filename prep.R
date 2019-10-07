@@ -143,6 +143,24 @@ stream_list = stream_data %>%
   select(stream_label) %>%
   distinct()
 
+get_survey_years = function(waterbody_id) {
+  qry = glue("select distinct date_part('year', s.survey_datetime) as survey_year ",
+             "from survey as s ",
+             "inner join location as up_loc on s.upper_end_point_id = up_loc.location_id ",
+             "inner join location as lo_loc on s.lower_end_point_id = lo_loc.location_id ",
+             "where up_loc.waterbody_id = '{waterbody_id}' ",
+             "or lo_loc.waterbody_id = '{waterbody_id}' ",
+             "order by survey_year")
+  con = poolCheckout(pool)
+  survey_years = DBI::dbGetQuery(con, qry)
+  poolReturn(con)
+  return(survey_years)
+}
+
+# Test
+waterbody_id = '3fd8a43f-505c-4e1b-9474-94046099af62'
+get_survey_years(waterbody_id)
+
 
 # Function to close pool
 onStop(function() {

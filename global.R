@@ -25,6 +25,8 @@
 #     when using replaceData() function.
 #  9. For sourcing server code: https://r-bar.net/organize-r-shiny-list-source/
 #                               https://shiny.rstudio.com/articles/scoping.html
+# 10. For wria_stream code to work...needed to use eventReactive(), Solved problem
+#     with weird firing of querys and leaked pool.
 #
 #
 # ToDo:
@@ -83,17 +85,14 @@
 # 22. May want to edit reach_point_srv.R to allow
 #     multiple edits to point on reach_point_map
 #     without having to update either lat-lon inputs
-#     or selecting a different row in DT.
+#     or selecting a different row in DT. Could use
+#     model for wria_stream code instead of modal.
 # 23. For editing reach points...only allow editing coordinates
 #     for one year previous. Otherwise send request to data manager.
 #     Done....Can also suggest adding new point with one decimal
 #     difference in river_mile. Then leave historical data alone.
 # 24. Need req and validate code to make sure survey_id is present
 #     if accordians are open. Getting multiple query failures.
-# 25. Modify WRIA query to only show WRIAs in select that have
-#     streams loaded.
-# 26. For stream_select query, do an intersect query so any streams
-#     that intersect the WRIA are shown.
 #
 # AS 2019-10-04
 #==============================================================
@@ -125,7 +124,7 @@ options("connectionObserver" = NULL)
 #reactlogShow()
 
 # Read .rds data
-wria_list = readRDS("www/wria_list.rds")
+#wria_list = readRDS("www/wria_list.rds")
 wria_polys = readRDS("www/wria_polys.rds")
 
 # Read content definitions of data-entry screens

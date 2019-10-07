@@ -1,4 +1,17 @@
 
+get_wrias = function() {
+  qry = glue("select distinct wr.wria_code || ' ' || wr.wria_description as wria_name ",
+             "from waterbody_lut as wb ",
+             "inner join stream as st on wb.waterbody_id = st.waterbody_id ",
+             "inner join wria_lut as wr on st_intersects(st.geom, wr.geom) ",
+             "order by wria_name")
+  con = poolCheckout(pool)
+  wria_list = DBI::dbGetQuery(con, qry) %>%
+    pull(wria_name)
+  poolReturn(con)
+  return(wria_list)
+}
+
 get_streams = function(chosen_wria) {
   qry = glue("select distinct wb.waterbody_id, wb.waterbody_display_name as stream_name, ",
              "wb.waterbody_name, wb.latitude_longitude_id as llid, ",
@@ -6,13 +19,30 @@ get_streams = function(chosen_wria) {
              "wr.wria_code || ' ' || wr.wria_description as wria_name, st.geom as geometry ",
              "from waterbody_lut as wb ",
              "inner join stream as st on wb.waterbody_id = st.waterbody_id ",
-             "inner join wria_lut as wr on st_intersects(st.geom, wr.geom)")
+             "inner join wria_lut as wr on st_intersects(st.geom, wr.geom) ",
+             "order by stream_name")
   con = poolCheckout(pool)
   streams_st = sf::st_read(con, query = qry)
   poolReturn(con)
   streams_st = streams_st %>%
     filter(wria_name %in% chosen_wria)
   return(streams_st)
+}
+
+get_data_years = function(waterbody_id) {
+  qry = glue("select distinct date_part('year', s.survey_datetime) as data_year ",
+             "from survey as s ",
+             "inner join location as up_loc on s.upper_end_point_id = up_loc.location_id ",
+             "inner join location as lo_loc on s.lower_end_point_id = lo_loc.location_id ",
+             "where up_loc.waterbody_id = '{waterbody_id}' ",
+             "or lo_loc.waterbody_id = '{waterbody_id}' ",
+             "order by data_year")
+  con = poolCheckout(pool)
+  year_list = DBI::dbGetQuery(con, qry) %>%
+    mutate(data_year = as.character(data_year)) %>%
+    pull(data_year)
+  poolReturn(con)
+  return(year_list)
 }
 
 get_end_points = function(waterbody_id) {
