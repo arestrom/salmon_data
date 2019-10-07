@@ -1,14 +1,86 @@
+#========================================================
+# Get Initial WRIA
+#========================================================
+
+# wria_select
+output$wria_select = renderUI({
+  wria_list = get_wrias()
+  selectizeInput("wria_select", label = NULL,
+                 choices = wria_list, selected = "23 Upper Chehalis",
+                 width = "100%")
+})
+
+#========================================================
+# Get initial set of streams for selected wria
+#========================================================
+
 # Get streams in wria
 wria_streams = reactive({
   req(input$wria_select)
-  get_streams(chosen_wria = input$wria_select) %>%
+  streams = get_streams(chosen_wria = input$wria_select) %>%
     mutate(stream_label = if_else(is.na(stream_name) & !is.na(waterbody_name),
                                   waterbody_name, stream_name)) %>%
     mutate(stream_label = paste0(stream_name, ": ", llid)) %>%
     mutate(waterbody_id = tolower(waterbody_id)) %>%
     st_transform(4326) %>%
     select(waterbody_id, stream_id, stream_label, geometry)
+  return(streams)
 })
+
+# Pull out stream_list from wria_streams
+stream_list = reactive({
+  stream_data = wria_streams() %>%
+    st_drop_geometry() %>%
+    select(stream_label) %>%
+    arrange(stream_label) %>%
+    distinct()
+  return(stream_data$stream_label)
+})
+
+# stream_select
+output$stream_select = renderUI({
+  selectizeInput("stream_select", label = NULL,
+                 choices = stream_list(), selected = stream_list()[1],
+                 width = "100%")
+})
+
+#========================================================
+# Get initial set of years for selected stream
+#========================================================
+
+# Filter to selected stream
+waterbody_id = eventReactive(input$stream_select, {
+  req(input$stream_select)
+  stream_data = wria_streams() %>%
+    st_drop_geometry() %>%
+    filter(stream_label == input$stream_select) %>%
+    select(waterbody_id) %>%
+    distinct() %>%
+    pull(waterbody_id)
+  return(stream_data)
+})
+
+waterbody_survey_years = eventReactive(input$stream_select, {
+  year_list = get_data_years(waterbody_id())
+  if (length(year_list) == 0 ) {
+    year_list = "No surveys"
+  } else {
+    year_list = year_list
+  }
+  return(year_list)
+})
+
+# year_select
+output$year_select = renderUI({
+  year_list = waterbody_survey_years()
+  selectizeInput("year_select", label = NULL,
+                 choices = year_list, selected = NULL,
+                 width = "100%")
+})
+
+#========================================================
+# Get data for initial map
+#========================================================
 
 selected_wria = reactive({
   req(input$wria_select)
@@ -23,22 +95,13 @@ selected_wria = reactive({
   return(zoom_wria)
 })
 
-# Pull out stream_list from wria_streams
-stream_list = reactive({
-  stream_data = wria_streams() %>%
-    st_drop_geometry() %>%
-    select(stream_label) %>%
-    arrange(stream_label) %>%
-    distinct()
-  return(stream_data$stream_label)
-})
-
 # Output leaflet bidn map
 output$stream_map <- renderLeaflet({
+  req(input$wria_select)
   m = leaflet() %>%
     setView(lng = selected_wria()$lon[1],
             lat = selected_wria()$lat[1],
-            zoom = 9) %>%
+            zoom = 10) %>%
     addPolylines(data = wria_streams(),
                  group = "Streams",
                  weight = 3,
@@ -48,77 +111,25 @@ output$stream_map <- renderLeaflet({
                  labelOptions = labelOptions(noHide = FALSE)) %>%
     addProviderTiles("Esri.WorldImagery", group = "Esri World Imagery") %>%
     addProviderTiles("OpenTopoMap", group = "Open Topo Map") %>%
-    addLayersControl(position = 'bottomright',
+    addLayersControl(position = 'bottomleft',
                      baseGroups = c("Esri World Imagery", "Open Topo Map"),
                      overlayGroups = c("Streams"),
                      options = layersControlOptions(collapsed = TRUE))
   m
 })
 
-# Display the map modal to select stream
-observeEvent(input$show_map_stream, {
-  showModal(
-    tags$div(id = "map_stream_modal",
-             modalDialog (
-               size = 'l',
-               title = "Click on stream to select",
-               fluidPage (
-                 leafletOutput("stream_map", height = "700px")
-               ),
-               easyClose = TRUE,
-               footer = NULL
-             )
-    )
-  )
-})
+#========================================================
+# Update stream select if map is clicked
+#========================================================
 
-# # selected stream reactive value
-# selected_stream <- reactiveValues(map_stream = NULL)
-
-# # Observer to record drop-down selection
-# observeEvent(input$stream_select, {
-#   selected_stream$map_stream = input$stream_select
-# })
-
-# # Observer to record polylines map click
-# observeEvent(input$stream_map_shape_click, {
-#   stream_names = wria_streams() %>%
-#     st_drop_geometry() %>%
-#     select(stream_id, stream_label) %>%
-#     distinct()
-#   selected_stream_id = input$stream_map_shape_click$id
-#   selected_stream_label = stream_names %>%
-#     filter(stream_id == selected_stream_id) %>%
-#     pull(stream_label)
-#   selected_stream$map_stream = selected_stream_label
-# })
-
-# # Update Stream input...Don't use req. If you do, select will stay NULL
-# observeEvent(input$stream_map_shape_click, {
-#   updated_stream = selected_stream$map_stream
-#   # Update
-#   updateSelectizeInput(session, "stream_select",
-#                        choices = stream_list(),
-#                        selected = updated_stream)
-# })
-
-# Reactive to record drop-down selection
-selected_input_stream = reactive({
-  stream_label = input$stream_select
-  return(stream_label)
-})
-
-# Reactive to record id of stream_clicked
+# Reactive to record stream_id of stream_clicked
 selected_map_stream_id = reactive({
-  req(input$show_map_stream)
   req(input$stream_map_shape_click$id)
   selected_map_stream_id = input$stream_map_shape_click$id
-  # Set click value to null
-  print(selected_map_stream_id)
   return(selected_map_stream_id)
 })
 
-# Reactive to record polylines map click
+# Reactive to record stream_label of stream_clicked
 selected_map_stream = reactive({
   req(input$stream_map_shape_click)
   stream_names = wria_streams() %>%
@@ -132,30 +143,13 @@ selected_map_stream = reactive({
   return(selected_map_stream_label)
 })
 
-# Update Stream input...Don't use req. If you do, select will stay NULL
-observe({
-  input$stream_map_shape_click
-  input$stream_select
-  if (is.null(input$stream_map_shape_click$id) ) {
-    updated_stream = selected_input_stream()
-  } else {
-    updated_stream = selected_map_stream()
-  }
+# Update Stream input if stream on map is clicked
+observeEvent(input$stream_map_shape_click, {
+  clicked_stream = selected_map_stream()
   # Update
   updateSelectizeInput(session, "stream_select",
                        choices = stream_list(),
-                       selected = updated_stream)
-})
-
-# Filter to selected stream
-waterbody_id = reactive({
-  req(input$stream_select)
-  stream_data = wria_streams() %>%
-    st_drop_geometry() %>%
-    filter(stream_label == input$stream_select) %>%
-    select(waterbody_id) %>%
-    distinct() %>%
-    pull(waterbody_id)
+                       selected = clicked_stream)
 })
 
 # Get list of river mile end_points for waterbody_id
@@ -168,15 +162,14 @@ rm_list = reactive({
 # Generate year values as a reactive
 year_vals = reactive({
   req(input$year_select)
+  req(!input$year_select == "No surveys")
   year_vals = paste0(input$year_select, collapse = ", ")
   return(year_vals)
 })
 
-# Update upper_rm select...use of req here means select stays null
+# Update river_mile selects
 observe({
-  rm_list()
   updated_rm_list = rm_list()$rm_label
-  #updated_rm_list = c(updated_rm_list, "add")
   # Update upper rm
   updateSelectizeInput(session, "upper_rm_select",
                        choices = updated_rm_list,
@@ -212,9 +205,4 @@ wria_id = reactive({
     distinct() %>%
     pull(wria_id)
 })
-
-# Try suspend idea
-# https://stackoverflow.com/questions/58034174/resetting-modal-when-closing-it-in-a-shiny-app
-# outputOptions(output, "stream_map", suspendWhenHidden = FALSE)
-
 

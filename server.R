@@ -4,7 +4,7 @@
 
 # Create the Shiny server
 server = function(input, output, session) {
-  source("dashboard/wria_stream_srv.R", local = TRUE)
+  source("wria_stream/wria_stream_srv.R", local = TRUE)
   source("survey/survey_srv.R", local = TRUE)
   source("survey_comment/survey_comment_srv.R", local = TRUE)
   source("survey_intent/survey_intent_srv.R", local = TRUE)

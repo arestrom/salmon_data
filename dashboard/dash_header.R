@@ -7,7 +7,7 @@ dash_header = dashboardHeaderPlus(
   title = tagList(
     span(class = "logo-lg", "Salmon data"),
     img(src = "ShinyDashboardPlus.svg")),
-  enable_rightsidebar = TRUE,
+  enable_rightsidebar = FALSE,
   rightSidebarIcon = "bars"
 )
 

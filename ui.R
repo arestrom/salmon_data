@@ -1,11 +1,32 @@
 ui = dashboardPagePlus(
   shinyjs::useShinyjs(),
+  enable_preloader = TRUE,
   header = dash_header,
   sidebar = dash_leftsidebar,
-  rightsidebar = dash_rightsidebar,
   body = dashboardBody(
     includeCSS("www/salmon_data.css"),
     tabItems(
+      tabItem(tabName = "wria_stream",
+              fluidRow(
+                br(),
+                br(),
+                boxPlus(
+                  title = "Select Stream and survey years",
+                  closable = FALSE,
+                  collapsible = TRUE,
+                  solidHeader = FALSE,
+                  width = NULL,
+                  collapsed = FALSE,
+                  enable_sidebar = TRUE,
+                  sidebar_width = 25,
+                  sidebar_start_open = TRUE,
+                  sidebar_content = tags$div(
+                    wria_stream_ui
+                  ),
+                  leafletOutput("stream_map", height = "800px")
+                )
+              )
+      ),
       tabItem(tabName = "data_entry",
               fluidRow(
                 br(),
