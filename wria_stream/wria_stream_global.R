@@ -13,7 +13,7 @@ get_wrias = function() {
 }
 
 get_streams = function(chosen_wria) {
-  qry = glue("select distinct wb.waterbody_id, wb.waterbody_display_name as stream_name, ",
+  qry = glue("select distinct wb.waterbody_id, wb.waterbody_name as stream_name, ",
              "wb.waterbody_name, wb.latitude_longitude_id as llid, ",
              "wb.stream_catalog_code as cat_code, wr.wria_id, st.stream_id, ",
              "wr.wria_code || ' ' || wr.wria_description as wria_name, st.geom as geometry ",
@@ -36,7 +36,7 @@ get_data_years = function(waterbody_id) {
              "inner join location as lo_loc on s.lower_end_point_id = lo_loc.location_id ",
              "where up_loc.waterbody_id = '{waterbody_id}' ",
              "or lo_loc.waterbody_id = '{waterbody_id}' ",
-             "order by data_year")
+             "order by data_year desc")
   con = poolCheckout(pool)
   year_list = DBI::dbGetQuery(con, qry) %>%
     mutate(data_year = as.character(data_year)) %>%
