@@ -89,6 +89,12 @@
 #     Done....Can also suggest adding new point with one decimal
 #     difference in river_mile. Then leave historical data alone.
 # 24. Find css to narrow sidebar in header boxplus.
+# 25. Should survey_year be multi-select? Currently on works as single.
+# 26. Fix Coulter Creek survey year 3016.
+# 27. Why are there extra dead entries for zero counts. Need to fix.
+# 28. Fix crash when changing top-level row selects while lower highlighted.
+#     Query for fish_location is getting NA for fish_encounter_id.
+#     Maybe just req(!is.na(fish_encounter_id)) ???
 #
 # AS 2019-10-04
 #==============================================================

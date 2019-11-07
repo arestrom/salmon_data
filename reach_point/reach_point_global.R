@@ -40,7 +40,7 @@ get_reach_point = function(waterbody_id) {
            latitude, longitude, horiz_accuracy, reach_point_description,
            created_date, created_dt, created_by, modified_date, modified_dt,
            modified_by) %>%
-    arrange(created_date)
+    arrange(river_mile)
   return(reach_points)
 }
 
