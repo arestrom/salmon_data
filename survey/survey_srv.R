@@ -31,16 +31,9 @@ output$completion_select = renderUI({
 # Primary DT datatable for database
 output$surveys = renderDT({
   req(input$year_select)
-  req(!input$year_select == "No surveys")
-  req(input$tabs == "data_entry")
-=======
-# Primary DT datatable for database
-output$surveys = renderDT({
-  req(input$year_select)
   req(!year_vals() == "No surveys")
   req(input$tabs == "data_entry")
   req(nchar(waterbody_id() == 36))
->>>>>>> 081b5bb33c08c0b959155ace72cdf6ef906e5f9b
   survey_title = glue("Surveys for {input$stream_select} in {year_vals()}")
   survey_data = get_surveys(waterbody_id(), year_vals()) %>%
     mutate(start_time = start_time_dt, end_time = end_time_dt) %>%
@@ -90,9 +83,7 @@ selected_survey_data = reactive({
 <<<<<<< HEAD
   req(!is.na(waterbody_id()))
   selected_survey = NULL
-=======
   req(nchar(waterbody_id() == 36))
->>>>>>> 081b5bb33c08c0b959155ace72cdf6ef906e5f9b
   surveys = get_surveys(waterbody_id(), year_vals())
   survey_row = input$surveys_rows_selected
   selected_survey = tibble(survey_id = surveys$survey_id[survey_row],
