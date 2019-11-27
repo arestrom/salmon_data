@@ -80,7 +80,6 @@ selected_survey_data = reactive({
   req(input$year_select)
   req(!year_vals() == "No surveys")
   req(input$tabs == "data_entry")
-<<<<<<< HEAD
   req(!is.na(waterbody_id()))
   selected_survey = NULL
   req(nchar(waterbody_id() == 36))
