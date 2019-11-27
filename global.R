@@ -92,9 +92,11 @@
 # 25. Should survey_year be multi-select? Currently on works as single.
 # 26. Fix Coulter Creek survey year 3016.
 # 27. Why are there extra dead entries for zero counts. Need to fix.
-# 28. Fix crash when changing top-level row selects while lower highlighted.
-#     Query for fish_location is getting NA for fish_encounter_id.
-#     Maybe just req(!is.na(fish_encounter_id)) ???
+# 28. Fix crash when changing top-level row selects. Repro example:
+#     Select Alder 2018 1/9/18. Then switch to Absher 2017. Crash occurs
+#     when tab moves back to data_entry. There are no surveys for Absher
+#     In 2018. Need to see what values are for rows_selected, year, and survey_id.
+#     May need to reset values to null when changing tabs or upper level selects.
 #
 # AS 2019-10-04
 #==============================================================
