@@ -28,11 +28,6 @@ output$completion_select = renderUI({
                  width = "150px")
 })
 
-<<<<<<< HEAD
-eventReactive(input$tabs, {
-  print(input$tabs)
-})
-
 # Primary DT datatable for database
 output$surveys = renderDT({
   req(input$year_select)
