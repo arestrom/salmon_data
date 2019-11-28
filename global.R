@@ -31,7 +31,7 @@
 #  2. Add validate and need functions to eliminate crashes
 #  3. Make sure users are set up with permissions and dsn's.
 #  4. Allow map modals to be resizable and draggable.
-#     Try the shinyjqui package:
+#     Try the shinyjqui or sortable package:
 #     https://github.com/nanxstats/awesome-shiny-extensions
 #  5. Set data_source order using number of surveys in category.
 #     Can do a query of data to arrange by n, then name.
@@ -61,7 +61,7 @@
 # 13. Need to add code to edit modals to make sure all
 #     required fields have values entered. See fish_location.
 #     Or use validate...need?
-# 24. Wrap all database operations in transactions before
+# 14. Wrap all database operations in transactions before
 #     porting to the fish.spawning_ground schema.
 #     See examples in dbWithTransactions() DBI docs.
 # 15. In survey code...add incomplete_survey_type and
@@ -71,33 +71,27 @@
 #     lut list.
 # 17. Verify all screens...especially edit, do not remove
 #     required values by backspacing and updating.
-# 18. Enable preloader:
-#     https://cran.r-project.org/web/packages/shinydashboardPlus/vignettes/css-preloader.html
-# 19. Change select for year in wria_stream_ui.R to
+# 18. Change select for year in wria_stream_ui.R to
 #     shinywidgets pickerSelect multiple.
-# 20. Need css for radius on textInput boxes
-# 21. Get rid of extra channel and orientation lut function
+# 19. Need css for radius on textInput boxes
+# 20. Get rid of extra channel and orientation lut function
 #     for fish in fish_location_global.R. Can reuse
 #     function from redd_location.
-# 22. May want to edit reach_point_srv.R to allow
+# 21. May want to edit reach_point_srv.R to allow
 #     multiple edits to point on reach_point_map
 #     without having to update either lat-lon inputs
 #     or selecting a different row in DT. Could use
 #     model for wria_stream code instead of modal.
-# 23. For editing reach points...only allow editing coordinates
+# 22. For editing reach points...only allow editing coordinates
 #     for one year previous. Otherwise send request to data manager.
 #     Done....Can also suggest adding new point with one decimal
 #     difference in river_mile. Then leave historical data alone.
-# 24. Find css to narrow sidebar in header boxplus.
-# 25. Should survey_year be multi-select? Currently on works as single.
-# 26. Fix Coulter Creek survey year 3016.
-# 27. Why are there extra dead entries for zero counts. Need to fix.
-# 28. Fix crash when changing top-level row selects. Repro example:
-#     Select Alder 2018 1/9/18. Then switch to Absher 2017. Crash occurs
-#     when tab moves back to data_entry. There are no surveys for Absher
-#     In 2018. Need to see what values are for rows_selected, year, and survey_id.
-#     May need to reset values to null when changing tabs or upper level selects.
-#
+# 23. Find css to narrow sidebar in header boxplus.
+# 24. Should survey_year be multi-select? Currently on works as single.
+# 25. Verify Coulter Creek survey year 3016 is fixed in Fish Prod
+# 26. Fix encoding of age code in select. Not rendering correctly.
+
+
 # AS 2019-10-04
 #==============================================================
 
