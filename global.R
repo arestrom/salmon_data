@@ -87,9 +87,17 @@
 #     Done....Can also suggest adding new point with one decimal
 #     difference in river_mile. Then leave historical data alone.
 # 23. Find css to narrow sidebar in header boxplus.
-# 24. Should survey_year be multi-select? Currently on works as single.
-# 25. Verify Coulter Creek survey year 3016 is fixed in Fish Prod
-# 26. Fix encoding of age code in select. Not rendering correctly.
+# 24. Fix encoding of age code in select. Not rendering correctly.
+# 25. Getting crash inside data_entry screen. Select Alder 2019.
+#     Select page 6 row 27. Open fish_encounter and select a row.
+#     Then switch to row 28 and crash occurs.
+# 26. Add code to pop up warning modal if no survey is selected
+#     when trying to insert a new survey after switching locations.
+#     Previous selections enabled two surveys in insert modal even
+#     when no survey row was selected in the current DT. Need to
+#     flush out old values.
+# 27. Am getting duplicated values when trying to insert new
+#     surveys. Need to figure out why....
 
 
 # AS 2019-10-04
