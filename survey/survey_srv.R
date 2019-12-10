@@ -31,9 +31,10 @@ output$completion_select = renderUI({
 # Primary DT datatable for database
 output$surveys = renderDT({
   req(input$year_select)
-  req(!year_vals() == "No surveys")
-  req(input$tabs == "data_entry")
-  req(nchar(waterbody_id() == 36))
+  req(input$stream_select)
+  # req(!year_vals() == "No surveys")
+  # req(input$tabs == "data_entry")
+  # req(nchar(waterbody_id() == 36))
   survey_title = glue("Surveys for {input$stream_select} in {year_vals()}")
   survey_data = get_surveys(waterbody_id(), year_vals()) %>%
     mutate(start_time = start_time_dt, end_time = end_time_dt) %>%
@@ -77,12 +78,12 @@ observeEvent(input$tabs, {
 # Create reactive to collect input values for update and delete actions
 selected_survey_data = reactive({
   req(input$surveys_rows_selected)
-  req(input$year_select)
-  req(!year_vals() == "No surveys")
-  req(input$tabs == "data_entry")
-  req(!is.na(waterbody_id()))
-  selected_survey = NULL
-  req(nchar(waterbody_id() == 36))
+  # req(input$year_select)
+  # req(!year_vals() == "No surveys")
+  # req(input$tabs == "data_entry")
+  # req(!is.na(waterbody_id()))
+  # selected_survey = NULL
+  # req(nchar(waterbody_id() == 36))
   surveys = get_surveys(waterbody_id(), year_vals())
   survey_row = input$surveys_rows_selected
   selected_survey = tibble(survey_id = surveys$survey_id[survey_row],
@@ -101,6 +102,8 @@ selected_survey_data = reactive({
                            created_by = surveys$created_by[survey_row],
                            modified_date = surveys$modified_date[survey_row],
                            modified_by = surveys$modified_by[survey_row])
+  print("n rows in selected_survey_data")
+  print(nrow(selected_survey))
   return(selected_survey)
 })
 
@@ -173,6 +176,10 @@ survey_create = reactive({
       filter(rm_label == up_rm_input) %>%
       pull(location_id)
   }
+  print("n upper end point")
+  print(length(upper_end_point_id))
+  print("vals upper end point")
+  print(upper_end_point_id)
   lo_rm_input = input$lower_rm_select
   if ( lo_rm_input == "" ) {
     lower_end_point_id = NA
@@ -181,6 +188,10 @@ survey_create = reactive({
       filter(rm_label == lo_rm_input) %>%
       pull(location_id)
   }
+  print("n lower end point")
+  print(length(lower_end_point_id))
+  print("vals lower end point")
+  print(lower_end_point_id)
   # Time values
   start_time = format(input$start_time_select)
   if (nchar(start_time) < 16) { start_time = NA_character_ }
@@ -220,6 +231,8 @@ survey_create = reactive({
   new_survey = new_survey %>%
     mutate(observer = if_else(is.na(observer) | observer == "", NA_character_, observer)) %>%
     mutate(submitter = if_else(is.na(submitter) | submitter == "", NA_character_, submitter))
+  print("n rows in survey_create()")
+  print(nrow(new_survey))
   return(new_survey)
 })
 
