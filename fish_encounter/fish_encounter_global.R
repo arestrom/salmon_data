@@ -23,7 +23,6 @@ get_fish_encounter = function(survey_event_id) {
   fish_encounters = DBI::dbGetQuery(con, qry)
   poolReturn(con)
   fish_encounters = fish_encounters %>%
-    mutate(fish_encounter_id = tolower(fish_encounter_id)) %>%
     mutate(fish_encounter_time = with_tz(fish_encounter_time, tzone = "America/Los_Angeles")) %>%
     mutate(fish_encounter_dt = format(fish_encounter_time, "%H:%M")) %>%
     mutate(prev_counted = if_else(prev_counted == "0", "No", "Yes")) %>%
@@ -49,7 +48,6 @@ get_fish_status = function() {
              "where obsolete_datetime is null")
   con = poolCheckout(pool)
   fish_status_list = DBI::dbGetQuery(con, qry) %>%
-    mutate(fish_status_id = tolower(fish_status_id)) %>%
     arrange(fish_status) %>%
     select(fish_status_id, fish_status)
   poolReturn(con)
@@ -63,7 +61,6 @@ get_sex = function() {
              "where obsolete_datetime is null")
   con = poolCheckout(pool)
   sex_list = DBI::dbGetQuery(con, qry) %>%
-    mutate(sex_id = tolower(sex_id)) %>%
     arrange(sex) %>%
     select(sex_id, sex)
   poolReturn(con)
@@ -77,7 +74,6 @@ get_maturity = function() {
              "where obsolete_datetime is null")
   con = poolCheckout(pool)
   maturity_list = DBI::dbGetQuery(con, qry) %>%
-    mutate(maturity_id = tolower(maturity_id)) %>%
     arrange(maturity) %>%
     select(maturity_id, maturity)
   poolReturn(con)
@@ -91,7 +87,6 @@ get_origin = function() {
              "where obsolete_datetime is null")
   con = poolCheckout(pool)
   origin_list = DBI::dbGetQuery(con, qry) %>%
-    mutate(origin_id = tolower(origin_id)) %>%
     arrange(origin) %>%
     select(origin_id, origin)
   poolReturn(con)
@@ -105,7 +100,6 @@ get_cwt_status = function() {
              "where obsolete_datetime is null")
   con = poolCheckout(pool)
   cwt_status_list = DBI::dbGetQuery(con, qry) %>%
-    mutate(cwt_detection_status_id = tolower(cwt_detection_status_id)) %>%
     mutate(cwt_status = if_else(cwt_status == "Coded-wire tag undetermined, e.g., no head",
                                 "Tag undetermined, e.g., no head", cwt_status)) %>%
     arrange(cwt_status) %>%
@@ -121,7 +115,6 @@ get_clip_status = function() {
              "where obsolete_datetime is null")
   con = poolCheckout(pool)
   clip_status_list = DBI::dbGetQuery(con, qry) %>%
-    mutate(adipose_clip_status_id = tolower(adipose_clip_status_id)) %>%
     mutate(clip_status = if_else(clip_status == "Adipose fin checked but undetermined, e.g., too deteriorated",
                                  "Checked but UD, e.g., decayed", clip_status)) %>%
     arrange(clip_status) %>%
@@ -137,7 +130,6 @@ get_fish_behavior = function() {
              "where obsolete_datetime is null")
   con = poolCheckout(pool)
   fish_behavior_list = DBI::dbGetQuery(con, qry) %>%
-    mutate(fish_behavior_type_id = tolower(fish_behavior_type_id)) %>%
     arrange(fish_behavior) %>%
     select(fish_behavior_type_id, fish_behavior)
   poolReturn(con)
@@ -183,7 +175,7 @@ fish_encounter_insert = function(new_fish_encounter_values) {
                   "previously_counted_indicator, ",
                   "created_by) ",
                   "VALUES (",
-                  "?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)"))
+                  "$1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13)"))
   dbBind(insert_result, list(survey_event_id, fish_status_id, sex_id,
                              maturity_id, origin_id, cwt_detection_status_id,
                              adipose_clip_status_id, fish_behavior_type_id,
@@ -220,19 +212,19 @@ fish_encounter_update = function(fish_encounter_edit_values) {
   con = poolCheckout(pool)
   update_result = dbSendStatement(
     con, glue_sql("UPDATE fish_encounter SET ",
-                  "fish_status_id = ?, ",
-                  "sex_id = ?, ",
-                  "maturity_id = ?, ",
-                  "origin_id = ?, ",
-                  "cwt_detection_status_id = ?, ",
-                  "adipose_clip_status_id = ?, ",
-                  "fish_behavior_type_id = ?, ",
-                  "fish_encounter_datetime = ?, ",
-                  "fish_count = ?, ",
-                  "previously_counted_indicator = ?, ",
-                  "modified_datetime = ?, ",
-                  "modified_by = ? ",
-                  "where fish_encounter_id = ?"))
+                  "fish_status_id = $1, ",
+                  "sex_id = $2, ",
+                  "maturity_id = $3, ",
+                  "origin_id = $4, ",
+                  "cwt_detection_status_id = $5, ",
+                  "adipose_clip_status_id = $6, ",
+                  "fish_behavior_type_id = $7, ",
+                  "fish_encounter_datetime = $8, ",
+                  "fish_count = $9, ",
+                  "previously_counted_indicator = $10, ",
+                  "modified_datetime = $11, ",
+                  "modified_by = $12 ",
+                  "where fish_encounter_id = $13"))
   dbBind(update_result, list(fish_status_id, sex_id, maturity_id, origin_id,
                              cwt_detection_status_id, adipose_clip_status_id,
                              fish_behavior_type_id, fish_encounter_datetime,
@@ -275,7 +267,7 @@ fish_encounter_delete = function(delete_values) {
   fish_encounter_id = delete_values$fish_encounter_id
   con = poolCheckout(pool)
   delete_result = dbSendStatement(
-    con, glue_sql("DELETE FROM fish_encounter WHERE fish_encounter_id = ?"))
+    con, glue_sql("DELETE FROM fish_encounter WHERE fish_encounter_id = $1"))
   dbBind(delete_result, list(fish_encounter_id))
   dbGetRowsAffected(delete_result)
   dbClearResult(delete_result)

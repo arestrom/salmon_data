@@ -32,7 +32,6 @@ get_individual_fish = function(fish_encounter_id) {
   individual_fish = DBI::dbGetQuery(pool, qry)
   poolReturn(con)
   individual_fish = individual_fish %>%
-    mutate(individual_fish_id = tolower(individual_fish_id)) %>%
     mutate(age_code = if_else(!is.na(age_code), paste0("eu: ", age_code), age_code)) %>%
     mutate(age_code = if_else(!is.na(age_code) & !is.na(gr), paste0(age_code, "; gr: ", gr), age_code)) %>%
     mutate(created_date = with_tz(created_date, tzone = "America/Los_Angeles")) %>%
@@ -59,7 +58,6 @@ get_fish_condition = function() {
              "where obsolete_datetime is null")
   con = poolCheckout(pool)
   fish_condition_list = DBI::dbGetQuery(con, qry) %>%
-    mutate(fish_condition_type_id = tolower(fish_condition_type_id)) %>%
     arrange(fish_condition) %>%
     select(fish_condition_type_id, fish_condition)
   poolReturn(con)
@@ -73,7 +71,6 @@ get_fish_trauma = function() {
              "where obsolete_datetime is null")
   con = poolCheckout(pool)
   fish_trauma_list = DBI::dbGetQuery(con, qry) %>%
-    mutate(fish_trauma_type_id = tolower(fish_trauma_type_id)) %>%
     arrange(fish_trauma) %>%
     select(fish_trauma_type_id, fish_trauma)
   poolReturn(con)
@@ -87,7 +84,6 @@ get_gill_condition = function() {
              "where obsolete_datetime is null")
   con = poolCheckout(pool)
   gill_condition_list = DBI::dbGetQuery(con, qry) %>%
-    mutate(gill_condition_type_id = tolower(gill_condition_type_id)) %>%
     arrange(gill_condition) %>%
     select(gill_condition_type_id, gill_condition)
   poolReturn(con)
@@ -101,7 +97,6 @@ get_spawn_condition = function() {
              "where obsolete_datetime is null")
   con = poolCheckout(pool)
   spawn_condition_list = DBI::dbGetQuery(con, qry) %>%
-    mutate(spawn_condition_type_id = tolower(spawn_condition_type_id)) %>%
     arrange(spawn_condition) %>%
     select(spawn_condition_type_id, spawn_condition)
   poolReturn(con)
@@ -115,7 +110,6 @@ get_age_code = function() {
              "where obsolete_datetime is null")
   con = poolCheckout(pool)
   age_code_list = DBI::dbGetQuery(con, qry) %>%
-    mutate(age_code_id = tolower(age_code_id)) %>%
     mutate(age_code = paste0("eu: ", age_code)) %>%
     mutate(age_code = if_else(!is.na(gr), paste0(age_code, "; gr: ", gr), age_code)) %>%
     arrange(age_code) %>%
@@ -131,7 +125,6 @@ get_cwt_result = function() {
              "where obsolete_datetime is null")
   con = poolCheckout(pool)
   cwt_result_list = DBI::dbGetQuery(con, qry) %>%
-    mutate(cwt_result_type_id = tolower(cwt_result_type_id)) %>%
     arrange(cwt_result) %>%
     select(cwt_result_type_id, cwt_result)
   poolReturn(con)
@@ -197,7 +190,7 @@ individual_fish_insert = function(new_individual_fish_values) {
                   "comment_text, ",
                   "created_by) ",
                   "VALUES (",
-                  "?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)"))
+                  "$1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19)"))
   dbBind(insert_result, list(fish_encounter_id, fish_condition_type_id, fish_trauma_type_id,
                              gill_condition_type_id, spawn_condition_type_id, cwt_result_type_id,
                              age_code_id, percent_eggs_retained, eggs_retained_gram,
@@ -249,26 +242,26 @@ individual_fish_update = function(individual_fish_edit_values) {
   con = poolCheckout(pool)
   update_result = dbSendStatement(
     con, glue_sql("UPDATE individual_fish SET ",
-                  "fish_condition_type_id = ?, ",
-                  "fish_trauma_type_id = ?, ",
-                  "gill_condition_type_id = ?, ",
-                  "spawn_condition_type_id = ?, ",
-                  "cwt_result_type_id = ?, ",
-                  "age_code_id = ?, ",
-                  "percent_eggs_retained = ?, ",
-                  "eggs_retained_gram = ?, ",
-                  "eggs_retained_number = ?, ",
-                  "fish_sample_number = ?, ",
-                  "scale_sample_card_number = ?, ",
-                  "scale_sample_position_number = ?, ",
-                  "cwt_snout_sample_number = ?, ",
-                  "cwt_tag_code = ?, ",
-                  "genetic_sample_number = ?, ",
-                  "otolith_sample_number = ?, ",
-                  "comment_text = ?, ",
-                  "modified_datetime = ?, ",
-                  "modified_by = ? ",
-                  "where individual_fish_id = ?"))
+                  "fish_condition_type_id = $1, ",
+                  "fish_trauma_type_id = $2, ",
+                  "gill_condition_type_id = $3, ",
+                  "spawn_condition_type_id = $4, ",
+                  "cwt_result_type_id = $5, ",
+                  "age_code_id = $6, ",
+                  "percent_eggs_retained = $7, ",
+                  "eggs_retained_gram = $8, ",
+                  "eggs_retained_number = $9, ",
+                  "fish_sample_number = $10, ",
+                  "scale_sample_card_number = $11, ",
+                  "scale_sample_position_number = $12, ",
+                  "cwt_snout_sample_number = $13, ",
+                  "cwt_tag_code = $14, ",
+                  "genetic_sample_number = $15, ",
+                  "otolith_sample_number = $16, ",
+                  "comment_text = $17, ",
+                  "modified_datetime = $18, ",
+                  "modified_by = $19 ",
+                  "where individual_fish_id = $20"))
   dbBind(update_result, list(fish_condition_type_id, fish_trauma_type_id,
                              gill_condition_type_id, spawn_condition_type_id,
                              cwt_result_type_id, age_code_id, percent_eggs_retained,
@@ -310,7 +303,7 @@ individual_fish_delete = function(delete_values) {
   individual_fish_id = delete_values$individual_fish_id
   con = poolCheckout(pool)
   delete_result = dbSendStatement(
-    con, glue_sql("DELETE FROM individual_fish WHERE individual_fish_id = ?"))
+    con, glue_sql("DELETE FROM individual_fish WHERE individual_fish_id = $1"))
   dbBind(delete_result, list(individual_fish_id))
   dbGetRowsAffected(delete_result)
   dbClearResult(delete_result)

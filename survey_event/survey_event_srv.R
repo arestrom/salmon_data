@@ -40,6 +40,8 @@ output$run_select = renderUI({
 
 # Primary DT datatable for survey_intent
 output$survey_events = renderDT({
+  req(input$tabs == "data_entry")
+  req(input$surveys_rows_selected)
   survey_event_title = glue("Species data for {input$stream_select} on ",
                              "{selected_survey_data()$survey_date} from river mile {selected_survey_data()$up_rm} ",
                              "to {selected_survey_data()$lo_rm}")
@@ -72,6 +74,8 @@ survey_event_dt_proxy = dataTableProxy(outputId = "survey_events")
 
 # Create reactive to collect input values for update and delete actions
 selected_survey_event_data = reactive({
+  req(input$tabs == "data_entry")
+  req(input$surveys_rows_selected)
   req(input$survey_events_rows_selected)
   survey_event_data = get_survey_event(selected_survey_data()$survey_id)
   survey_event_row = input$survey_events_rows_selected
@@ -112,6 +116,7 @@ observeEvent(input$survey_events_rows_selected, {
 
 # Create reactive to collect input values for insert actions
 survey_event_create = reactive({
+  req(input$surveys_rows_selected)
   # Survey_id
   survey_id_input = selected_survey_data()$survey_id
   # Species
@@ -265,6 +270,7 @@ observeEvent(input$insert_survey_event, {
 
 # Create reactive to collect input values for insert actions
 survey_event_edit = reactive({
+  req(input$survey_events_rows_selected)
   # Species
   event_species_input = input$event_species_select
   if (event_species_input == "" ) {

@@ -53,7 +53,6 @@ get_area_surveyed = function() {
              "where obsolete_datetime is null")
   con = poolCheckout(pool)
   area_surveyed_list = DBI::dbGetQuery(pool, qry) %>%
-    # mutate(area_sureveyed_id = tolower(area_surveyed_id)) %>%
     arrange(area_surveyed) %>%
     select(area_surveyed_id, area_surveyed)
   poolReturn(con)
@@ -67,7 +66,6 @@ get_abundance_condition = function() {
              "where obsolete_datetime is null")
   con = poolCheckout(pool)
   fish_abundance_list = DBI::dbGetQuery(con, qry) %>%
-    # mutate(fish_abundance_condition_id = tolower(fish_abundance_condition_id)) %>%
     arrange(abundance_condition) %>%
     select(fish_abundance_condition_id, abundance_condition)
   poolReturn(con)
@@ -81,7 +79,6 @@ get_stream_condition = function() {
              "where obsolete_datetime is null")
   con = poolCheckout(pool)
   stream_condition_list = DBI::dbGetQuery(con, qry) %>%
-    # mutate(stream_condition_id = tolower(stream_condition_id)) %>%
     arrange(stream_condition) %>%
     select(stream_condition_id, stream_condition)
   poolReturn(con)
@@ -95,7 +92,6 @@ get_stream_flow = function() {
              "where obsolete_datetime is null")
   con = poolCheckout(pool)
   stream_flow_list = DBI::dbGetQuery(con, qry) %>%
-    # mutate(stream_flow_type_id = tolower(stream_flow_type_id)) %>%
     arrange(stream_flow) %>%
     select(stream_flow_type_id, stream_flow)
   poolReturn(con)
@@ -109,7 +105,6 @@ get_count_condition = function() {
              "where obsolete_datetime is null")
   con = poolCheckout(pool)
   count_condition_list = DBI::dbGetQuery(con, qry) %>%
-    # mutate(survey_count_condition_id = tolower(survey_count_condition_id)) %>%
     arrange(count_condition) %>%
     select(survey_count_condition_id, count_condition)
   poolReturn(con)
@@ -123,7 +118,6 @@ get_survey_direction = function() {
              "where obsolete_datetime is null")
   con = poolCheckout(pool)
   survey_direction_list = DBI::dbGetQuery(con, qry) %>%
-    # mutate(survey_direction_id = tolower(survey_direction_id)) %>%
     arrange(survey_direction) %>%
     select(survey_direction_id, survey_direction)
   poolReturn(con)
@@ -137,7 +131,6 @@ get_survey_timing = function() {
              "where obsolete_datetime is null")
   con = poolCheckout(pool)
   survey_timing_list = DBI::dbGetQuery(con, qry) %>%
-    # mutate(survey_timing_id = tolower(survey_timing_id)) %>%
     arrange(survey_timing) %>%
     select(survey_timing_id, survey_timing)
   poolReturn(con)
@@ -151,7 +144,6 @@ get_visibility_condition = function() {
              "where obsolete_datetime is null")
   con = poolCheckout(pool)
   visibility_condition_list = DBI::dbGetQuery(con, qry) %>%
-    # mutate(visibility_condition_id = tolower(visibility_condition_id)) %>%
     arrange(visibility_condition) %>%
     select(visibility_condition_id, visibility_condition)
   poolReturn(con)
@@ -165,7 +157,6 @@ get_visibility_type = function() {
              "where obsolete_datetime is null")
   con = poolCheckout(pool)
   visibility_type_list = DBI::dbGetQuery(con, qry) %>%
-    # mutate(visibility_type_id = tolower(visibility_type_id)) %>%
     arrange(visibility_type) %>%
     select(visibility_type_id, visibility_type)
   poolReturn(con)
@@ -179,7 +170,6 @@ get_weather_type = function() {
              "where obsolete_datetime is null")
   con = poolCheckout(pool)
   weather_type_list = DBI::dbGetQuery(con, qry) %>%
-    # mutate(weather_type_id = tolower(weather_type_id)) %>%
     arrange(weather_type) %>%
     select(weather_type_id, weather_type)
   poolReturn(con)

@@ -32,9 +32,6 @@ get_surveys = function(waterbody_id, survey_years) {
   surveys = DBI::dbGetQuery(con, qry)
   poolReturn(con)
   surveys = surveys %>%
-    # mutate(survey_id = tolower(survey_id)) %>%
-    # mutate(upper_location_id = tolower(upper_location_id)) %>%
-    # mutate(lower_location_id = tolower(lower_location_id)) %>%
     mutate(survey_date = with_tz(survey_date, tzone = "America/Los_Angeles")) %>%
     mutate(survey_date_dt = format(survey_date, "%m/%d/%Y")) %>%
     mutate(start_time = with_tz(start_time, tzone = "America/Los_Angeles")) %>%
@@ -66,7 +63,6 @@ get_data_source = function() {
              "where obsolete_datetime is null")
   con = poolCheckout(pool)
   data_source = DBI::dbGetQuery(con, qry) %>%
-    # mutate(data_source_id = tolower(data_source_id)) %>%
     arrange(data_source_code) %>%
     select(data_source_id, data_source_code)
   poolReturn(con)
@@ -80,7 +76,6 @@ get_survey_method = function() {
              "where obsolete_datetime is null")
   con = poolCheckout(pool)
   survey_method_list = DBI::dbGetQuery(con, qry) %>%
-    # mutate(survey_method_id = tolower(survey_method_id)) %>%
     arrange(survey_method) %>%
     select(survey_method_id, survey_method)
   poolReturn(con)
@@ -94,7 +89,6 @@ get_data_review = function() {
              "where obsolete_datetime is null")
   con = poolCheckout(pool)
   data_review_list = DBI::dbGetQuery(con, qry) %>%
-    # mutate(data_review_status_id = tolower(data_review_status_id)) %>%
     arrange(data_review) %>%
     select(data_review_status_id, data_review)
   poolReturn(con)
@@ -108,7 +102,6 @@ get_completion_status = function() {
              "where obsolete_datetime is null")
   con = poolCheckout(pool)
   completion_list = DBI::dbGetQuery(con, qry) %>%
-    # mutate(survey_completion_status_id = tolower(survey_completion_status_id)) %>%
     arrange(completion) %>%
     select(survey_completion_status_id, completion)
   poolReturn(con)

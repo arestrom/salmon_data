@@ -25,6 +25,11 @@ output$fish_orientation_type_select = renderUI({
 
 # Primary DT datatable for survey_intent
 output$fish_locations = renderDT({
+  req(input$tabs == "data_entry")
+  req(input$surveys_rows_selected)
+  req(input$survey_events_rows_selected)
+  req(input$fish_encounters_rows_selected)
+  req(!is.na(selected_fish_encounter_data()$fish_encounter_id))
   fish_location_title = glue("{selected_survey_event_data()$species} fish locations for {input$stream_select} on ",
                              "{selected_survey_data()$survey_date} from river mile {selected_survey_data()$up_rm} ",
                              "to {selected_survey_data()$lo_rm}")
@@ -58,7 +63,12 @@ fish_location_dt_proxy = dataTableProxy(outputId = "fish_locations")
 
 # Create reactive to collect input values for update and delete actions
 selected_fish_location_data = reactive({
+  req(input$tabs == "data_entry")
+  req(input$surveys_rows_selected)
+  req(input$survey_events_rows_selected)
+  req(input$fish_encounters_rows_selected)
   req(input$fish_locations_rows_selected)
+  req(!is.na(selected_fish_encounter_data()$fish_encounter_id))
   fish_location_data = get_fish_location(selected_fish_encounter_data()$fish_encounter_id)
   fish_location_row = input$fish_locations_rows_selected
   selected_fish_location = tibble(fish_location_id = fish_location_data$fish_location_id[fish_location_row],
@@ -100,7 +110,11 @@ observeEvent(input$fish_locations_rows_selected, {
 
 # Get centroid of stream for setting view of redd_map
 selected_fish_coords = reactive({
+  req(input$tabs == "data_entry")
+  req(input$surveys_rows_selected)
+  req(input$survey_events_rows_selected)
   req(input$fish_encounters_rows_selected)
+  req(!is.na(selected_fish_encounter_data()$fish_encounter_id))
   # Get centroid of stream....always available if stream is selected
   center_lat = selected_stream_centroid()$center_lat
   center_lon = selected_stream_centroid()$center_lon
@@ -235,6 +249,7 @@ observeEvent(input$capture_fish_loc, {
 
 # Disable "New" button if a row of coordinates already exists
 observe({
+  req(!is.na(selected_fish_encounter_data()$fish_encounter_id))
   input$insert_fish_location
   input$delete_fish_location
   fish_loc_data = get_fish_location(selected_fish_encounter_data()$fish_encounter_id)
@@ -247,6 +262,11 @@ observe({
 
 # Create reactive to collect input values for insert actions
 fish_location_create = reactive({
+  req(input$tabs == "data_entry")
+  req(input$surveys_rows_selected)
+  req(input$survey_events_rows_selected)
+  req(input$fish_encounters_rows_selected)
+  req(!is.na(selected_fish_encounter_data()$fish_encounter_id))
   # fish_encounter_id
   fish_encounter_id_input = selected_fish_encounter_data()$fish_encounter_id
   # Channel type
@@ -366,6 +386,12 @@ observeEvent(input$insert_fish_location, {
 
 # Create reactive to collect input values for insert actions
 fish_location_edit = reactive({
+  req(input$tabs == "data_entry")
+  req(input$surveys_rows_selected)
+  req(input$survey_events_rows_selected)
+  req(input$fish_encounters_rows_selected)
+  req(input$fish_locations_rows_selected)
+  req(!is.na(selected_fish_location_data()$fish_location_id))
   # Channel type
   fish_channel_type_input = input$fish_channel_type_select
   if ( fish_channel_type_input == "" ) {
@@ -402,6 +428,7 @@ fish_location_edit = reactive({
 })
 
 dependent_fish_location_surveys = reactive({
+  req(!is.na(selected_fish_location_data()$fish_location_id))
   fish_loc_id = selected_fish_location_data()$fish_location_id
   fish_loc_srv = get_fish_location_surveys(fish_loc_id)
   return(fish_loc_srv)

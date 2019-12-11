@@ -11,7 +11,6 @@ get_survey_intent = function(survey_id) {
   survey_intents = DBI::dbGetQuery(con, qry)
   poolReturn(con)
   survey_intents = survey_intents %>%
-    mutate(survey_intent_id = tolower(survey_intent_id)) %>%
     mutate(created_date = with_tz(created_date, tzone = "America/Los_Angeles")) %>%
     mutate(created_dt = format(created_date, "%m/%d/%Y %H:%M")) %>%
     mutate(modified_date = with_tz(modified_date, tzone = "America/Los_Angeles")) %>%
@@ -33,7 +32,6 @@ get_intent_species = function() {
              "where obsolete_datetime is null")
   con = poolCheckout(pool)
   species_list = DBI::dbGetQuery(con, qry) %>%
-    mutate(species_id = tolower(species_id)) %>%
     arrange(species) %>%
     select(species_id, species)
   poolReturn(con)
@@ -47,7 +45,6 @@ get_count_type = function() {
              "where obsolete_datetime is null")
   con = poolCheckout(pool)
   count_type_list = DBI::dbGetQuery(con, qry) %>%
-    mutate(count_type_id = tolower(count_type_id)) %>%
     arrange(count_type) %>%
     select(count_type_id, count_type)
   poolReturn(con)
@@ -94,7 +91,7 @@ survey_intent_insert = function(new_intent_values) {
                   "count_type_id, ",
                   "created_by) ",
                   "VALUES (",
-                  "?, ?, ?, ?)"))
+                  "$1, $2, $3, $4)"))
   dbBind(insert_result, list(survey_id, species_id, count_type_id, created_by))
   dbGetRowsAffected(insert_result)
   dbClearResult(insert_result)
@@ -118,11 +115,11 @@ survey_intent_update = function(intent_edit_values) {
   con = poolCheckout(pool)
   update_result = dbSendStatement(
     con, glue_sql("UPDATE survey_intent SET ",
-                  "species_id = ?, ",
-                  "count_type_id = ?, ",
-                  "modified_datetime = ?, ",
-                  "modified_by = ? ",
-                  "where survey_intent_id = ?"))
+                  "species_id = $1, ",
+                  "count_type_id = $2, ",
+                  "modified_datetime = $3, ",
+                  "modified_by = $4 ",
+                  "where survey_intent_id = $5"))
   dbBind(update_result, list(species_id, count_type_id, mod_dt, mod_by,
                              survey_intent_id))
   dbGetRowsAffected(update_result)
@@ -139,7 +136,7 @@ survey_intent_delete = function(delete_values) {
   survey_intent_id = delete_values$survey_intent_id
   con = poolCheckout(pool)
   delete_result = dbSendStatement(
-    con, glue_sql("DELETE FROM survey_intent WHERE survey_intent_id = ?"))
+    con, glue_sql("DELETE FROM survey_intent WHERE survey_intent_id = $1"))
   dbBind(delete_result, list(survey_intent_id))
   dbGetRowsAffected(delete_result)
   dbClearResult(delete_result)

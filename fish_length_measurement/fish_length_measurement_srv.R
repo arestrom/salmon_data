@@ -16,6 +16,12 @@ output$length_type_select = renderUI({
 
 # Primary DT datatable for survey_intent
 output$length_measurements = renderDT({
+  req(input$tabs == "data_entry")
+  req(input$surveys_rows_selected)
+  req(input$survey_events_rows_selected)
+  req(input$fish_encounters_rows_selected)
+  req(input$individual_fishes_rows_selected)
+  req(!is.na(selected_individual_fish_data()$individual_fish_id))
   length_measurements_title = glue("{selected_survey_event_data()$species} data for {input$stream_select} on ",
                                "{selected_survey_data()$survey_date} from river mile {selected_survey_data()$up_rm} ",
                                "to {selected_survey_data()$lo_rm}")
@@ -47,7 +53,13 @@ length_measurement_dt_proxy = dataTableProxy(outputId = "length_measurements")
 
 # Create reactive to collect input values for update and delete actions
 selected_length_measurement_data = reactive({
+  req(input$tabs == "data_entry")
+  req(input$surveys_rows_selected)
+  req(input$survey_events_rows_selected)
+  req(input$fish_encounters_rows_selected)
+  req(input$individual_fishes_rows_selected)
   req(input$length_measurements_rows_selected)
+  req(!is.na(selected_individual_fish_data()$individual_fish_id))
   length_measurement_data = get_length_measurements(selected_individual_fish_data()$individual_fish_id)
   length_measurement_row = input$length_measurements_rows_selected
   selected_length_measurement = tibble(fish_length_measurement_id = length_measurement_data$fish_length_measurement_id[length_measurement_row],
@@ -77,6 +89,12 @@ observeEvent(input$length_measurements_rows_selected, {
 
 # Create reactive to collect input values for insert actions
 length_measurement_create = reactive({
+  req(input$tabs == "data_entry")
+  req(input$surveys_rows_selected)
+  req(input$survey_events_rows_selected)
+  req(input$fish_encounters_rows_selected)
+  req(input$individual_fishes_rows_selected)
+  req(!is.na(selected_individual_fish_data()$individual_fish_id))
   # individual_fish_id
   individual_fish_id_input = selected_individual_fish_data()$individual_fish_id
   # length_type
@@ -116,6 +134,7 @@ output$lengh_measurement_modal_insert_vals = renderDT({
 
 # Modal for new intents. Need a dup flag, multiple rows possible
 observeEvent(input$fish_meas_add, {
+  req(!is.na(selected_individual_fish_data()$individual_fish_id))
   new_length_measurement_vals = length_measurement_create()
   existing_length_measurement_vals = get_length_measurements(selected_individual_fish_data()$individual_fish_id)
   dup_length_type_flag = dup_length_type(new_length_measurement_vals, existing_length_measurement_vals)
@@ -180,6 +199,12 @@ observeEvent(input$insert_length_measurements, {
 
 # Create reactive to collect input values for insert actions
 length_measurement_edit = reactive({
+  req(input$tabs == "data_entry")
+  req(input$surveys_rows_selected)
+  req(input$survey_events_rows_selected)
+  req(input$fish_encounters_rows_selected)
+  req(input$individual_fishes_rows_selected)
+  req(!is.na(selected_individual_fish_data()$individual_fish_id))
   # length_type
   length_type_input = input$length_type_select
   if ( length_type_input == "" ) {

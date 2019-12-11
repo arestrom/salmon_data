@@ -90,16 +90,7 @@
 # 25. Getting crash inside data_entry screen. Select Alder 2019.
 #     Select page 6 row 27. Open fish_encounter and select a row.
 #     Then switch to row 28 and crash occurs.
-# 26. Add code to pop up warning modal if no survey is selected
-#     when trying to insert a new survey after switching locations.
-#     Previous selections enabled two surveys in insert modal even
-#     when no survey row was selected in the current DT. Need to
-#     flush out old values.
-# 27. Am getting duplicated values when trying to insert new
-#     surveys. Source is duplicated RMs. Need to delete all
-#     dup RMs from location table and reassign surveys to
-#     remaining values. Duplicates can not be allowed. If dups
-#     have coordinates then reset RMs to be off by 0.01.
+# 26.
 
 
 # AS 2019-10-04

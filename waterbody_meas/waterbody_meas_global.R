@@ -17,7 +17,6 @@ get_waterbody_meas = function(survey_id) {
   waterbody_measure = DBI::dbGetQuery(pool, qry)
   poolReturn(con)
   waterbody_measure = waterbody_measure %>%
-    mutate(waterbody_measurement_id = tolower(waterbody_measurement_id)) %>%
     mutate(survey_date = with_tz(survey_date, tzone = "America/Los_Angeles")) %>%
     mutate(start_tmp_time = with_tz(start_tmp_time, tzone = "America/Los_Angeles")) %>%
     mutate(start_tmp_dt = format(start_tmp_time, "%H:%M")) %>%
@@ -46,7 +45,6 @@ get_clarity_type = function() {
              "where obsolete_datetime is null")
   con = poolCheckout(pool)
   clarity_type_list = DBI::dbGetQuery(con, qry) %>%
-    mutate(water_clarity_type_id = tolower(water_clarity_type_id)) %>%
     arrange(clarity_type) %>%
     select(water_clarity_type_id, clarity_type)
   poolReturn(con)
@@ -86,7 +84,7 @@ waterbody_meas_insert = function(new_wbm_values) {
                   "waterbody_ph, ",
                   "created_by) ",
                   "VALUES (",
-                  "?, ?, ?, ?, ?, ?, ?, ?, ?, ?)"))
+                  "$1, $2, $3, $4, $5, $6, $7, $8, $9, $10)"))
   dbBind(insert_result, list(survey_id, water_clarity_type_id, water_clarity_meter,
                              stream_flow_measurement_cfs, start_water_temperature_datetime,
                              start_water_temperature_celsius, end_water_temperature_datetime,
@@ -119,17 +117,17 @@ waterbody_meas_update = function(waterbody_meas_edit_values) {
   con = poolCheckout(pool)
   update_result = dbSendStatement(
     con, glue_sql("UPDATE waterbody_measurement SET ",
-                  "water_clarity_type_id = ?, ",
-                  "water_clarity_meter = ?, ",
-                  "stream_flow_measurement_cfs = ?, ",
-                  "start_water_temperature_datetime = ?, ",
-                  "start_water_temperature_celsius = ?, ",
-                  "end_water_temperature_datetime = ?, ",
-                  "end_water_temperature_celsius = ?, ",
-                  "waterbody_ph = ?, ",
-                  "modified_datetime = ?, ",
-                  "modified_by = ? ",
-                  "where waterbody_measurement_id = ?"))
+                  "water_clarity_type_id = $1, ",
+                  "water_clarity_meter = $2, ",
+                  "stream_flow_measurement_cfs = $3, ",
+                  "start_water_temperature_datetime = $4, ",
+                  "start_water_temperature_celsius = $5, ",
+                  "end_water_temperature_datetime = $6, ",
+                  "end_water_temperature_celsius = $7, ",
+                  "waterbody_ph = $8, ",
+                  "modified_datetime = $9, ",
+                  "modified_by = $10 ",
+                  "where waterbody_measurement_id = $11"))
   dbBind(update_result, list(water_clarity_type_id, water_clarity_meter,
                              stream_flow_measurement_cfs, start_water_temperature_datetime,
                              start_water_temperature_celsius, end_water_temperature_datetime,
@@ -149,7 +147,7 @@ waterbody_meas_delete = function(delete_values) {
   waterbody_measurement_id = delete_values$waterbody_measurement_id
   con = poolCheckout(pool)
   delete_result = dbSendStatement(
-    con, glue_sql("DELETE FROM waterbody_measurement WHERE waterbody_measurement_id = ?"))
+    con, glue_sql("DELETE FROM waterbody_measurement WHERE waterbody_measurement_id = $1"))
   dbBind(delete_result, list(waterbody_measurement_id))
   dbGetRowsAffected(delete_result)
   dbClearResult(delete_result)

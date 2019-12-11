@@ -64,6 +64,9 @@ output$fish_behavior_select = renderUI({
 
 # Primary DT datatable for survey_intent
 output$fish_encounters = renderDT({
+  req(input$tabs == "data_entry")
+  req(input$surveys_rows_selected)
+  req(input$survey_events_rows_selected)
   fish_encounter_title = glue("{selected_survey_event_data()$species} data for {input$stream_select} on ",
                               "{selected_survey_data()$survey_date} from river mile {selected_survey_data()$up_rm} ",
                               "to {selected_survey_data()$lo_rm}")
@@ -91,12 +94,21 @@ output$fish_encounters = renderDT({
 # Create surveys DT proxy object
 fish_encounter_dt_proxy = dataTableProxy(outputId = "fish_encounters")
 
+# Set row selection in fish_encounters_dt to NULL if selection changes in survey_events dt
+observe({
+  input$survey_events_rows_selected
+  selectRows(fish_encounter_dt_proxy, NULL)
+})
+
 #========================================================
 # Collect encounter values from selected row for later use
 #========================================================
 
 # Create reactive to collect input values for update and delete actions
 selected_fish_encounter_data = reactive({
+  req(input$tabs == "data_entry")
+  req(input$surveys_rows_selected)
+  req(input$survey_events_rows_selected)
   req(input$fish_encounters_rows_selected)
   fish_encounter_data = get_fish_encounter(selected_survey_event_data()$survey_event_id)
   fish_encounter_row = input$fish_encounters_rows_selected
@@ -143,6 +155,9 @@ observeEvent(input$fish_encounters_rows_selected, {
 
 # Create reactive to collect input values for insert actions
 fish_encounter_create = reactive({
+  req(input$tabs == "data_entry")
+  req(input$surveys_rows_selected)
+  req(input$survey_events_rows_selected)
   # Survey date
   survey_date = selected_survey_data()$survey_date
   # Survey_event_id
@@ -340,6 +355,9 @@ observeEvent(input$insert_fish_encounter, {
 
 # Create reactive to collect input values for insert actions
 fish_encounter_edit = reactive({
+  req(input$tabs == "data_entry")
+  req(input$surveys_rows_selected)
+  req(input$survey_events_rows_selected)
   # Survey date
   survey_date = selected_survey_data()$survey_date
   # # Location....NA for now
