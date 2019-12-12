@@ -82,6 +82,7 @@ output$weather_type_select = renderUI({
 # Primary DT datatable for comments
 output$survey_comments = renderDT({
   req(input$tabs == "data_entry")
+  req(input$surveys_rows_selected)
   survey_comment_title = glue("Survey comments for {input$stream_select} on ",
                               "{selected_survey_data()$survey_date} from river mile {selected_survey_data()$up_rm} ",
                               "to {selected_survey_data()$lo_rm}")
@@ -115,7 +116,8 @@ survey_comment_dt_proxy = dataTableProxy(outputId = "survey_comments")
 # Create reactive to collect input values for update and delete actions
 selected_survey_comment_data = reactive({
   req(input$tabs == "data_entry")
-  req(!is.na(selected_survey_data()$survey_id))
+  req(input$surveys_rows_selected)
+  req(input$survey_comments_rows_selected)
   survey_comment_data = get_survey_comment(selected_survey_data()$survey_id)
   survey_comment_row = input$survey_comments_rows_selected
   selected_survey_comment = tibble(survey_comment_id = survey_comment_data$survey_comment_id[survey_comment_row],
@@ -174,6 +176,7 @@ observe({
 
 # Create reactive to collect input values for insert actions
 survey_comment_create = reactive({
+  req(input$surveys_rows_selected)
   # Survey_id
   survey_id_input = selected_survey_data()$survey_id
   # Area surveyed

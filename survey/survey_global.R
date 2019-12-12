@@ -32,9 +32,6 @@ get_surveys = function(waterbody_id, survey_years) {
   surveys = DBI::dbGetQuery(con, qry)
   poolReturn(con)
   surveys = surveys %>%
-    mutate(survey_id = tolower(survey_id)) %>%
-    mutate(upper_location_id = tolower(upper_location_id)) %>%
-    mutate(lower_location_id = tolower(lower_location_id)) %>%
     mutate(survey_date = with_tz(survey_date, tzone = "America/Los_Angeles")) %>%
     mutate(survey_date_dt = format(survey_date, "%m/%d/%Y")) %>%
     mutate(start_time = with_tz(start_time, tzone = "America/Los_Angeles")) %>%
@@ -66,7 +63,6 @@ get_data_source = function() {
              "where obsolete_datetime is null")
   con = poolCheckout(pool)
   data_source = DBI::dbGetQuery(con, qry) %>%
-    mutate(data_source_id = tolower(data_source_id)) %>%
     arrange(data_source_code) %>%
     select(data_source_id, data_source_code)
   poolReturn(con)
@@ -80,7 +76,6 @@ get_survey_method = function() {
              "where obsolete_datetime is null")
   con = poolCheckout(pool)
   survey_method_list = DBI::dbGetQuery(con, qry) %>%
-    mutate(survey_method_id = tolower(survey_method_id)) %>%
     arrange(survey_method) %>%
     select(survey_method_id, survey_method)
   poolReturn(con)
@@ -94,7 +89,6 @@ get_data_review = function() {
              "where obsolete_datetime is null")
   con = poolCheckout(pool)
   data_review_list = DBI::dbGetQuery(con, qry) %>%
-    mutate(data_review_status_id = tolower(data_review_status_id)) %>%
     arrange(data_review) %>%
     select(data_review_status_id, data_review)
   poolReturn(con)
@@ -108,7 +102,6 @@ get_completion_status = function() {
              "where obsolete_datetime is null")
   con = poolCheckout(pool)
   completion_list = DBI::dbGetQuery(con, qry) %>%
-    mutate(survey_completion_status_id = tolower(survey_completion_status_id)) %>%
     arrange(completion) %>%
     select(survey_completion_status_id, completion)
   poolReturn(con)
@@ -181,7 +174,7 @@ survey_insert = function(new_values) {
                   "data_submitter_last_name, ",
                   "created_by) ",
                   "VALUES (",
-                  "?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)"))
+                  "$1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14)"))
   dbBind(insert_result, list(survey_datetime, data_source_id, data_source_unit_id,
                              survey_method_id, data_review_status_id, upper_end_point_id,
                              lower_end_point_id, survey_completion_status_id,
@@ -220,20 +213,20 @@ survey_update = function(edit_values) {
   con = poolCheckout(pool)
   update_result = dbSendStatement(
     con, glue_sql("UPDATE survey SET ",
-                  "survey_datetime = ?, ",
-                  "data_source_id = ?, ",
-                  "survey_method_id = ?, ",
-                  "data_review_status_id = ?, ",
-                  "upper_end_point_id = ?, ",
-                  "lower_end_point_id = ?, ",
-                  "survey_completion_status_id = ?, ",
-                  "survey_start_datetime = ?, ",
-                  "survey_end_datetime = ?, ",
-                  "observer_last_name = ?, ",
-                  "data_submitter_last_name = ?, ",
-                  "modified_datetime = ?, ",
-                  "modified_by = ? ",
-                  "where survey_id = ?"))
+                  "survey_datetime = $1, ",
+                  "data_source_id = $2, ",
+                  "survey_method_id = $3, ",
+                  "data_review_status_id = $4, ",
+                  "upper_end_point_id = $5, ",
+                  "lower_end_point_id = $6, ",
+                  "survey_completion_status_id = $7, ",
+                  "survey_start_datetime = $8, ",
+                  "survey_end_datetime = $9, ",
+                  "observer_last_name = $10, ",
+                  "data_submitter_last_name = $11, ",
+                  "modified_datetime = $12, ",
+                  "modified_by = $13 ",
+                  "where survey_id = $14"))
   dbBind(update_result, list(survey_datetime, data_source_id, survey_method_id,
                              data_review_status_id, upper_end_point_id,
                              lower_end_point_id, survey_completion_status_id,
@@ -288,7 +281,7 @@ survey_delete = function(delete_values) {
   survey_id = delete_values$survey_id
   con = poolCheckout(pool)
   delete_result = dbSendStatement(
-    con, glue_sql("DELETE FROM survey WHERE survey_id = ?"))
+    con, glue_sql("DELETE FROM survey WHERE survey_id = $1"))
   dbBind(delete_result, list(survey_id))
   dbGetRowsAffected(delete_result)
   dbClearResult(delete_result)

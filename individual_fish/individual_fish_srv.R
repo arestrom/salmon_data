@@ -56,6 +56,11 @@ output$cwt_result_select = renderUI({
 
 # Primary DT datatable for survey_intent
 output$individual_fishes = renderDT({
+  req(input$tabs == "data_entry")
+  req(input$surveys_rows_selected)
+  req(input$survey_events_rows_selected)
+  req(input$fish_encounters_rows_selected)
+  req(!is.na(selected_fish_encounter_data()$fish_encounter_id))
   individual_fish_title = glue("{selected_survey_event_data()$species} data for {input$stream_select} on ",
                                "{selected_survey_data()$survey_date} from river mile {selected_survey_data()$up_rm} ",
                                "to {selected_survey_data()$lo_rm}")
@@ -90,7 +95,12 @@ individual_fish_dt_proxy = dataTableProxy(outputId = "individual_fishes")
 
 # Create reactive to collect input values for update and delete actions
 selected_individual_fish_data = reactive({
+  req(input$tabs == "data_entry")
+  req(input$surveys_rows_selected)
+  req(input$survey_events_rows_selected)
+  req(input$fish_encounters_rows_selected)
   req(input$individual_fishes_rows_selected)
+  req(!is.na(selected_fish_encounter_data()$fish_encounter_id))
   individual_fish_data = get_individual_fish(selected_fish_encounter_data()$fish_encounter_id)
   individual_fish_row = input$individual_fishes_rows_selected
   selected_individual_fish = tibble(individual_fish_id = individual_fish_data$individual_fish_id[individual_fish_row],
@@ -150,6 +160,7 @@ observeEvent(input$individual_fishes_rows_selected, {
 
 # Disable "New" button if a row of comments already exists
 observe({
+  req(!is.na(selected_fish_encounter_data()$fish_encounter_id))
   input$insert_individual_fish
   ind_fish_data = get_individual_fish(selected_fish_encounter_data()$fish_encounter_id)
   if (nrow(ind_fish_data) >= 1L) {
@@ -161,6 +172,11 @@ observe({
 
 # Create reactive to collect input values for insert actions
 individual_fish_create = reactive({
+  req(input$tabs == "data_entry")
+  req(input$surveys_rows_selected)
+  req(input$survey_events_rows_selected)
+  req(input$fish_encounters_rows_selected)
+  req(!is.na(selected_fish_encounter_data()$fish_encounter_id))
   # fish_encounter_id
   fish_encounter_id_input = selected_fish_encounter_data()$fish_encounter_id
   # Fish count
@@ -346,6 +362,12 @@ observeEvent(input$insert_individual_fish, {
 
 # Create reactive to collect input values for insert actions
 individual_fish_edit = reactive({
+  req(input$tabs == "data_entry")
+  req(input$surveys_rows_selected)
+  req(input$survey_events_rows_selected)
+  req(input$fish_encounters_rows_selected)
+  req(input$individual_fishes_rows_selected)
+  req(!is.na(selected_individual_fish_data()$individual_fish_id))
   # Fish condition
   fish_condition_input = input$fish_condition_select
   if ( fish_condition_input == "" ) {

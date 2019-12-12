@@ -14,7 +14,6 @@ get_redd_encounter = function(survey_event_id) {
   redd_encounters = DBI::dbGetQuery(con, qry)
   poolReturn(con)
   redd_encounters = redd_encounters %>%
-    mutate(redd_encounter_id = tolower(redd_encounter_id)) %>%
     mutate(redd_encounter_time = with_tz(redd_encounter_time, tzone = "America/Los_Angeles")) %>%
     mutate(redd_encounter_dt = format(redd_encounter_time, "%H:%M")) %>%
     mutate(redd_status = if_else(redd_status == "Combined visible redds",
@@ -42,7 +41,6 @@ get_redd_name = function(survey_event_id) {
              "where rd.survey_event_id = '{survey_event_id}' and loc.location_name is not null")
   con = poolCheckout(pool)
   redd_name_list = DBI::dbGetQuery(con, qry) %>%
-    mutate(redd_location_id = tolower(redd_location_id)) %>%
     arrange(redd_name) %>%
     select(redd_location_id, redd_name)
   poolReturn(con)
@@ -56,7 +54,6 @@ get_redd_status = function() {
              "where obsolete_datetime is null")
   con = poolCheckout(pool)
   redd_status_list = DBI::dbGetQuery(con, qry) %>%
-    mutate(redd_status_id = tolower(redd_status_id)) %>%
     mutate(redd_status = if_else(redd_status == "Combined visible redds",
                                  "Visible new and old redds combined", redd_status)) %>%
     arrange(redd_status) %>%
@@ -93,7 +90,7 @@ redd_encounter_insert = function(new_redd_encounter_values) {
                   "comment_text, ",
                   "created_by) ",
                   "VALUES (",
-                  "?, ?, ?, ?, ?, ?, ?)"))
+                  "$1, $2, $3, $4, $5, $6, $7)"))
   dbBind(insert_result, list(survey_event_id, redd_location_id,
                              redd_status_id, redd_encounter_datetime,
                              redd_count, comment_text, created_by))
@@ -123,14 +120,14 @@ redd_encounter_update = function(redd_encounter_edit_values) {
   con = poolCheckout(pool)
   update_result = dbSendStatement(
     con, glue_sql("UPDATE redd_encounter SET ",
-                  "redd_location_id = ?, ",
-                  "redd_status_id = ?, ",
-                  "redd_encounter_datetime = ?, ",
-                  "redd_count = ?, ",
-                  "comment_text = ?, ",
-                  "modified_datetime = ?, ",
-                  "modified_by = ? ",
-                  "where redd_encounter_id = ?"))
+                  "redd_location_id = $1, ",
+                  "redd_status_id = $2, ",
+                  "redd_encounter_datetime = $3, ",
+                  "redd_count = $4, ",
+                  "comment_text = $5, ",
+                  "modified_datetime = $6, ",
+                  "modified_by = $7 ",
+                  "where redd_encounter_id = $8"))
   dbBind(update_result, list(redd_location_id, redd_status_id,
                              redd_encounter_datetime, redd_count,
                              comment_text, mod_dt, mod_by,
@@ -175,7 +172,7 @@ redd_encounter_delete = function(delete_values) {
   redd_encounter_id = delete_values$redd_encounter_id
   con = poolCheckout(pool)
   delete_result = dbSendStatement(
-    con, glue_sql("DELETE FROM redd_encounter WHERE redd_encounter_id = ?"))
+    con, glue_sql("DELETE FROM redd_encounter WHERE redd_encounter_id = $1"))
   dbBind(delete_result, list(redd_encounter_id))
   dbGetRowsAffected(delete_result)
   dbClearResult(delete_result)

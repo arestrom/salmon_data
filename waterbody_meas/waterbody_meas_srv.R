@@ -10,6 +10,7 @@ output$clarity_type_select = renderUI({
 # Primary DT datatable for survey_intent
 output$waterbody_measure = renderDT({
   req(input$tabs == "data_entry")
+  req(input$surveys_rows_selected)
   req(!is.na(selected_survey_data()$survey_id))
   waterbody_meas_title = glue("Water measurements for {input$stream_select} on ",
                               "{selected_survey_data()$survey_date} from river mile {selected_survey_data()$up_rm} ",
@@ -43,9 +44,9 @@ waterbody_measure_dt_proxy = dataTableProxy(outputId = "waterbody_measure")
 # Create reactive to collect input values for update and delete actions
 # Absolutely needed req() here to avoid errors !!!!!!!!!!!!!!!!!
 selected_waterbody_meas_data = reactive({
-  req(!is.na(selected_survey_data()$survey_id))
-  req(input$waterbody_measure_rows_selected)
   req(input$tabs == "data_entry")
+  req(input$surveys_rows_selected)
+  req(input$waterbody_measure_rows_selected)
   waterbody_meas_data = get_waterbody_meas(selected_survey_data()$survey_id)
   waterbody_meas_row = input$waterbody_measure_rows_selected
   selected_waterbody_meas = tibble(waterbody_measurement_id = waterbody_meas_data$waterbody_measurement_id[waterbody_meas_row],
@@ -100,6 +101,7 @@ observe({
 
 # Create reactive to collect input values for insert actions
 waterbody_meas_create = reactive({
+  req(input$surveys_rows_selected)
   # Survey_id
   survey_id_input = selected_survey_data()$survey_id
   # Survey date

@@ -87,20 +87,14 @@
 #     Done....Can also suggest adding new point with one decimal
 #     difference in river_mile. Then leave historical data alone.
 # 23. Find css to narrow sidebar in header boxplus.
-# 24. Fix encoding of age code in select. Not rendering correctly.
-#     FIXED BY SWITCHING TO Rpostgres connection. Now need to
-#     update all ? to $ in parameterized query placeholders. !!!!!!!!!!!!!!!!!!!!!!
-# 25. Getting crash inside data_entry screen. Select Alder 2019.
-#     Select page 6 row 27. Open fish_encounter and select a row.
-#     Then switch to row 28 and crash occurs.
-# 26. Add code to pop up warning modal if no survey is selected
-#     when trying to insert a new survey after switching locations.
-#     Previous selections enabled two surveys in insert modal even
-#     when no survey row was selected in the current DT. Need to
-#     flush out old values.
-# 27. Am getting duplicated values when trying to insert new
-#     surveys. Need to figure out why....
-
+# 25. Need to fix data entry of redd encounter, redd location.
+#     Getting duplicates of redd encounter during CRUD. May
+#     need to limit redd_name to unique per new redd. Or only
+#     set redd_name in the redd_location interface. Use same
+#     updated methods with fish locations.
+# 26. Zoom to stream extent when setting locations via map.
+#     Right now marker is sometimes off the screen.
+# 27.
 
 # AS 2019-10-04
 #==============================================================
@@ -170,30 +164,30 @@ source("reach_point/reach_point_global.R")
 
 # Define globals ================================================================
 
-# Define dsns
-salmon_db = "local_spawn"
-
-# Set up dsn connection
-pool = pool::dbPool(drv = odbc::odbc(), timezone = "UTC", dsn = salmon_db)
+# # Define dsns
+# salmon_db = "local_spawn"
+#
+# # Set up dsn connection
+# pool = pool::dbPool(drv = odbc::odbc(), timezone = "UTC", dsn = salmon_db)
 
 # # # Function to get pw for database
 # # pg_host <- function(host_label) {
 # #   Sys.getenv(host_label)
 # # }
 
-# # Function to get user for database
-# pg_user <- function(user_label) {
-#   Sys.getenv(user_label)
-# }
-#
-# # Function to get pw for database
-# pg_pw <- function(pwd_label) {
-#   Sys.getenv(pwd_label)
-# }
-#
-# # Switch to RPostgres....works, but need to change placeholders in separate branch...then do PR.
-# pool = pool::dbPool(RPostgres::Postgres(), dbname = "spawning_ground", host = "localhost",
-#                    port = "5432", user = pg_user("pg_user"), password = pg_pw("pg_pwd_local"))
+# Function to get user for database
+pg_user <- function(user_label) {
+  Sys.getenv(user_label)
+}
+
+# Function to get pw for database
+pg_pw <- function(pwd_label) {
+  Sys.getenv(pwd_label)
+}
+
+# Switch to RPostgres....works, but need to change placeholders in separate branch...then do PR.
+pool = pool::dbPool(RPostgres::Postgres(), dbname = "spawning_ground", host = "localhost",
+                   port = "5432", user = pg_user("pg_user"), password = pg_pw("pg_pwd_local"))
 
 # Define functions =============================================================
 

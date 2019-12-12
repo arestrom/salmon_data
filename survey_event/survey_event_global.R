@@ -18,7 +18,6 @@ get_survey_event = function(survey_id) {
   survey_events = DBI::dbGetQuery(con, qry)
   poolReturn(con)
   survey_events = survey_events %>%
-    mutate(survey_event_id = tolower(survey_event_id)) %>%
     mutate(created_date = with_tz(created_date, tzone = "America/Los_Angeles")) %>%
     mutate(created_dt = format(created_date, "%m/%d/%Y %H:%M")) %>%
     mutate(modified_date = with_tz(modified_date, tzone = "America/Los_Angeles")) %>%
@@ -41,7 +40,6 @@ get_event_species = function() {
              "where obsolete_datetime is null")
   con = poolCheckout(pool)
   species_list = DBI::dbGetQuery(con, qry) %>%
-    mutate(species_id = tolower(species_id)) %>%
     arrange(species) %>%
     select(species_id, species)
   poolReturn(con)
@@ -55,7 +53,6 @@ get_survey_design = function() {
              "where obsolete_datetime is null")
   con = poolCheckout(pool)
   survey_design_list = DBI::dbGetQuery(con, qry) %>%
-    mutate(survey_design_type_id = tolower(survey_design_type_id)) %>%
     arrange(survey_design) %>%
     select(survey_design_type_id, survey_design)
   poolReturn(con)
@@ -69,7 +66,6 @@ get_cwt_detect_method = function() {
              "where obsolete_datetime is null")
   con = poolCheckout(pool)
   cwt_detect_method_list = DBI::dbGetQuery(con, qry) %>%
-    mutate(cwt_detection_method_id = tolower(cwt_detection_method_id)) %>%
     arrange(cwt_detect_method) %>%
     select(cwt_detection_method_id, cwt_detect_method)
   poolReturn(con)
@@ -83,7 +79,6 @@ get_run = function() {
              "where obsolete_datetime is null")
   con = poolCheckout(pool)
   run_list = DBI::dbGetQuery(con, qry) %>%
-    mutate(run_id = tolower(run_id)) %>%
     arrange(run) %>%
     select(run_id, run)
   poolReturn(con)
@@ -141,7 +136,7 @@ survey_event_insert = function(new_event_values) {
                   "comment_text, ",
                   "created_by) ",
                   "VALUES (",
-                  "?, ?, ?, ?, ?, ?, ?, ?, ?)"))
+                  "$1, $2, $3, $4, $5, $6, $7, $8, $9)"))
   dbBind(insert_result, list(survey_id, species_id, survey_design_type_id,
                              cwt_detection_method_id, run_id, run_year,
                              estimated_percent_fish_seen, comment_text,
@@ -174,16 +169,16 @@ survey_event_update = function(survey_event_edit_values) {
   con = poolCheckout(pool)
   update_result = dbSendStatement(
     con, glue_sql("UPDATE survey_event SET ",
-                  "species_id = ?, ",
-                  "survey_design_type_id = ?, ",
-                  "cwt_detection_method_id = ?, ",
-                  "run_id = ?, ",
-                  "run_year = ?, ",
-                  "estimated_percent_fish_seen = ?, ",
-                  "comment_text = ?, ",
-                  "modified_datetime = ?, ",
-                  "modified_by = ? ",
-                  "where survey_event_id = ?"))
+                  "species_id = $1, ",
+                  "survey_design_type_id = $2, ",
+                  "cwt_detection_method_id = $3, ",
+                  "run_id = $4, ",
+                  "run_year = $5, ",
+                  "estimated_percent_fish_seen = $6, ",
+                  "comment_text = $7, ",
+                  "modified_datetime = $8, ",
+                  "modified_by = $9 ",
+                  "where survey_event_id = $10"))
   dbBind(update_result, list(species_id, survey_design_type_id,
                              cwt_detection_method_id, run_id, run_year,
                              estimated_percent_fish_seen, comment_text,
@@ -223,7 +218,7 @@ survey_event_delete = function(delete_values) {
   survey_event_id = delete_values$survey_event_id
   con = poolCheckout(pool)
   delete_result = dbSendStatement(
-    con, glue_sql("DELETE FROM survey_event WHERE survey_event_id = ?"))
+    con, glue_sql("DELETE FROM survey_event WHERE survey_event_id = $1"))
   dbBind(delete_result, list(survey_event_id))
   dbGetRowsAffected(delete_result)
   dbClearResult(delete_result)

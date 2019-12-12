@@ -22,7 +22,6 @@ get_individual_redd = function(redd_encounter_id) {
   individual_redds = DBI::dbGetQuery(con, qry)
   poolReturn(con)
   individual_redds = individual_redds %>%
-    mutate(individual_redd_id = tolower(individual_redd_id)) %>%
     mutate(created_date = with_tz(created_date, tzone = "America/Los_Angeles")) %>%
     mutate(created_dt = format(created_date, "%m/%d/%Y %H:%M")) %>%
     mutate(modified_date = with_tz(modified_date, tzone = "America/Los_Angeles")) %>%
@@ -47,7 +46,6 @@ get_redd_shape = function() {
              "where obsolete_datetime is null")
   con = poolCheckout(pool)
   redd_shape_list = DBI::dbGetQuery(con, qry) %>%
-    mutate(redd_shape_id = tolower(redd_shape_id)) %>%
     arrange(redd_shape) %>%
     select(redd_shape_id, redd_shape)
   poolReturn(con)
@@ -61,7 +59,6 @@ get_dewatered_type = function() {
              "where obsolete_datetime is null")
   con = poolCheckout(pool)
   dewatered_type_list = DBI::dbGetQuery(con, qry) %>%
-    mutate(redd_dewatered_type_id = tolower(redd_dewatered_type_id)) %>%
     arrange(dewatered_type) %>%
     select(redd_dewatered_type_id, dewatered_type)
   poolReturn(con)
@@ -109,7 +106,7 @@ individual_redd_insert = function(new_individual_redd_values) {
                   "comment_text, ",
                   "created_by) ",
                   "VALUES (",
-                  "?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)"))
+                  "$1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13)"))
   dbBind(insert_result, list(redd_encounter_id, redd_shape_id, redd_dewatered_type_id,
                              percent_redd_visible, redd_length_measure_meter,
                              redd_width_measure_meter, redd_depth_measure_meter,
@@ -149,20 +146,20 @@ individual_redd_update = function(individual_redd_edit_values) {
   con = poolCheckout(pool)
   update_result = dbSendStatement(
     con, glue_sql("UPDATE individual_redd SET ",
-                  "redd_shape_id = ?, ",
-                  "redd_dewatered_type_id = ?, ",
-                  "percent_redd_visible = ?, ",
-                  "redd_length_measure_meter = ?, ",
-                  "redd_width_measure_meter = ?, ",
-                  "redd_depth_measure_meter = ?, ",
-                  "tailspill_height_measure_meter = ?, ",
-                  "percent_redd_superimposed = ?, ",
-                  "percent_redd_degraded = ?, ",
-                  "superimposed_redd_name = ?, ",
-                  "comment_text = ?, ",
-                  "modified_datetime = ?, ",
-                  "modified_by = ? ",
-                  "where individual_redd_id = ?"))
+                  "redd_shape_id = $1, ",
+                  "redd_dewatered_type_id = $2, ",
+                  "percent_redd_visible = $3, ",
+                  "redd_length_measure_meter = $4, ",
+                  "redd_width_measure_meter = $5, ",
+                  "redd_depth_measure_meter = $6, ",
+                  "tailspill_height_measure_meter = $7, ",
+                  "percent_redd_superimposed = $8, ",
+                  "percent_redd_degraded = $9, ",
+                  "superimposed_redd_name = $10, ",
+                  "comment_text = $11, ",
+                  "modified_datetime = $12, ",
+                  "modified_by = $13 ",
+                  "where individual_redd_id = $14"))
   dbBind(update_result, list(redd_shape_id, redd_dewatered_type_id,
                              percent_redd_visible, redd_length_measure_meter,
                              redd_width_measure_meter, redd_depth_measure_meter,
@@ -185,7 +182,7 @@ individual_redd_delete = function(delete_values) {
   individual_redd_id = delete_values$individual_redd_id
   con = poolCheckout(pool)
   delete_result = dbSendStatement(
-    con, glue_sql("DELETE FROM individual_redd WHERE individual_redd_id = ?"))
+    con, glue_sql("DELETE FROM individual_redd WHERE individual_redd_id = $1"))
   dbBind(delete_result, list(individual_redd_id))
   dbGetRowsAffected(delete_result)
   dbClearResult(delete_result)

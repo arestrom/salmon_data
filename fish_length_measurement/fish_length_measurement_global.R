@@ -35,7 +35,6 @@ get_length_type = function() {
              "where obsolete_datetime is null")
   con = poolCheckout(pool)
   length_type_list = DBI::dbGetQuery(con, qry) %>%
-    mutate(fish_length_measurement_type_id = tolower(fish_length_measurement_type_id)) %>%
     arrange(length_type) %>%
     select(fish_length_measurement_type_id, length_type)
   poolReturn(con)
@@ -82,7 +81,7 @@ length_measurement_insert = function(new_length_measurement_values) {
                   "length_measurement_centimeter, ",
                   "created_by) ",
                   "VALUES (",
-                  "?, ?, ?, ?)"))
+                  "$1, $2, $3, $4)"))
   dbBind(insert_result, list(individual_fish_id, fish_length_measurement_type_id,
                              length_measurement_centimeter, created_by))
   dbGetRowsAffected(insert_result)
@@ -107,11 +106,11 @@ length_measurement_update = function(length_measurement_edit_values) {
   con = poolCheckout(pool)
   update_result = dbSendStatement(
     con, glue_sql("UPDATE fish_length_measurement SET ",
-                  "fish_length_measurement_type_id = ?, ",
-                  "length_measurement_centimeter = ?, ",
-                  "modified_datetime = ?, ",
-                  "modified_by = ? ",
-                  "where fish_length_measurement_id = ?"))
+                  "fish_length_measurement_type_id = $1, ",
+                  "length_measurement_centimeter = $2, ",
+                  "modified_datetime = $3, ",
+                  "modified_by = $4 ",
+                  "where fish_length_measurement_id = $5"))
   dbBind(update_result, list(fish_length_measurement_type_id,
                              length_measurement_centimeter,
                              mod_dt, mod_by,
@@ -130,7 +129,7 @@ length_measurement_delete = function(delete_values) {
   fish_length_measurement_id = delete_values$fish_length_measurement_id
   con = poolCheckout(pool)
   delete_result = dbSendStatement(
-    con, glue_sql("DELETE FROM fish_length_measurement WHERE fish_length_measurement_id = ?"))
+    con, glue_sql("DELETE FROM fish_length_measurement WHERE fish_length_measurement_id = $1"))
   dbBind(delete_result, list(fish_length_measurement_id))
   dbGetRowsAffected(delete_result)
   dbClearResult(delete_result)

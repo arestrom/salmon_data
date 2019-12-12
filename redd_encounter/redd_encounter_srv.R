@@ -26,6 +26,10 @@ output$redd_name_select = renderUI({
 
 # Primary DT datatable for survey_intent
 output$redd_encounters = renderDT({
+  req(input$tabs == "data_entry")
+  req(input$surveys_rows_selected)
+  req(input$survey_events_rows_selected)
+  req(!is.na(selected_survey_event_data()$survey_event_id))
   redd_encounter_title = glue("{selected_survey_event_data()$species} redd data for {input$stream_select} on ",
                               "{selected_survey_data()$survey_date} from river mile {selected_survey_data()$up_rm} ",
                               "to {selected_survey_data()$lo_rm}")
@@ -52,13 +56,23 @@ output$redd_encounters = renderDT({
 # Create surveys DT proxy object
 redd_encounter_dt_proxy = dataTableProxy(outputId = "redd_encounters")
 
+# Set row selection in redd_encounter_dt to NULL if selection changes in survey_event dt
+observe({
+  input$survey_events_rows_selected
+  selectRows(redd_encounter_dt_proxy, NULL)
+})
+
 #========================================================
 # Collect encounter values from selected row for later use
 #========================================================
 
 # Create reactive to collect input values for update and delete actions
 selected_redd_encounter_data = reactive({
+  req(input$tabs == "data_entry")
+  req(input$surveys_rows_selected)
+  req(input$survey_events_rows_selected)
   req(input$redd_encounters_rows_selected)
+  req(!is.na(selected_survey_event_data()$survey_event_id))
   redd_encounter_data = get_redd_encounter(selected_survey_event_data()$survey_event_id)
   redd_encounter_row = input$redd_encounters_rows_selected
   selected_redd_encounter = tibble(redd_encounter_id = redd_encounter_data$redd_encounter_id[redd_encounter_row],
@@ -94,6 +108,10 @@ observeEvent(input$redd_encounters_rows_selected, {
 
 # Create reactive to collect input values for insert actions
 redd_encounter_create = reactive({
+  req(input$tabs == "data_entry")
+  req(input$surveys_rows_selected)
+  req(input$survey_events_rows_selected)
+  req(!is.na(selected_survey_event_data()$survey_event_id))
   # Survey date
   survey_date = selected_survey_data()$survey_date
   # Survey_event_id
@@ -196,6 +214,7 @@ redd_encounter_insert_vals = reactive({
       !is.na(redd_encounter_dt) ~ as.POSIXct(paste0(format(survey_date), " ",
                                                     format(redd_encounter_dt, "%H:%M")),
                                              tz = "America/Los_Angeles"))) %>%
+    mutate(redd_encounter_datetime = with_tz(redd_encounter_datetime, tzone = "UTC")) %>%
     select(survey_event_id, redd_location_id, redd_status_id, redd_encounter_datetime,
            redd_count, comment_text = redd_comment, created_by)
   return(new_redd_enc_values)
@@ -225,6 +244,10 @@ observeEvent(input$insert_redd_location, {
 
 # Create reactive to collect input values for insert actions
 redd_encounter_edit = reactive({
+  req(input$tabs == "data_entry")
+  req(input$surveys_rows_selected)
+  req(input$survey_events_rows_selected)
+  req(!is.na(selected_redd_encounter_data()$redd_encounter_id))
   # Survey date
   survey_date = selected_survey_data()$survey_date
   # Survey_event_id

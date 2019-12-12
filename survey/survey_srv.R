@@ -31,9 +31,7 @@ output$completion_select = renderUI({
 # Primary DT datatable for database
 output$surveys = renderDT({
   req(input$year_select)
-  req(!year_vals() == "No surveys")
-  req(input$tabs == "data_entry")
-  req(nchar(waterbody_id() == 36))
+  req(input$stream_select)
   survey_title = glue("Surveys for {input$stream_select} in {year_vals()}")
   survey_data = get_surveys(waterbody_id(), year_vals()) %>%
     mutate(start_time = start_time_dt, end_time = end_time_dt) %>%
@@ -77,12 +75,7 @@ observeEvent(input$tabs, {
 # Create reactive to collect input values for update and delete actions
 selected_survey_data = reactive({
   req(input$surveys_rows_selected)
-  req(input$year_select)
-  req(!year_vals() == "No surveys")
-  req(input$tabs == "data_entry")
-  req(!is.na(waterbody_id()))
-  selected_survey = NULL
-  req(nchar(waterbody_id() == 36))
+  # selected_survey = NULL
   surveys = get_surveys(waterbody_id(), year_vals())
   survey_row = input$surveys_rows_selected
   selected_survey = tibble(survey_id = surveys$survey_id[survey_row],
@@ -244,9 +237,6 @@ output$survey_modal_insert_vals = renderDT({
 
 observeEvent(input$survey_add, {
   new_survey_vals = survey_create()
-  req(input$year_select)
-  req(!input$year_select == "No surveys")
-  req(input$tabs == "data_entry")
   existing_survey_vals = get_surveys(waterbody_id(), year_vals()) %>%
     mutate(up_rm = as.character(up_rm)) %>%
     mutate(lo_rm = as.character(lo_rm)) %>%
@@ -278,6 +268,14 @@ observeEvent(input$survey_add, {
                  size = "m",
                  title = "Warning",
                  paste0("Survey already exists. Please edit the date, RMs, observer, or source before proceeding." ),
+                 easyClose = TRUE,
+                 footer = NULL
+               )
+             } else if ( nrow(new_survey_vals) > 1L ) {
+               modalDialog (
+                 size = "m",
+                 title = "Warning",
+                 paste0("Duplicate rows of survey data are being created. Check for duplicated RMs." ),
                  easyClose = TRUE,
                  footer = NULL
                )
@@ -322,9 +320,6 @@ survey_insert_vals = reactive({
 
 # Update DB and reload DT
 observeEvent(input$insert_survey, {
-  req(input$year_select)
-  req(!input$year_select == "No surveys")
-  req(input$tabs == "data_entry")
   survey_insert(survey_insert_vals())
   removeModal()
   post_insert_vals = get_surveys(waterbody_id(), year_vals()) %>%
@@ -482,9 +477,6 @@ observeEvent(input$survey_edit, {
 
 # Update DB and reload DT
 observeEvent(input$save_edits, {
-  req(input$year_select)
-  req(!input$year_select == "No surveys")
-  req(input$tabs == "data_entry")
   survey_update(survey_edit())
   removeModal()
   post_edit_vals = get_surveys(waterbody_id(), year_vals()) %>%
@@ -502,9 +494,6 @@ observeEvent(input$save_edits, {
 
 # Generate values to show in modal
 output$survey_modal_delete_vals = renderDT({
-  req(input$year_select)
-  req(!input$year_select == "No surveys")
-  req(input$tabs == "data_entry")
   survey_modal_del_id = selected_survey_data()$survey_id
   survey_modal_del_vals = get_surveys(waterbody_id(), year_vals()) %>%
     filter(survey_id == survey_modal_del_id) %>%
@@ -566,9 +555,6 @@ observeEvent(input$survey_delete, {
 
 # Update DB and reload DT
 observeEvent(input$delete_survey, {
-  req(input$year_select)
-  req(!input$year_select == "No surveys")
-  req(input$tabs == "data_entry")
   survey_delete(selected_survey_data())
   removeModal()
   surveys_after_delete = get_surveys(waterbody_id(), year_vals()) %>%
