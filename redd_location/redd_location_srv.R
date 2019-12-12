@@ -25,6 +25,11 @@ output$orientation_type_select = renderUI({
 
 # Primary DT datatable for survey_intent
 output$redd_locations = renderDT({
+  req(input$tabs == "data_entry")
+  req(input$surveys_rows_selected)
+  req(input$survey_events_rows_selected)
+  req(input$redd_encounters_rows_selected)
+  req(!is.na(selected_redd_encounter_data()$redd_encounter_id))
   redd_location_title = glue("{selected_survey_event_data()$species} redd locations for {input$stream_select} on ",
                              "{selected_survey_data()$survey_date} from river mile {selected_survey_data()$up_rm} ",
                              "to {selected_survey_data()$lo_rm}")
@@ -58,7 +63,12 @@ redd_location_dt_proxy = dataTableProxy(outputId = "redd_locations")
 
 # Create reactive to collect input values for update and delete actions
 selected_redd_location_data = reactive({
+  req(input$tabs == "data_entry")
+  req(input$surveys_rows_selected)
+  req(input$survey_events_rows_selected)
+  req(input$redd_encounters_rows_selected)
   req(input$redd_locations_rows_selected)
+  req(!is.na(selected_redd_encounter_data()$redd_encounter_id))
   redd_location_data = get_redd_location(selected_redd_encounter_data()$redd_encounter_id)
   redd_location_row = input$redd_locations_rows_selected
   selected_redd_location = tibble(redd_location_id = redd_location_data$redd_location_id[redd_location_row],
@@ -100,7 +110,11 @@ observeEvent(input$redd_locations_rows_selected, {
 
 # Get centroid of stream for setting view of redd_map
 selected_redd_coords = reactive({
+  req(input$tabs == "data_entry")
+  req(input$surveys_rows_selected)
+  req(input$survey_events_rows_selected)
   req(input$redd_encounters_rows_selected)
+  req(!is.na(selected_redd_encounter_data()$redd_encounter_id))
   # Get centroid of stream....always available if stream is selected
   center_lat = selected_stream_centroid()$center_lat
   center_lon = selected_stream_centroid()$center_lon
@@ -236,6 +250,7 @@ observeEvent(input$capture_redd_loc, {
 
 # Disable "New" button if a row of comments already exists
 observe({
+  req(!is.na(selected_redd_encounter_data()$redd_encounter_id))
   input$insert_redd_location
   redd_loc_data = get_redd_location(selected_redd_encounter_data()$redd_encounter_id)
   if (nrow(redd_loc_data) >= 1L) {
@@ -247,6 +262,11 @@ observe({
 
 # Create reactive to collect input values for insert actions
 redd_location_create = reactive({
+  req(input$tabs == "data_entry")
+  req(input$surveys_rows_selected)
+  req(input$survey_events_rows_selected)
+  req(input$redd_encounters_rows_selected)
+  req(!is.na(selected_redd_encounter_data()$redd_encounter_id))
   # Redd_encounter_id
   redd_encounter_id_input = selected_redd_encounter_data()$redd_encounter_id
   # Channel type
@@ -368,6 +388,12 @@ observeEvent(input$insert_redd_location, {
 
 # Create reactive to collect input values for insert actions
 redd_location_edit = reactive({
+  req(input$tabs == "data_entry")
+  req(input$surveys_rows_selected)
+  req(input$survey_events_rows_selected)
+  req(input$redd_encounters_rows_selected)
+  req(input$redd_locations_rows_selected)
+  req(!is.na(selected_redd_location_data()$redd_location_id))
   # Channel type
   channel_type_input = input$channel_type_select
   if ( channel_type_input == "" ) {

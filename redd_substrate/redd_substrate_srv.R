@@ -26,6 +26,11 @@ output$substrate_type_select = renderUI({
 
 # Primary DT datatable for survey_intent
 output$redd_substrates = renderDT({
+  req(input$tabs == "data_entry")
+  req(input$surveys_rows_selected)
+  req(input$survey_events_rows_selected)
+  req(input$redd_encounters_rows_selected)
+  req(!is.na(selected_redd_encounter_data()$redd_encounter_id))
   redd_substrate_title = glue("{selected_survey_event_data()$species} redd substrate data for {input$stream_select} on ",
                                "{selected_survey_data()$survey_date} from river mile {selected_survey_data()$up_rm} ",
                                "to {selected_survey_data()$lo_rm}")
@@ -58,7 +63,12 @@ redd_substrate_dt_proxy = dataTableProxy(outputId = "redd_substrates")
 
 # Create reactive to collect input values for update and delete actions
 selected_redd_substrate_data = reactive({
+  req(input$tabs == "data_entry")
+  req(input$surveys_rows_selected)
+  req(input$survey_events_rows_selected)
+  req(input$redd_encounters_rows_selected)
   req(input$redd_substrates_rows_selected)
+  req(!is.na(selected_redd_encounter_data()$redd_encounter_id))
   redd_substrate_data = get_redd_substrate(selected_redd_encounter_data()$redd_encounter_id)
   redd_substrate_row = input$redd_substrates_rows_selected
   selected_redd_substrate = tibble(redd_substrate_id = redd_substrate_data$redd_substrate_id[redd_substrate_row],
@@ -91,6 +101,7 @@ observeEvent(input$redd_substrates_rows_selected, {
 # Disable "New" button if four rows of substrate already exists
 # There are only four categories in the lut
 observe({
+  req(!is.na(selected_redd_encounter_data()$redd_encounter_id))
   input$insert_redd_substrate
   input$delete_redd_substrate
   redd_substrate_data = get_redd_substrate(selected_redd_encounter_data()$redd_encounter_id)
@@ -103,6 +114,11 @@ observe({
 
 # Create reactive to collect input values for insert actions
 redd_substrate_create = reactive({
+  req(input$tabs == "data_entry")
+  req(input$surveys_rows_selected)
+  req(input$survey_events_rows_selected)
+  req(input$redd_encounters_rows_selected)
+  req(!is.na(selected_redd_encounter_data()$redd_encounter_id))
   # Redd_encounter_id
   redd_encounter_id_input = selected_redd_encounter_data()$redd_encounter_id
   # Substrate level
@@ -244,6 +260,11 @@ observeEvent(input$insert_redd_substrate, {
 
 # Create reactive to collect input values for insert actions
 redd_substrate_edit = reactive({
+  req(input$tabs == "data_entry")
+  req(input$surveys_rows_selected)
+  req(input$survey_events_rows_selected)
+  req(input$redd_encounters_rows_selected)
+  req(!is.na(selected_redd_substrate_data()$redd_substrate_id))
   # Redd_substrate_id
   redd_substrate_id_input = selected_redd_substrate_data()$redd_substrate_id
   substrate_level_input = input$substrate_level_select

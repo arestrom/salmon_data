@@ -14,7 +14,6 @@ get_redd_substrate = function(redd_encounter_id) {
   redd_substrate = DBI::dbGetQuery(con, qry)
   poolReturn(con)
   redd_substrate = redd_substrate %>%
-    mutate(redd_substrate_id = tolower(redd_substrate_id)) %>%
     mutate(created_date = with_tz(created_date, tzone = "America/Los_Angeles")) %>%
     mutate(created_dt = format(created_date, "%m/%d/%Y %H:%M")) %>%
     mutate(modified_date = with_tz(modified_date, tzone = "America/Los_Angeles")) %>%
@@ -37,7 +36,6 @@ get_substrate_level = function() {
              "where obsolete_datetime is null")
   con = poolCheckout(pool)
   substrate_level_list = DBI::dbGetQuery(con, qry) %>%
-    mutate(substrate_level_id = tolower(substrate_level_id)) %>%
     arrange(factor(substrate_level, levels = c("Primary", "Secondary", "Tertiary", "Quaternary"))) %>%
     select(substrate_level_id, substrate_level)
   poolReturn(con)
@@ -51,7 +49,6 @@ get_substrate_type = function() {
              "where obsolete_datetime is null")
   con = poolCheckout(pool)
   substrate_type_list = DBI::dbGetQuery(con, qry) %>%
-    mutate(substrate_type_id = tolower(substrate_type_id)) %>%
     arrange(substrate_type) %>%
     select(substrate_type_id, substrate_type)
   poolReturn(con)
@@ -81,7 +78,7 @@ redd_substrate_insert = function(new_redd_substrate_values) {
                   "substrate_percent, ",
                   "created_by) ",
                   "VALUES (",
-                  "?, ?, ?, ?, ?)"))
+                  "$1, $2, $3, $4, $5)"))
   dbBind(insert_result, list(redd_encounter_id, substrate_level_id, substrate_type_id,
                              substrate_percent, created_by))
   dbGetRowsAffected(insert_result)
@@ -107,12 +104,12 @@ redd_substrate_update = function(redd_substrate_edit_values) {
   con = poolCheckout(pool)
   update_result = dbSendStatement(
     con, glue_sql("UPDATE redd_substrate SET ",
-                  "substrate_level_id = ?, ",
-                  "substrate_type_id = ?, ",
-                  "substrate_percent = ?, ",
-                  "modified_datetime = ?, ",
-                  "modified_by = ? ",
-                  "where redd_substrate_id = ?"))
+                  "substrate_level_id = $1, ",
+                  "substrate_type_id = $2, ",
+                  "substrate_percent = $3, ",
+                  "modified_datetime = $4, ",
+                  "modified_by = $5 ",
+                  "where redd_substrate_id = $6"))
   dbBind(update_result, list(substrate_level_id, substrate_type_id,
                              substrate_percent, mod_dt, mod_by,
                              redd_substrate_id))
@@ -131,7 +128,7 @@ redd_substrate_delete = function(delete_values) {
   redd_substrate_id = delete_values$redd_substrate_id
   con = poolCheckout(pool)
   delete_result = dbSendStatement(
-    con, glue_sql("DELETE FROM redd_substrate WHERE redd_substrate_id = ?"))
+    con, glue_sql("DELETE FROM redd_substrate WHERE redd_substrate_id = $1"))
   dbBind(delete_result, list(redd_substrate_id))
   dbGetRowsAffected(delete_result)
   dbClearResult(delete_result)

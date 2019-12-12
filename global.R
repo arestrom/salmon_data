@@ -87,11 +87,14 @@
 #     Done....Can also suggest adding new point with one decimal
 #     difference in river_mile. Then leave historical data alone.
 # 23. Find css to narrow sidebar in header boxplus.
-# 25. Getting crash inside data_entry screen. Select Alder 2019.
-#     Select page 6 row 27. Open fish_encounter and select a row.
-#     Then switch to row 28 and crash occurs.
-# 26.
-
+# 25. Need to fix data entry of redd encounter, redd location.
+#     Getting duplicates of redd encounter during CRUD. May
+#     need to limit redd_name to unique per new redd. Or only
+#     set redd_name in the redd_location interface. Use same
+#     updated methods with fish locations.
+# 26. Zoom to stream extent when setting locations via map.
+#     Right now marker is sometimes off the screen.
+# 27.
 
 # AS 2019-10-04
 #==============================================================

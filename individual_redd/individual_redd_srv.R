@@ -26,6 +26,11 @@ output$dewatered_type_select = renderUI({
 
 # Primary DT datatable for survey_intent
 output$individual_redds = renderDT({
+  req(input$tabs == "data_entry")
+  req(input$surveys_rows_selected)
+  req(input$survey_events_rows_selected)
+  req(input$redd_encounters_rows_selected)
+  req(!is.na(selected_redd_encounter_data()$redd_encounter_id))
   individual_redd_title = glue("{selected_survey_event_data()$species} individual redd data for {input$stream_select} on ",
                                "{selected_survey_data()$survey_date} from river mile {selected_survey_data()$up_rm} ",
                                "to {selected_survey_data()$lo_rm}")
@@ -59,7 +64,12 @@ individual_redd_dt_proxy = dataTableProxy(outputId = "individual_redds")
 
 # Create reactive to collect input values for update and delete actions
 selected_individual_redd_data = reactive({
+  req(input$tabs == "data_entry")
+  req(input$surveys_rows_selected)
+  req(input$survey_events_rows_selected)
+  req(input$redd_encounters_rows_selected)
   req(input$individual_redds_rows_selected)
+  req(!is.na(selected_redd_encounter_data()$redd_encounter_id))
   individual_redd_data = get_individual_redd(selected_redd_encounter_data()$redd_encounter_id)
   individual_redd_row = input$individual_redds_rows_selected
   selected_individual_redd = tibble(individual_redd_id = individual_redd_data$individual_redd_id[individual_redd_row],
@@ -107,6 +117,7 @@ observeEvent(input$individual_redds_rows_selected, {
 
 # Disable "New" button if a row of comments already exists
 observe({
+  req(!is.na(selected_redd_encounter_data()$redd_encounter_id))
   input$insert_individual_redd
   ind_redd_data = get_individual_redd(selected_redd_encounter_data()$redd_encounter_id)
   if (nrow(ind_redd_data) >= 1L) {
@@ -118,6 +129,11 @@ observe({
 
 # Create reactive to collect input values for insert actions
 individual_redd_create = reactive({
+  req(input$tabs == "data_entry")
+  req(input$surveys_rows_selected)
+  req(input$survey_events_rows_selected)
+  req(input$redd_encounters_rows_selected)
+  req(!is.na(selected_redd_encounter_data()$redd_encounter_id))
   # Redd_encounter_id
   redd_encounter_id_input = selected_redd_encounter_data()$redd_encounter_id
   # Redd count
@@ -248,6 +264,12 @@ observeEvent(input$insert_individual_redd, {
 
 # Create reactive to collect input values for insert actions
 individual_redd_edit = reactive({
+  req(input$tabs == "data_entry")
+  req(input$surveys_rows_selected)
+  req(input$survey_events_rows_selected)
+  req(input$redd_encounters_rows_selected)
+  req(input$individual_redds_rows_selected)
+  req(!is.na(selected_individual_redd_data()$individual_redd_id))
   # Redd_encounter_id
   individual_redd_id_input = selected_individual_redd_data()$individual_redd_id
   # Redd count

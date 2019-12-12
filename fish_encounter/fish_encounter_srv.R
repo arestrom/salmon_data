@@ -67,6 +67,7 @@ output$fish_encounters = renderDT({
   req(input$tabs == "data_entry")
   req(input$surveys_rows_selected)
   req(input$survey_events_rows_selected)
+  req(!is.na(selected_survey_event_data()$survey_event_id))
   fish_encounter_title = glue("{selected_survey_event_data()$species} data for {input$stream_select} on ",
                               "{selected_survey_data()$survey_date} from river mile {selected_survey_data()$up_rm} ",
                               "to {selected_survey_data()$lo_rm}")
@@ -110,6 +111,7 @@ selected_fish_encounter_data = reactive({
   req(input$surveys_rows_selected)
   req(input$survey_events_rows_selected)
   req(input$fish_encounters_rows_selected)
+  req(!is.na(selected_survey_event_data()$survey_event_id))
   fish_encounter_data = get_fish_encounter(selected_survey_event_data()$survey_event_id)
   fish_encounter_row = input$fish_encounters_rows_selected
   selected_fish_encounter = tibble(fish_encounter_id = fish_encounter_data$fish_encounter_id[fish_encounter_row],
@@ -158,6 +160,7 @@ fish_encounter_create = reactive({
   req(input$tabs == "data_entry")
   req(input$surveys_rows_selected)
   req(input$survey_events_rows_selected)
+  req(!is.na(selected_survey_event_data()$survey_event_id))
   # Survey date
   survey_date = selected_survey_data()$survey_date
   # Survey_event_id
@@ -331,6 +334,7 @@ fish_encounter_insert_vals = reactive({
       !is.na(fish_encounter_dt) ~ as.POSIXct(paste0(format(survey_date), " ",
                                                     format(fish_encounter_dt, "%H:%M")),
                                              tz = "America/Los_Angeles"))) %>%
+    mutate(fish_encounter_datetime = with_tz(fish_encounter_datetime, tzone = "UTC")) %>%
     mutate(previously_counted_indicator = if_else(prev_counted == "No", 0L, 1L)) %>%
     select(survey_event_id, fish_status_id, sex_id, maturity_id, origin_id,
            cwt_detection_status_id, adipose_clip_status_id, fish_behavior_type_id,
@@ -358,6 +362,7 @@ fish_encounter_edit = reactive({
   req(input$tabs == "data_entry")
   req(input$surveys_rows_selected)
   req(input$survey_events_rows_selected)
+  req(!is.na(selected_fish_encounter_data()$fish_encounter_id))
   # Survey date
   survey_date = selected_survey_data()$survey_date
   # # Location....NA for now

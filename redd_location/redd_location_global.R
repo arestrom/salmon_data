@@ -22,8 +22,6 @@ get_redd_location = function(redd_encounter_id) {
   redd_locations = DBI::dbGetQuery(con, qry)
   poolReturn(con)
   redd_locations = redd_locations %>%
-    mutate(redd_location_id = tolower(redd_location_id)) %>%
-    mutate(location_coordinates_id = tolower(location_coordinates_id)) %>%
     mutate(latitude = round(latitude, 6)) %>%
     mutate(longitude = round(longitude, 6)) %>%
     mutate(created_date = with_tz(created_date, tzone = "America/Los_Angeles")) %>%
@@ -60,8 +58,6 @@ get_redd_coordinates = function(redd_encounter_id) {
   redd_coordinates = DBI::dbGetQuery(con, qry)
   poolReturn(con)
   redd_coordinates = redd_coordinates %>%
-    mutate(redd_location_id = tolower(redd_location_id)) %>%
-    mutate(location_coordinates_id = tolower(location_coordinates_id)) %>%
     mutate(latitude = round(latitude, 6)) %>%
     mutate(longitude = round(longitude, 6)) %>%
     mutate(created_date = with_tz(created_date, tzone = "America/Los_Angeles")) %>%
@@ -87,7 +83,6 @@ get_channel_type = function() {
              "where obsolete_datetime is null")
   con = poolCheckout(pool)
   channel_type_list = DBI::dbGetQuery(con, qry) %>%
-    mutate(stream_channel_type_id = tolower(stream_channel_type_id)) %>%
     arrange(channel_type) %>%
     select(stream_channel_type_id, channel_type)
   poolReturn(con)
@@ -101,7 +96,6 @@ get_orientation_type = function() {
              "where obsolete_datetime is null")
   con = poolCheckout(pool)
   orientation_type_list = DBI::dbGetQuery(con, qry) %>%
-    mutate(location_orientation_type_id = tolower(location_orientation_type_id)) %>%
     arrange(orientation_type) %>%
     select(location_orientation_type_id, orientation_type)
   poolReturn(con)
@@ -166,7 +160,7 @@ redd_location_insert = function(new_redd_location_values) {
                   "location_description, ",
                   "created_by) ",
                   "VALUES (",
-                  "?, ?, ?, ?, ?, ?, ?, ?, ?)"))
+                  "$1, $2, $3, $4, $5, $6, $7, $8, $9)"))
   dbBind(insert_loc_result, list(location_id, waterbody_id, wria_id,
                                  location_type_id, stream_channel_type_id,
                                  location_orientation_type_id, location_name,
@@ -244,13 +238,13 @@ redd_location_update = function(redd_location_edit_values) {
   con = poolCheckout(pool)
   update_result = dbSendStatement(
     con, glue_sql("UPDATE location SET ",
-                  "stream_channel_type_id = ?, ",
-                  "location_orientation_type_id = ?, ",
-                  "location_name = ?, ",
-                  "location_description = ?, ",
-                  "modified_datetime = ?, ",
-                  "modified_by = ? ",
-                  "where location_id = ?"))
+                  "stream_channel_type_id = $1, ",
+                  "location_orientation_type_id = $2, ",
+                  "location_name = $3, ",
+                  "location_description = $4, ",
+                  "modified_datetime = $5, ",
+                  "modified_by = $6 ",
+                  "where location_id = $7"))
   dbBind(update_result, list(stream_channel_type_id,
                              location_orientation_type_id,
                              location_name, location_description,
@@ -306,7 +300,7 @@ redd_location_delete = function(location_dependencies, delete_values, encounter_
     con = poolCheckout(pool)
     update_result = dbSendStatement(
       con, glue_sql("UPDATE redd_encounter SET redd_location_id = NULL ",
-                    "WHERE redd_encounter_id = ?"))
+                    "WHERE redd_encounter_id = $1"))
     dbBind(update_result, list(redd_encounter_id))
     dbGetRowsAffected(update_result)
     dbClearResult(update_result)
@@ -315,17 +309,17 @@ redd_location_delete = function(location_dependencies, delete_values, encounter_
     con = poolCheckout(pool)
     update_result = dbSendStatement(
       con, glue_sql("UPDATE redd_encounter SET redd_location_id = NULL ",
-                    "WHERE redd_encounter_id = ?"))
+                    "WHERE redd_encounter_id = $1"))
     dbBind(update_result, list(redd_encounter_id))
     dbGetRowsAffected(update_result)
     dbClearResult(update_result)
     delete_result_one = dbSendStatement(
-      con, glue_sql("DELETE FROM location_coordinates WHERE location_id = ?"))
+      con, glue_sql("DELETE FROM location_coordinates WHERE location_id = $1"))
     dbBind(delete_result_one, list(redd_location_id))
     dbGetRowsAffected(delete_result_one)
     dbClearResult(delete_result_one)
     delete_result_two = dbSendStatement(
-      con, glue_sql("DELETE FROM location WHERE location_id = ?"))
+      con, glue_sql("DELETE FROM location WHERE location_id = $1"))
     dbBind(delete_result_two, list(redd_location_id))
     dbGetRowsAffected(delete_result_two)
     dbClearResult(delete_result_two)
