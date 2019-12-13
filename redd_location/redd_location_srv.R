@@ -23,17 +23,14 @@ output$orientation_type_select = renderUI({
 # Primary datatable for redd_locations
 #========================================================
 
-# Primary DT datatable for survey_intent
+# Primary DT datatable for redd locations...pulling in redds by species and stream for 9 months past
 output$redd_locations = renderDT({
   req(input$tabs == "data_entry")
   req(input$surveys_rows_selected)
   req(input$survey_events_rows_selected)
-  req(input$redd_encounters_rows_selected)
-  req(!is.na(selected_redd_encounter_data()$redd_encounter_id))
-  redd_location_title = glue("{selected_survey_event_data()$species} redd locations for {input$stream_select} on ",
-                             "{selected_survey_data()$survey_date} from river mile {selected_survey_data()$up_rm} ",
-                             "to {selected_survey_data()$lo_rm}")
-  redd_location_data = get_redd_location(selected_redd_encounter_data()$redd_encounter_id) %>%
+  redd_location_title = glue("{selected_survey_event_data()$species} redd locations for {input$stream_select} ",
+                             "from river mile {selected_survey_data()$up_rm} to {selected_survey_data()$lo_rm}")
+  redd_location_data = get_redd_location(selected_survey_event_data()$survey_event_id) %>%
     select(redd_name, channel_type, orientation_type, latitude,
            longitude, horiz_accuracy, location_description,
            created_dt, created_by, modified_dt, modified_by)
@@ -64,12 +61,7 @@ redd_location_dt_proxy = dataTableProxy(outputId = "redd_locations")
 # Create reactive to collect input values for update and delete actions
 selected_redd_location_data = reactive({
   req(input$tabs == "data_entry")
-  req(input$surveys_rows_selected)
-  req(input$survey_events_rows_selected)
-  req(input$redd_encounters_rows_selected)
-  req(input$redd_locations_rows_selected)
-  req(!is.na(selected_redd_encounter_data()$redd_encounter_id))
-  redd_location_data = get_redd_location(selected_redd_encounter_data()$redd_encounter_id)
+  redd_location_data = get_redd_location(selected_survey_event_data()$survey_event_id)
   redd_location_row = input$redd_locations_rows_selected
   selected_redd_location = tibble(redd_location_id = redd_location_data$redd_location_id[redd_location_row],
                                   location_coordinates_id = redd_location_data$location_coordinates_id[redd_location_row],
@@ -84,7 +76,6 @@ selected_redd_location_data = reactive({
                                   created_by = redd_location_data$created_by[redd_location_row],
                                   modified_date = redd_location_data$modified_date[redd_location_row],
                                   modified_by = redd_location_data$modified_by[redd_location_row])
-  #print(selected_redd_location)
   return(selected_redd_location)
 })
 
@@ -108,28 +99,30 @@ observeEvent(input$redd_locations_rows_selected, {
 # Get either selected redd coordinates or default stream centroid
 #================================================================
 
-# Get centroid of stream for setting view of redd_map
+# Get centroid of stream for setting view of redd_map....might be null if no location entered
 selected_redd_coords = reactive({
   req(input$tabs == "data_entry")
-  req(input$surveys_rows_selected)
-  req(input$survey_events_rows_selected)
-  req(input$redd_encounters_rows_selected)
-  req(!is.na(selected_redd_encounter_data()$redd_encounter_id))
   # Get centroid of stream....always available if stream is selected
   center_lat = selected_stream_centroid()$center_lat
   center_lon = selected_stream_centroid()$center_lon
-  # Get location_coordinates data should be nrow == 0 if no coordiinates present
-  redd_coords = get_redd_coordinates(selected_redd_encounter_data()$redd_encounter_id)
-  if ( nrow(redd_coords) == 0 ) {
+  # Get location_coordinates data should be nrow == 0 if no coordinates present
+  if (!is.na(selected_redd_encounter_data()$redd_encounter_id)) {
+    redd_coords = get_redd_coordinates(selected_redd_encounter_data()$redd_encounter_id)
+    redd_encounter_id = selected_redd_encounter_data()$redd_encounter_id
+  } else {
+    redd_coords = NULL
+    redd_encounter_id = remisc::get_uuid(1L)
+  }
+  if ( is.null(redd_coords) ) {
     redd_lat = center_lat
     redd_lon = center_lon
-    redd_name = "need redd name"
+    redd_name = "none"
   } else {
     redd_lat = redd_coords$latitude
     redd_lon = redd_coords$longitude
     redd_name = selected_redd_encounter_data()$redd_name
   }
-  redd_coords = tibble(redd_encounter_id = selected_redd_encounter_data()$redd_encounter_id,
+  redd_coords = tibble(redd_encounter_id = redd_encounter_id,
                        redd_name = redd_name,
                        redd_lat = redd_lat,
                        redd_lon = redd_lon)
@@ -219,9 +212,15 @@ observeEvent(input$redd_loc_map, {
                    )
                  ),
                  fluidRow(
-                   column(width = 2,
-                          actionButton("capture_redd_loc", "Capture redd location")),
-                   column(width = 10,
+                   column(width = 3,
+                          actionButton("capture_redd_loc", "Capture redd location"),
+                          tippy("<i style='color:#1a5e86;padding-left:8px', class='fas fa-info-circle'></i>",
+                                tooltip = glue("You can zoom in on the map and drag the marker to the ",
+                                               "correct redd location. Click on the marker to set ",
+                                               "the coordinates. Then click on the button to capture ",
+                                               "the location and send the coordinates to the data ",
+                                               "entry screen."))),
+                   column(width = 9,
                           htmlOutput("redd_coordinates"))
                  )
                ),
@@ -247,18 +246,6 @@ observeEvent(input$capture_redd_loc, {
 #========================================================
 # Insert operations: reactives, observers and modals
 #========================================================
-
-# Disable "New" button if a row of comments already exists
-observe({
-  req(!is.na(selected_redd_encounter_data()$redd_encounter_id))
-  input$insert_redd_location
-  redd_loc_data = get_redd_location(selected_redd_encounter_data()$redd_encounter_id)
-  if (nrow(redd_loc_data) >= 1L) {
-    shinyjs::disable("redd_loc_add")
-  } else {
-    shinyjs::enable("redd_loc_add")
-  }
-})
 
 # Create reactive to collect input values for insert actions
 redd_location_create = reactive({

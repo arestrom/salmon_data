@@ -105,7 +105,8 @@ library(shinydashboard)
 library(shinydashboardPlus)
 library(shinyTime)
 library(shinyjs)
-library(odbc)
+library(tippy)
+library(RPostgres)
 library(glue)
 library(tibble)
 library(DBI)
@@ -163,17 +164,6 @@ source("reach_point/reach_point_ui.R")
 source("reach_point/reach_point_global.R")
 
 # Define globals ================================================================
-
-# # Define dsns
-# salmon_db = "local_spawn"
-#
-# # Set up dsn connection
-# pool = pool::dbPool(drv = odbc::odbc(), timezone = "UTC", dsn = salmon_db)
-
-# # # Function to get pw for database
-# # pg_host <- function(host_label) {
-# #   Sys.getenv(host_label)
-# # }
 
 # Function to get user for database
 pg_user <- function(user_label) {
