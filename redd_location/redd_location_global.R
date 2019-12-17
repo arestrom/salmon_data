@@ -1,6 +1,7 @@
 
-# Main redd_encounter query
-get_redd_location = function(redd_encounter_id) {
+# Main redd_location query
+# Need stream, RMs, species, time-span (four months prior)
+get_redd_location = function(waterbody_id, up_rm, lo_rm, survey_date, species) {
   qry = glue("select loc.location_id as redd_location_id, ",
              "lc.location_coordinates_id, ",
              "loc.location_name as redd_name, ",
