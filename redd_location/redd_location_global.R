@@ -1,36 +1,52 @@
 
 # Main redd_location query
-# Need stream, RMs, species, time-span (four months prior)
-#get_redd_location = function(waterbody_id, up_rm, lo_rm, survey_date, species) {
-get_redd_location = function(redd_encounter_id) {
-  qry = glue("select loc.location_id as redd_location_id, ",
+# Need stream, RMs, species, survey_date, time-span (four months prior)
+get_redd_locations = function(waterbody_id, up_rm, lo_rm, survey_date, species_id) {
+  qry = glue("select s.survey_datetime as survey_date, se.species_id, ",
+             "uploc.river_mile_measure as up_rm, loloc.river_mile_measure as lo_rm, ",
+             "rloc.location_id as redd_location_id, ",
+             "rloc.location_name as redd_name, ",
+             "rs.redd_status_short_description as redd_status, ",
              "lc.location_coordinates_id, ",
-             "loc.location_name as redd_name, ",
              "st_x(st_transform(lc.geom, 4326)) as longitude, ",
              "st_y(st_transform(lc.geom, 4326)) as latitude, ",
              "lc.horizontal_accuracy as horiz_accuracy, ",
              "sc.channel_type_description as channel_type, ",
              "lo.orientation_type_description as orientation_type, ",
-             "loc.location_description, ",
-             "loc.created_datetime as created_date, loc.created_by, ",
-             "loc.modified_datetime as modified_date, loc.modified_by ",
-             "from redd_encounter as rd ",
-             "inner join location as loc on rd.redd_location_id = loc.location_id ",
-             "left join location_coordinates as lc on loc.location_id = lc.location_id ",
-             "left join stream_channel_type_lut as sc on loc.stream_channel_type_id = sc.stream_channel_type_id ",
-             "left join location_orientation_type_lut as lo on loc.location_orientation_type_id = lo.location_orientation_type_id ",
-             "where rd.redd_encounter_id = '{redd_encounter_id}'")
+             "rloc.location_description, ",
+             "rloc.created_datetime as created_date, rloc.created_by, ",
+             "rloc.modified_datetime as modified_date, rloc.modified_by ",
+             "from survey as s ",
+             "inner join survey_event as se on s.survey_id = se.survey_id ",
+             "inner join location as uploc on s.upper_end_point_id = uploc.location_id ",
+             "inner join location as loloc on s.lower_end_point_id = loloc.location_id ",
+             "inner join redd_encounter as rd on se.survey_event_id = rd.survey_event_id ",
+             "inner join redd_status_lut as rs on rd.redd_status_id = rs.redd_status_id ",
+             "inner join location as rloc on rd.redd_location_id = rloc.location_id ",
+             "left join location_coordinates as lc on rloc.location_id = lc.location_id ",
+             "left join stream_channel_type_lut as sc on rloc.stream_channel_type_id = sc.stream_channel_type_id ",
+             "left join location_orientation_type_lut as lo on rloc.location_orientation_type_id = lo.location_orientation_type_id ",
+             "where loloc.waterbody_id = '{waterbody_id}' ",
+             "and uploc.river_mile_measure <= {up_rm} ",
+             "and loloc.river_mile_measure >= {lo_rm} ",
+             "and se.species_id = '{species_id}' ",
+             "and s.survey_datetime < '{survey_date}' ",
+             "and s.survey_datetime > '{survey_date}'::date - interval '4 months' ",
+             "and not redd_status_short_description in ('Previous redd, not visible')")
   con = poolCheckout(pool)
   redd_locations = DBI::dbGetQuery(con, qry)
   poolReturn(con)
   redd_locations = redd_locations %>%
-    mutate(latitude = round(latitude, 6)) %>%
-    mutate(longitude = round(longitude, 6)) %>%
+    mutate(latitude = round(latitude, 7)) %>%
+    mutate(longitude = round(longitude, 7)) %>%
+    mutate(survey_date = with_tz(survey_date, tzone = "America/Los_Angeles")) %>%
+    mutate(survey_dt = format(survey_date, "%m/%d/%Y")) %>%
     mutate(created_date = with_tz(created_date, tzone = "America/Los_Angeles")) %>%
     mutate(created_dt = format(created_date, "%m/%d/%Y %H:%M")) %>%
     mutate(modified_date = with_tz(modified_date, tzone = "America/Los_Angeles")) %>%
     mutate(modified_dt = format(modified_date, "%m/%d/%Y %H:%M")) %>%
-    select(redd_location_id, location_coordinates_id, redd_name,
+    select(redd_location_id, location_coordinates_id,
+           survey_date, survey_dt, redd_name, redd_status,
            latitude, longitude, horiz_accuracy, channel_type,
            orientation_type, location_description, created_date,
            created_dt, created_by, modified_date, modified_dt,
@@ -43,30 +59,59 @@ get_redd_location = function(redd_encounter_id) {
 # Get just the redd_coordinates
 #==========================================================================
 
-# Redd_coordinates query
-get_redd_coordinates = function(redd_encounter_id) {
-  qry = glue("select lc.location_id as redd_location_id, ",
-             "lc.location_coordinates_id, ",
+# # Redd_coordinates query...for setting stream centroid when redd_encounter row is selected
+# get_redd_coordinates = function(redd_encounter_id) {
+#   qry = glue("select lc.location_id as redd_location_id, ",
+#              "lc.location_coordinates_id, ",
+#              "st_x(st_transform(lc.geom, 4326)) as longitude, ",
+#              "st_y(st_transform(lc.geom, 4326)) as latitude, ",
+#              "lc.horizontal_accuracy as horiz_accuracy, ",
+#              "lc.created_datetime as created_date, lc.created_by, ",
+#              "lc.modified_datetime as modified_date, lc.modified_by ",
+#              "from redd_encounter as rd ",
+#              "inner join location as loc on rd.redd_location_id = loc.location_id ",
+#              "inner join location_coordinates as lc on loc.location_id = lc.location_id ",
+#              "where rd.redd_encounter_id = '{redd_encounter_id}'")
+#   con = poolCheckout(pool)
+#   redd_coordinates = DBI::dbGetQuery(con, qry)
+#   poolReturn(con)
+#   redd_coordinates = redd_coordinates %>%
+#     mutate(latitude = round(latitude, 6)) %>%
+#     mutate(longitude = round(longitude, 6)) %>%
+#     mutate(created_date = with_tz(created_date, tzone = "America/Los_Angeles")) %>%
+#     mutate(created_dt = format(created_date, "%m/%d/%Y %H:%M")) %>%
+#     mutate(modified_date = with_tz(modified_date, tzone = "America/Los_Angeles")) %>%
+#     mutate(modified_dt = format(modified_date, "%m/%d/%Y %H:%M")) %>%
+#     select(redd_location_id, location_coordinates_id,
+#            latitude, longitude, horiz_accuracy, created_date,
+#            created_dt, created_by, modified_date, modified_dt,
+#            modified_by) %>%
+#     arrange(created_date)
+#   return(redd_coordinates)
+# }
+
+# Redd_coordinates query...for setting redd_marker when redd_location row is selected
+get_redd_coordinates = function(redd_location_id) {
+  qry = glue("select loc.location_id, lc.location_coordinates_id, ",
              "st_x(st_transform(lc.geom, 4326)) as longitude, ",
              "st_y(st_transform(lc.geom, 4326)) as latitude, ",
              "lc.horizontal_accuracy as horiz_accuracy, ",
              "lc.created_datetime as created_date, lc.created_by, ",
              "lc.modified_datetime as modified_date, lc.modified_by ",
-             "from redd_encounter as rd ",
-             "inner join location as loc on rd.redd_location_id = loc.location_id ",
+             "from location as loc ",
              "inner join location_coordinates as lc on loc.location_id = lc.location_id ",
-             "where rd.redd_encounter_id = '{redd_encounter_id}'")
+             "where loc.location_id = '{redd_location_id}'")
   con = poolCheckout(pool)
   redd_coordinates = DBI::dbGetQuery(con, qry)
   poolReturn(con)
   redd_coordinates = redd_coordinates %>%
-    mutate(latitude = round(latitude, 6)) %>%
-    mutate(longitude = round(longitude, 6)) %>%
+    mutate(latitude = round(latitude, 7)) %>%
+    mutate(longitude = round(longitude, 7)) %>%
     mutate(created_date = with_tz(created_date, tzone = "America/Los_Angeles")) %>%
     mutate(created_dt = format(created_date, "%m/%d/%Y %H:%M")) %>%
     mutate(modified_date = with_tz(modified_date, tzone = "America/Los_Angeles")) %>%
     mutate(modified_dt = format(modified_date, "%m/%d/%Y %H:%M")) %>%
-    select(redd_location_id, location_coordinates_id,
+    select(redd_location_id = location_id, location_coordinates_id,
            latitude, longitude, horiz_accuracy, created_date,
            created_dt, created_by, modified_date, modified_dt,
            modified_by) %>%
@@ -144,8 +189,6 @@ redd_location_insert = function(new_redd_location_values) {
   location_description = new_insert_values$location_description
   if (is.na(location_name) | location_name == "") { location_name = NA }
   if (is.na(location_description) | location_description == "") { location_description = NA }
-  # Pull out redd_encounter table data
-  redd_encounter_id = new_insert_values$redd_encounter_id
   mod_dt = lubridate::with_tz(Sys.time(), "UTC")
   mod_by = Sys.getenv("USERNAME")
   # Insert to location table
@@ -176,12 +219,6 @@ redd_location_insert = function(new_redd_location_values) {
                  "ST_Transform(ST_GeomFromText('POINT({longitude} {latitude})', 4326), 2927), ",
                  "{created_by}) ",
                  .con = con)
-  # Checkout a connection
-  DBI::dbExecute(con, qry)
-  # Update location_id in redd_encounter table
-  qry = glue_sql("UPDATE redd_encounter SET redd_location_id = {location_id}, ",
-                 "modified_datetime = {mod_dt}, modified_by = {mod_by} ",
-                 "WHERE redd_encounter_id = {redd_encounter_id}", .con = con)
   # Checkout a connection
   DBI::dbExecute(con, qry)
   poolReturn(con)

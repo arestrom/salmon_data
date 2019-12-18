@@ -56,7 +56,6 @@ get_end_points = function(waterbody_id) {
   end_points = DBI::dbGetQuery(con, qry)
   poolReturn(con)
   end_points = end_points %>%
-    mutate(location_id = tolower(location_id)) %>%
     arrange(river_mile) %>%
     mutate(rm_label = if_else(is.na(rm_desc), as.character(river_mile),
                               paste0(river_mile, " ", rm_desc))) %>%

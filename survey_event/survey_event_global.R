@@ -1,6 +1,6 @@
 # Main survey intent query
 get_survey_event = function(survey_id) {
-  qry = glue("select se.survey_event_id, sp.common_name as species, ",
+  qry = glue("select se.survey_event_id, se.species_id, sp.common_name as species, ",
              "sd.survey_design_type_code as survey_design, ",
              "cw.detection_method_description as cwt_detect_method, ",
              "rn.run_short_description as run, se.run_year, ",
@@ -22,7 +22,7 @@ get_survey_event = function(survey_id) {
     mutate(created_dt = format(created_date, "%m/%d/%Y %H:%M")) %>%
     mutate(modified_date = with_tz(modified_date, tzone = "America/Los_Angeles")) %>%
     mutate(modified_dt = format(modified_date, "%m/%d/%Y %H:%M")) %>%
-    select(survey_event_id, species, survey_design, cwt_detect_method,
+    select(survey_event_id, species_id, species, survey_design, cwt_detect_method,
            run, run_year, pct_fish_seen, species_comment, created_date,
            created_dt, created_by, modified_date, modified_dt, modified_by) %>%
     arrange(created_date)

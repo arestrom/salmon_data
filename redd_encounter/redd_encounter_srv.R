@@ -10,16 +10,6 @@ output$redd_status_select = renderUI({
                  width = "250px")
 })
 
-output$redd_name_select = renderUI({
-  req(input$survey_events_rows_selected)
-  survey_event_id = selected_survey_event_data()$survey_event_id
-  redd_name_list = get_redd_name(survey_event_id)$redd_name
-  redd_name_list = c("", redd_name_list)
-  selectizeInput("redd_name_select", label = "redd_name",
-                 choices = redd_name_list, selected = NULL,
-                 width = "200px")
-})
-
 #========================================================
 # Primary datatable for redd_encounters
 #========================================================
@@ -97,8 +87,8 @@ observeEvent(input$redd_encounters_rows_selected, {
   sredat = selected_redd_encounter_data()
   updateTimeInput(session, "redd_encounter_time_select", value = sredat$redd_encounter_time)
   updateSelectizeInput(session, "redd_status_select", selected = sredat$redd_status)
+  updateTextInput(session, "redd_name_display", value = sredat$redd_name)
   updateNumericInput(session, "redd_count_input", value = sredat$redd_count)
-  updateSelectizeInput(session, "redd_name_select", selected = sredat$redd_name)
   updateTextAreaInput(session, "redd_comment_input", value = sredat$redd_comment)
 })
 
@@ -111,6 +101,7 @@ redd_encounter_create = reactive({
   req(input$tabs == "data_entry")
   req(input$surveys_rows_selected)
   req(input$survey_events_rows_selected)
+  #req(input$redd_locations_rows_selected)
   req(!is.na(selected_survey_event_data()$survey_event_id))
   # Survey date
   survey_date = selected_survey_data()$survey_date
@@ -131,14 +122,11 @@ redd_encounter_create = reactive({
       pull(redd_status_id)
   }
   # Redd name, location_id
-  redd_name_input = input$redd_name_select
-  if ( redd_name_input == "" ) {
+  redd_name_input = input$redd_name_display
+  if ( redd_name_display == "" ) {
     redd_location_id = NA
   } else {
-    redd_name_vals = get_redd_name(survey_event_id_input)
-    redd_location_id = redd_name_vals %>%
-      filter(redd_name == redd_name_input) %>%
-      pull(redd_location_id)
+    redd_location_id = selected_redd_location_data()$redd_location_id
   }
   new_redd_encounter = tibble(survey_event_id = survey_event_id_input,
                               survey_date = survey_date,
@@ -147,7 +135,6 @@ redd_encounter_create = reactive({
                               redd_status = redd_status_input,
                               redd_status_id = redd_status_id,
                               redd_count = input$redd_count_input,
-                              redd_name = redd_name_input,
                               redd_location_id = redd_location_id,
                               redd_comment = input$redd_comment_input,
                               created_dt = lubridate::with_tz(Sys.time(), "UTC"),

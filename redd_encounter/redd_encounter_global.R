@@ -99,6 +99,13 @@ redd_encounter_insert = function(new_redd_encounter_values) {
   poolReturn(con)
 }
 
+# # Update location_id in redd_encounter table
+# qry = glue_sql("UPDATE redd_encounter SET redd_location_id = {location_id}, ",
+#                "modified_datetime = {mod_dt}, modified_by = {mod_by} ",
+#                "WHERE redd_encounter_id = {redd_encounter_id}", .con = con)
+# # Checkout a connection
+# DBI::dbExecute(con, qry)
+
 #========================================================
 # Edit update callback
 #========================================================

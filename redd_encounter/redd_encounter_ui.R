@@ -15,6 +15,8 @@ redd_encounter_ui = tags$div(
   br(),
   timeInput(inputId = "redd_encounter_time_select", "encounter_time", seconds = FALSE),
   uiOutput("redd_status_select", inline = TRUE),
+  textInput(inputId = "redd_name_display", label = "redd_name (read only)", value = NULL,
+            width = "150px"),
   numericInput(inputId = "redd_count_input", label = "redd_count", value = 0,
                min = 0, step = 1, width = "75px"),
   textAreaInput(inputId = "redd_comment_input", label = "redd_comment", value = "",
