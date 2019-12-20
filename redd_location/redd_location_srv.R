@@ -122,7 +122,7 @@ selected_redd_coords = reactive({
   center_lat = selected_stream_centroid()$center_lat
   center_lon = selected_stream_centroid()$center_lon
   # Get location_coordinates data should be nrow == 0 if no coordinates present
-  if (!is.na(selected_redd_location_data()$redd_location_id)) {
+  if (!is.null(input$redd_locations_rows_selected) ) {
     redd_coords = get_redd_coordinates(selected_redd_location_data()$redd_location_id)
     redd_location_id = selected_redd_location_data()$redd_location_id
   } else {
@@ -327,14 +327,12 @@ observeEvent(input$redd_loc_add, {
     tags$div(id = "redd_location_insert_modal",
              if ( is.na(new_redd_location_vals$redd_name) |
                   new_redd_location_vals$redd_name == "" |
-                  is.na(new_redd_location_vals$channel_type) |
-                  is.na(new_redd_location_vals$orientation_type) |
-                  is.na(new_redd_location_vals$latitude) |
-                  is.na(new_redd_location_vals$longitude) ) {
+                  is.na(new_redd_location_vals$stream_channel_type_id) |
+                  is.na(new_redd_location_vals$location_orientation_type_id) ) {
                modalDialog (
                  size = "m",
                  title = "Warning",
-                 paste0("Values are required for all but the last two fields"),
+                 paste0("At minimum, values are required for redd name (flag code or redd ID), channel type, and orientation type"),
                  easyClose = TRUE,
                  footer = NULL
                )
@@ -362,7 +360,7 @@ redd_location_insert_vals = reactive({
     mutate(waterbody_id = waterbody_id()) %>%
     mutate(wria_id = wria_id()) %>%
     mutate(location_type_id = "d5edb1c0-f645-4e82-92af-26f5637b2de0") %>%     # Redd encounter
-    select(redd_encounter_id, waterbody_id, wria_id, location_type_id,
+    select(waterbody_id, wria_id, location_type_id,
            stream_channel_type_id, location_orientation_type_id,
            redd_name, location_description, latitude, longitude,
            horiz_accuracy, created_by)
@@ -583,6 +581,10 @@ output$redd_location_modal_delete_vals = renderDT({
 redd_location_dependencies = reactive({
   redd_location_id = selected_redd_location_data()$redd_location_id
   redd_loc_dep = get_redd_location_dependencies(redd_location_id)
+  print("redd dependencies")
+  print(redd_loc_dep)
+  print("redd name")
+  print(selected_redd_coords()$redd_name)
   return(redd_loc_dep)
 })
 
@@ -596,7 +598,7 @@ observeEvent(input$redd_loc_delete, {
   table_names = paste0(paste0("'", names(redd_loc_dependencies), "'"), collapse = ", ")
   redd_nm = selected_redd_coords()$redd_name
   # Customize the delete message depending on if other entries are linked to redd_name
-  if (ncol(redd_loc_dependencies) > 1L | redd_loc_dependencies$redd_encounter[1] > 1L) {
+  if ( ncol(redd_loc_dependencies) > 1L ) {
     redd_delete_msg = glue("Other entries in {table_names} are linked to redd_name: '{redd_nm}'. ",
                            "Only the link to the redd location will be deleted.")
   } else {
@@ -635,7 +637,7 @@ observeEvent(input$delete_redd_location, {
   req(input$survey_events_rows_selected)
   redd_location_delete(redd_location_dependencies(),
                        selected_redd_location_data(),
-                       selected_redd_encounter_data())
+                       selected_redd_encounter_data())   # THIS IS STOPPING DELETE !!!!!!!!!!!!!
   removeModal()
   # Collect parameters
   up_rm = selected_survey_data()$up_rm

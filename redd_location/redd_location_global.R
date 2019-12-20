@@ -2,6 +2,31 @@
 # Main redd_location query
 # Need stream, RMs, species, survey_date, time-span (four months prior)
 get_redd_locations = function(waterbody_id, up_rm, lo_rm, survey_date, species_id) {
+  # Define query for new redd locations...no attached surveys
+  qry = glue("select rloc.location_id as redd_location_id, ",
+             "rloc.location_name as redd_name, ",
+             "lc.location_coordinates_id, ",
+             "st_x(st_transform(lc.geom, 4326)) as longitude, ",
+             "st_y(st_transform(lc.geom, 4326)) as latitude, ",
+             "lc.horizontal_accuracy as horiz_accuracy, ",
+             "sc.channel_type_description as channel_type, ",
+             "lo.orientation_type_description as orientation_type, ",
+             "rloc.location_description, ",
+             "rloc.created_datetime as created_date, rloc.created_by, ",
+             "rloc.modified_datetime as modified_date, rloc.modified_by ",
+             "from location as rloc ",
+             "left join location_coordinates as lc on rloc.location_id = lc.location_id ",
+             "left join stream_channel_type_lut as sc on rloc.stream_channel_type_id = sc.stream_channel_type_id ",
+             "left join location_orientation_type_lut as lo on rloc.location_orientation_type_id = lo.location_orientation_type_id ",
+             "left join redd_encounter as rd on rloc.location_id = rd.redd_location_id ",
+             "left join location_type_lut as lt on rloc.location_type_id = lt.location_type_id ",
+             "where rloc.waterbody_id = '{waterbody_id}' ",
+             "and lt.location_type_description = 'Redd encounter' ",
+             "and rd.redd_encounter_id is null")
+  con = poolCheckout(pool)
+  new_redd_locations = DBI::dbGetQuery(con, qry)
+  poolReturn(con)
+  # Define query for redd locations already tied to surveys
   qry = glue("select s.survey_datetime as survey_date, se.species_id, ",
              "uploc.river_mile_measure as up_rm, loloc.river_mile_measure as lo_rm, ",
              "rloc.location_id as redd_location_id, ",
@@ -31,12 +56,12 @@ get_redd_locations = function(waterbody_id, up_rm, lo_rm, survey_date, species_i
              "and loloc.river_mile_measure >= {lo_rm} ",
              "and se.species_id = '{species_id}' ",
              "and s.survey_datetime < '{survey_date}' ",
-             "and s.survey_datetime > '{survey_date}'::date - interval '4 months' ",
+             "and s.survey_datetime >= '{survey_date}'::date - interval '4 months' ",
              "and not redd_status_short_description in ('Previous redd, not visible')")
   con = poolCheckout(pool)
-  redd_locations = DBI::dbGetQuery(con, qry)
+  old_redd_locations = DBI::dbGetQuery(con, qry)
   poolReturn(con)
-  redd_locations = redd_locations %>%
+  redd_locations = bind_rows(new_redd_locations, old_redd_locations) %>%
     mutate(latitude = round(latitude, 7)) %>%
     mutate(longitude = round(longitude, 7)) %>%
     mutate(survey_date = with_tz(survey_date, tzone = "America/Los_Angeles")) %>%
@@ -212,15 +237,17 @@ redd_location_insert = function(new_redd_location_values) {
                                  location_description, created_by))
   dbGetRowsAffected(insert_loc_result)
   dbClearResult(insert_loc_result)
-  # Insert coordinates to location_coordinates
-  qry = glue_sql("INSERT INTO location_coordinates ",
-                 "(location_id, horizontal_accuracy, geom, created_by) ",
-                 "VALUES ({location_id}, {horizontal_accuracy}, ",
-                 "ST_Transform(ST_GeomFromText('POINT({longitude} {latitude})', 4326), 2927), ",
-                 "{created_by}) ",
-                 .con = con)
-  # Checkout a connection
-  DBI::dbExecute(con, qry)
+  if (!is.na(latitude) & !is.na(longitude) ) {
+    # Insert coordinates to location_coordinates
+    qry = glue_sql("INSERT INTO location_coordinates ",
+                   "(location_id, horizontal_accuracy, geom, created_by) ",
+                   "VALUES ({location_id}, {horizontal_accuracy}, ",
+                   "ST_Transform(ST_GeomFromText('POINT({longitude} {latitude})', 4326), 2927), ",
+                   "{created_by}) ",
+                   .con = con)
+    # Checkout a connection
+    DBI::dbExecute(con, qry)
+  }
   poolReturn(con)
 }
 

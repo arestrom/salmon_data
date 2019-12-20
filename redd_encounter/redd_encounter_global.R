@@ -33,20 +33,6 @@ get_redd_encounter = function(survey_event_id) {
 # Get generic lut input values
 #==========================================================================
 
-# # Redd name
-# get_redd_name = function(survey_event_id) {
-#   qry = glue("select loc.location_id as redd_location_id, loc.location_name as redd_name ",
-#              "from redd_encounter as rd ",
-#              "inner join location as loc on rd.redd_location_id = loc.location_id ",
-#              "where rd.survey_event_id = '{survey_event_id}' and loc.location_name is not null")
-#   con = poolCheckout(pool)
-#   redd_name_list = DBI::dbGetQuery(con, qry) %>%
-#     arrange(redd_name) %>%
-#     select(redd_location_id, redd_name)
-#   poolReturn(con)
-#   return(redd_name_list)
-# }
-
 # Redd status
 get_redd_status = function() {
   qry = glue("select redd_status_id, redd_status_short_description as redd_status ",
@@ -98,13 +84,6 @@ redd_encounter_insert = function(new_redd_encounter_values) {
   dbClearResult(insert_result)
   poolReturn(con)
 }
-
-# # Update location_id in redd_encounter table
-# qry = glue_sql("UPDATE redd_encounter SET redd_location_id = {location_id}, ",
-#                "modified_datetime = {mod_dt}, modified_by = {mod_by} ",
-#                "WHERE redd_encounter_id = {redd_encounter_id}", .con = con)
-# # Checkout a connection
-# DBI::dbExecute(con, qry)
 
 #========================================================
 # Edit update callback
