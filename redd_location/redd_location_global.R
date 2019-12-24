@@ -2,7 +2,7 @@
 # Main redd_location query
 # Need stream, RMs, species, survey_date, time-span (four months prior)
 get_redd_locations = function(waterbody_id, up_rm, lo_rm, survey_date, species_id) {
-  # Define query for new redd locations...no attached surveys
+  # Define query for new redd locations...no attached surveys yet...finds new entries or orphan entries
   qry = glue("select rloc.location_id as redd_location_id, ",
              "rloc.location_name as redd_name, ",
              "lc.location_coordinates_id, ",
@@ -55,7 +55,7 @@ get_redd_locations = function(waterbody_id, up_rm, lo_rm, survey_date, species_i
              "and uploc.river_mile_measure <= {up_rm} ",
              "and loloc.river_mile_measure >= {lo_rm} ",
              "and se.species_id = '{species_id}' ",
-             "and s.survey_datetime < '{survey_date}' ",
+             "and s.survey_datetime < '{survey_date}'::date + interval '1 day' ",
              "and s.survey_datetime >= '{survey_date}'::date - interval '4 months' ",
              "and not redd_status_short_description in ('Previous redd, not visible')")
   con = poolCheckout(pool)
@@ -319,15 +319,34 @@ redd_location_update = function(redd_location_edit_values) {
   dbGetRowsAffected(update_result)
   dbClearResult(update_result)
   # Update coordinates to location_coordinates
-  qry = glue_sql("UPDATE location_coordinates ",
-                 "SET horizontal_accuracy = {horizontal_accuracy}, ",
-                 "geom = ST_Transform(ST_GeomFromText('POINT({longitude} {latitude})', 4326), 2927), ",
-                 "modified_datetime = {mod_dt}, modified_by = {mod_by} ",
-                 "WHERE location_id = {location_id} ",
-                 .con = con)
-  # Checkout a connection
-  DBI::dbExecute(con, qry)
+  if ( !is.na(latitude) & !is.na(longitude) ) {
+    qry = glue_sql("UPDATE location_coordinates ",
+                   "SET horizontal_accuracy = {horizontal_accuracy}, ",
+                   "geom = ST_Transform(ST_GeomFromText('POINT({longitude} {latitude})', 4326), 2927), ",
+                   "modified_datetime = {mod_dt}, modified_by = {mod_by} ",
+                   "WHERE location_id = {location_id} ",
+                   .con = con)
+    # Checkout a connection
+    DBI::dbExecute(con, qry)
+  }
   poolReturn(con)
+}
+
+#======================================================================
+# Identify redd encounter IDs tied to redd location about to be deleted
+#======================================================================
+
+# Identify fish_encounter dependencies prior to delete
+get_redd_encounter_ids = function(redd_location_id) {
+  qry = glue("select ",
+             "re.redd_encounter_id ",
+             "from redd_encounter as re ",
+             "inner join location as loc on re.redd_location_id = loc.location_id ",
+             "where loc.location_id = '{redd_location_id}'")
+  con = poolCheckout(pool)
+  redd_encounters = DBI::dbGetQuery(con, qry)
+  poolReturn(con)
+  return(redd_encounters)
 }
 
 #==============================================================
@@ -358,37 +377,64 @@ get_redd_location_dependencies = function(redd_location_id) {
 # Delete callback
 #========================================================
 
+# # Define delete callback
+# redd_location_delete = function(location_dependencies, delete_values, encounter_values) {
+#   redd_location_id = delete_values$redd_location_id
+#   redd_encounter_id = encounter_values$redd_encounter_id
+#   if ( ncol(location_dependencies) > 1L | location_dependencies$redd_encounter[1] > 1L) {
+#     con = poolCheckout(pool)
+#     update_result = dbSendStatement(
+#       con, glue_sql("UPDATE redd_encounter SET redd_location_id = NULL ",
+#                     "WHERE redd_encounter_id = $1"))
+#     dbBind(update_result, list(redd_encounter_id))
+#     dbGetRowsAffected(update_result)
+#     dbClearResult(update_result)
+#     poolReturn(con)
+#   } else {
+#     con = poolCheckout(pool)
+#     update_result = dbSendStatement(
+#       con, glue_sql("UPDATE redd_encounter SET redd_location_id = NULL ",
+#                     "WHERE redd_encounter_id = $1"))
+#     dbBind(update_result, list(redd_encounter_id))
+#     dbGetRowsAffected(update_result)
+#     dbClearResult(update_result)
+#     delete_result_one = dbSendStatement(
+#       con, glue_sql("DELETE FROM location_coordinates WHERE location_id = $1"))
+#     dbBind(delete_result_one, list(redd_location_id))
+#     dbGetRowsAffected(delete_result_one)
+#     dbClearResult(delete_result_one)
+#     delete_result_two = dbSendStatement(
+#       con, glue_sql("DELETE FROM location WHERE location_id = $1"))
+#     dbBind(delete_result_two, list(redd_location_id))
+#     dbGetRowsAffected(delete_result_two)
+#     dbClearResult(delete_result_two)
+#     poolReturn(con)
+#   }
+# }
+
 # Define delete callback
-redd_location_delete = function(location_dependencies, delete_values, encounter_values) {
+redd_location_delete = function(location_dependencies, delete_values, redd_encounter_ids) {
   redd_location_id = delete_values$redd_location_id
-  redd_encounter_id = encounter_values$redd_encounter_id
-  if ( ncol(location_dependencies) > 1L | location_dependencies$redd_encounter[1] > 1L) {
-    con = poolCheckout(pool)
+  con = poolCheckout(pool)
+  # Set redd_location_ids to null for cases where redd_encounters are tied to redd_location
+  if ( !redd_encounter_ids == "''" ) {
     update_result = dbSendStatement(
       con, glue_sql("UPDATE redd_encounter SET redd_location_id = NULL ",
-                    "WHERE redd_encounter_id = $1"))
-    dbBind(update_result, list(redd_encounter_id))
+                    "WHERE redd_encounter_id in ($1)"))
+    dbBind(update_result, list(redd_encounter_ids))
     dbGetRowsAffected(update_result)
     dbClearResult(update_result)
-    poolReturn(con)
-  } else {
-    con = poolCheckout(pool)
-    update_result = dbSendStatement(
-      con, glue_sql("UPDATE redd_encounter SET redd_location_id = NULL ",
-                    "WHERE redd_encounter_id = $1"))
-    dbBind(update_result, list(redd_encounter_id))
-    dbGetRowsAffected(update_result)
-    dbClearResult(update_result)
-    delete_result_one = dbSendStatement(
-      con, glue_sql("DELETE FROM location_coordinates WHERE location_id = $1"))
-    dbBind(delete_result_one, list(redd_location_id))
-    dbGetRowsAffected(delete_result_one)
-    dbClearResult(delete_result_one)
-    delete_result_two = dbSendStatement(
-      con, glue_sql("DELETE FROM location WHERE location_id = $1"))
-    dbBind(delete_result_two, list(redd_location_id))
-    dbGetRowsAffected(delete_result_two)
-    dbClearResult(delete_result_two)
-    poolReturn(con)
   }
+  # Just delete otherwise
+  delete_result_one = dbSendStatement(
+    con, glue_sql("DELETE FROM location_coordinates WHERE location_id = $1"))
+  dbBind(delete_result_one, list(redd_location_id))
+  dbGetRowsAffected(delete_result_one)
+  dbClearResult(delete_result_one)
+  delete_result_two = dbSendStatement(
+    con, glue_sql("DELETE FROM location WHERE location_id = $1"))
+  dbBind(delete_result_two, list(redd_location_id))
+  dbGetRowsAffected(delete_result_two)
+  dbClearResult(delete_result_two)
+  poolReturn(con)
 }

@@ -129,7 +129,11 @@ selected_redd_coords = reactive({
     redd_coords = NULL
     redd_location_id = remisc::get_uuid(1L)
   }
-  if ( is.null(redd_coords) ) {
+  print("latitude")
+  print(redd_coords$latitude)
+  print("longitude")
+  print(redd_coords$longitude)
+  if ( is.null(redd_coords) | length(redd_coords$latitude) == 0 | length(redd_coords$longitude) == 0 ) {
     redd_lat = center_lat
     redd_lon = center_lon
     redd_name = "none"
@@ -538,11 +542,17 @@ observeEvent(input$save_redd_loc_edits, {
   lo_rm = selected_survey_data()$lo_rm
   survey_date = format(as.Date(selected_survey_data()$survey_date))
   species_id = selected_survey_event_data()$species_id
+  # Update redd location table
   post_redd_location_edit_vals = get_redd_locations(waterbody_id(), up_rm, lo_rm, survey_date, species_id) %>%
     select(survey_dt, redd_name, redd_status, channel_type, orientation_type,
            latitude, longitude, horiz_accuracy, location_description,
            created_dt, created_by, modified_dt, modified_by)
   replaceData(redd_location_dt_proxy, post_redd_location_edit_vals)
+  # Update redd encounter table if something in redd location changed
+  post_redd_encounter_edit_vals = get_redd_encounter(selected_survey_event_data()$survey_event_id) %>%
+    select(redd_encounter_dt, redd_status, redd_count, redd_name, redd_comment,
+           created_dt, created_by, modified_dt, modified_by)
+  replaceData(redd_encounter_dt_proxy, post_redd_encounter_edit_vals)
 })
 
 #========================================================
@@ -588,11 +598,23 @@ redd_location_dependencies = reactive({
   return(redd_loc_dep)
 })
 
+# Reactive to hold redd_encounter_ids tied to redd_location
+redd_location_encounters = reactive({
+  redd_location_id = selected_redd_location_data()$redd_location_id
+  redd_enc_ids = get_redd_encounter_ids(redd_location_id) %>%
+    pull(redd_encounter_id)
+  redd_enc_ids = paste0(paste0("'", redd_enc_ids, "'"), collapse = ", ")
+  print("redd encounter_ids")
+  print(redd_enc_ids)
+  return(redd_enc_ids)
+})
+
 observeEvent(input$redd_loc_delete, {
   req(input$tabs == "data_entry")
   req(input$surveys_rows_selected)
   req(input$survey_events_rows_selected)
   req(input$redd_locations_rows_selected)
+  redd_encounter_ids = redd_location_encounters()
   redd_location_id = selected_redd_location_data()$redd_location_id
   redd_loc_dependencies = redd_location_dependencies()
   table_names = paste0(paste0("'", names(redd_loc_dependencies), "'"), collapse = ", ")
@@ -600,7 +622,7 @@ observeEvent(input$redd_loc_delete, {
   # Customize the delete message depending on if other entries are linked to redd_name
   if ( ncol(redd_loc_dependencies) > 1L ) {
     redd_delete_msg = glue("Other entries in {table_names} are linked to redd_name: '{redd_nm}'. ",
-                           "Only the link to the redd location will be deleted.")
+                           "Are you sure you want to delete this redd location data from the database?")
   } else {
     redd_delete_msg = "Are you sure you want to delete this redd location data from the database?"
   }
@@ -637,7 +659,7 @@ observeEvent(input$delete_redd_location, {
   req(input$survey_events_rows_selected)
   redd_location_delete(redd_location_dependencies(),
                        selected_redd_location_data(),
-                       selected_redd_encounter_data())   # THIS IS STOPPING DELETE !!!!!!!!!!!!!
+                       redd_location_encounters())
   removeModal()
   # Collect parameters
   up_rm = selected_survey_data()$up_rm

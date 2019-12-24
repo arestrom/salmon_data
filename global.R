@@ -94,7 +94,10 @@
 #     updated methods with fish locations.
 # 26. Zoom to stream extent when setting locations via map.
 #     Right now marker is sometimes off the screen.
-# 27. Working on redd_location_srv...line 640 delete function.....
+# 27. For old_redd_location query...survey_date needs to be converted
+#     back to UTC. Using interval + '1 day' kludge right now.
+# 28. Adding coords to existing redd_location is not working.
+#     All shows ok in the modal, but updates don't happen.
 
 # AS 2019-10-04
 #==============================================================

@@ -87,7 +87,6 @@ observeEvent(input$redd_encounters_rows_selected, {
   sredat = selected_redd_encounter_data()
   updateTimeInput(session, "redd_encounter_time_select", value = sredat$redd_encounter_time)
   updateSelectizeInput(session, "redd_status_select", selected = sredat$redd_status)
-  updateTextInput(session, "redd_name_display", value = sredat$redd_name)
   updateNumericInput(session, "redd_count_input", value = sredat$redd_count)
   updateTextAreaInput(session, "redd_comment_input", value = sredat$redd_comment)
 })
@@ -122,8 +121,8 @@ redd_encounter_create = reactive({
       pull(redd_status_id)
   }
   # Redd name, location_id
-  redd_name_input = input$redd_name_display
-  if ( redd_name_display == "" ) {
+  redd_name_input = input$redd_name_input
+  if ( redd_name_input == "" ) {
     redd_location_id = NA
   } else {
     redd_location_id = selected_redd_location_data()$redd_location_id
@@ -135,6 +134,7 @@ redd_encounter_create = reactive({
                               redd_status = redd_status_input,
                               redd_status_id = redd_status_id,
                               redd_count = input$redd_count_input,
+                              redd_name = input$redd_name_input,
                               redd_location_id = redd_location_id,
                               redd_comment = input$redd_comment_input,
                               created_dt = lubridate::with_tz(Sys.time(), "UTC"),
