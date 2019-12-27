@@ -122,12 +122,20 @@ redd_encounter_create = reactive({
       pull(redd_status_id)
   }
   # Redd name, location_id
-  redd_name_input = input$redd_name_input
-  if ( redd_name_input == "" ) {
+  loc_select = input$redd_locations_rows_selected
+  if ( is.null(loc_select) ) {
     redd_location_id = NA
+    redd_name_input = NA
   } else {
     redd_location_id = selected_redd_location_data()$redd_location_id
+    redd_name_input = selected_redd_location_data()$redd_name
   }
+  print("loc_select")
+  print(loc_select)
+  print("redd_location_id")
+  print(redd_location_id)
+  print("redd_name")
+  print(redd_name_input)
   new_redd_encounter = tibble(survey_event_id = survey_event_id_input,
                               survey_date = survey_date,
                               # Need to create full datetime values below modal
@@ -135,7 +143,7 @@ redd_encounter_create = reactive({
                               redd_status = redd_status_input,
                               redd_status_id = redd_status_id,
                               redd_count = input$redd_count_input,
-                              redd_name = input$redd_name_input,
+                              redd_name = redd_name_input,
                               redd_location_id = redd_location_id,
                               redd_comment = input$redd_comment_input,
                               created_dt = lubridate::with_tz(Sys.time(), "UTC"),
@@ -256,8 +264,6 @@ redd_encounter_edit = reactive({
   }
   # Redd name, location_id
   loc_select = input$redd_locations_rows_selected
-  print("loc_select")
-  print(loc_select)
   if ( is.null(loc_select) ) {
     redd_location_id = selected_redd_encounter_data()$redd_location_id
     redd_name_input = selected_redd_encounter_data()$redd_name
@@ -265,10 +271,6 @@ redd_encounter_edit = reactive({
     redd_location_id = selected_redd_location_data()$redd_location_id
     redd_name_input = selected_redd_location_data()$redd_name
   }
-  print("redd_location_id")
-  print(redd_location_id)
-  print("redd_name")
-  print(redd_name_input)
   edit_redd_encounter = tibble(redd_encounter_id = selected_redd_encounter_data()$redd_encounter_id,
                                # Need to create full datetime values below modal
                                survey_date = survey_date,
