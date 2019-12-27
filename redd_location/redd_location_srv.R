@@ -657,7 +657,7 @@ observeEvent(input$redd_loc_delete, {
     ))
 })
 
-# Update DB and reload DT
+# Update redd_location DB and reload location DT
 observeEvent(input$delete_redd_location, {
   req(input$surveys_rows_selected)
   req(input$survey_events_rows_selected)
@@ -676,3 +676,17 @@ observeEvent(input$delete_redd_location, {
            created_dt, created_by, modified_dt, modified_by)
   replaceData(redd_location_dt_proxy, redd_locations_after_delete)
 }, priority = 9999)
+
+# Reload location DT after deleting encounter
+observeEvent(input$delete_redd_encounter, {
+  # Collect parameters
+  up_rm = selected_survey_data()$up_rm
+  lo_rm = selected_survey_data()$lo_rm
+  survey_date = format(as.Date(selected_survey_data()$survey_date))
+  species_id = selected_survey_event_data()$species_id
+  redd_locations_after_encounter_delete = get_redd_locations(waterbody_id(), up_rm, lo_rm, survey_date, species_id) %>%
+    select(survey_dt, redd_name, redd_status, channel_type, orientation_type,
+           latitude, longitude, horiz_accuracy, location_description,
+           created_dt, created_by, modified_dt, modified_by)
+  replaceData(redd_location_dt_proxy, redd_locations_after_encounter_delete)
+}, priority = -1)
