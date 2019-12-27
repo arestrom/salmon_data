@@ -69,6 +69,7 @@ selected_redd_encounter_data = reactive({
                                    redd_encounter_time = redd_encounter_data$redd_encounter_time[redd_encounter_row],
                                    redd_status = redd_encounter_data$redd_status[redd_encounter_row],
                                    redd_count = redd_encounter_data$redd_count[redd_encounter_row],
+                                   redd_location_id = redd_encounter_data$redd_location_id[redd_encounter_row],
                                    redd_name = redd_encounter_data$redd_name[redd_encounter_row],
                                    redd_comment = redd_encounter_data$redd_comment[redd_encounter_row],
                                    created_date = redd_encounter_data$created_date[redd_encounter_row],
@@ -254,15 +255,20 @@ redd_encounter_edit = reactive({
       pull(redd_status_id)
   }
   # Redd name, location_id
-  redd_name_input = input$redd_name_select
-  if ( redd_name_input == "" ) {
-    redd_location_id = NA
+  loc_select = input$redd_locations_rows_selected
+  print("loc_select")
+  print(loc_select)
+  if ( is.null(loc_select) ) {
+    redd_location_id = selected_redd_encounter_data()$redd_location_id
+    redd_name_input = selected_redd_encounter_data()$redd_name
   } else {
-    redd_name_vals = get_redd_name(survey_event_id_input)
-    redd_location_id = redd_name_vals %>%
-      filter(redd_name == redd_name_input) %>%
-      pull(redd_location_id)
+    redd_location_id = selected_redd_location_data()$redd_location_id
+    redd_name_input = selected_redd_location_data()$redd_name
   }
+  print("redd_location_id")
+  print(redd_location_id)
+  print("redd_name")
+  print(redd_name_input)
   edit_redd_encounter = tibble(redd_encounter_id = selected_redd_encounter_data()$redd_encounter_id,
                                # Need to create full datetime values below modal
                                survey_date = survey_date,

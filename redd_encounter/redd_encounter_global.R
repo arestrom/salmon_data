@@ -3,7 +3,7 @@
 get_redd_encounter = function(survey_event_id) {
   qry = glue("select rd.redd_encounter_id, rd.redd_encounter_datetime as redd_encounter_time, ",
              "rd.redd_count, rs.redd_status_short_description as redd_status, ",
-             "loc.location_name as redd_name, rd.comment_text as redd_comment, ",
+             "rd.redd_location_id, loc.location_name as redd_name, rd.comment_text as redd_comment, ",
              "rd.created_datetime as created_date, rd.created_by, ",
              "rd.modified_datetime as modified_date, rd.modified_by ",
              "from redd_encounter as rd ",
@@ -23,8 +23,8 @@ get_redd_encounter = function(survey_event_id) {
     mutate(modified_date = with_tz(modified_date, tzone = "America/Los_Angeles")) %>%
     mutate(modified_dt = format(modified_date, "%m/%d/%Y %H:%M")) %>%
     select(redd_encounter_id, redd_encounter_time, redd_encounter_dt, redd_count,
-           redd_status, redd_name, redd_comment, created_date, created_dt,
-           created_by, modified_date, modified_dt, modified_by) %>%
+           redd_status, redd_location_id, redd_name, redd_comment, created_date,
+           created_dt, created_by, modified_date, modified_dt, modified_by) %>%
     arrange(created_date)
   return(redd_encounters)
 }
@@ -130,12 +130,10 @@ redd_encounter_update = function(redd_encounter_edit_values) {
 # Identify fish_encounter dependencies prior to delete
 get_redd_encounter_dependencies = function(redd_encounter_id) {
   qry = glue("select ",
-             "count(loc.location_id) as location, ",
              "count(ir.individual_redd_id) as individual_redd, ",
              "count(rc.redd_confidence_id) as redd_confidence, ",
              "count(rs.redd_substrate_id) as redd_substrate ",
              "from redd_encounter as rd ",
-             "left join location as loc on rd.redd_location_id = loc.location_id ",
              "left join individual_redd as ir on rd.redd_encounter_id = ir.redd_encounter_id ",
              "left join redd_confidence as rc on rd.redd_encounter_id = rc.redd_encounter_id ",
              "left join redd_substrate as rs on rd.redd_encounter_id = rs.redd_encounter_id ",

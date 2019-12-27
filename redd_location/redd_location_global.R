@@ -283,8 +283,57 @@ get_redd_location_surveys = function(redd_location_id) {
 # Edit location callback
 #========================================================
 
+# # Define update callback
+# redd_location_update = function(redd_location_edit_values) {
+#   edit_values = redd_location_edit_values
+#   # Pull out data for location table
+#   location_id = edit_values$redd_location_id
+#   stream_channel_type_id = edit_values$stream_channel_type_id
+#   location_orientation_type_id = edit_values$location_orientation_type_id
+#   location_name = edit_values$redd_name
+#   location_description = edit_values$location_description
+#   if (is.na(location_name) | location_name == "") { location_name = NA }
+#   if (is.na(location_description) | location_description == "") { location_description = NA }
+#   mod_dt = lubridate::with_tz(Sys.time(), "UTC")
+#   mod_by = Sys.getenv("USERNAME")
+#   # Pull out data for location_coordinates table
+#   horizontal_accuracy = edit_values$horiz_accuracy
+#   latitude = edit_values$latitude
+#   longitude = edit_values$longitude
+#   # Checkout a connection
+#   con = poolCheckout(pool)
+#   update_result = dbSendStatement(
+#     con, glue_sql("UPDATE location SET ",
+#                   "stream_channel_type_id = $1, ",
+#                   "location_orientation_type_id = $2, ",
+#                   "location_name = $3, ",
+#                   "location_description = $4, ",
+#                   "modified_datetime = $5, ",
+#                   "modified_by = $6 ",
+#                   "where location_id = $7"))
+#   dbBind(update_result, list(stream_channel_type_id,
+#                              location_orientation_type_id,
+#                              location_name, location_description,
+#                              mod_dt, mod_by,
+#                              location_id))
+#   dbGetRowsAffected(update_result)
+#   dbClearResult(update_result)
+#   # Update coordinates to location_coordinates if entry exists...otherwise insert new coords
+#   if ( !is.na(latitude) & !is.na(longitude) ) {
+#     qry = glue_sql("UPDATE location_coordinates ",
+#                    "SET horizontal_accuracy = {horizontal_accuracy}, ",
+#                    "geom = ST_Transform(ST_GeomFromText('POINT({longitude} {latitude})', 4326), 2927), ",
+#                    "modified_datetime = {mod_dt}, modified_by = {mod_by} ",
+#                    "WHERE location_id = {location_id} ",
+#                    .con = con)
+#     # Checkout a connection
+#     DBI::dbExecute(con, qry)
+#   }
+#   poolReturn(con)
+# }
+
 # Define update callback
-redd_location_update = function(redd_location_edit_values) {
+redd_location_update = function(redd_location_edit_values, selected_redd_data) {
   edit_values = redd_location_edit_values
   # Pull out data for location table
   location_id = edit_values$redd_location_id
@@ -296,6 +345,7 @@ redd_location_update = function(redd_location_edit_values) {
   if (is.na(location_description) | location_description == "") { location_description = NA }
   mod_dt = lubridate::with_tz(Sys.time(), "UTC")
   mod_by = Sys.getenv("USERNAME")
+  created_by = mod_by
   # Pull out data for location_coordinates table
   horizontal_accuracy = edit_values$horiz_accuracy
   latitude = edit_values$latitude
@@ -318,16 +368,31 @@ redd_location_update = function(redd_location_edit_values) {
                              location_id))
   dbGetRowsAffected(update_result)
   dbClearResult(update_result)
-  # Update coordinates to location_coordinates
-  if ( !is.na(latitude) & !is.na(longitude) ) {
-    qry = glue_sql("UPDATE location_coordinates ",
-                   "SET horizontal_accuracy = {horizontal_accuracy}, ",
-                   "geom = ST_Transform(ST_GeomFromText('POINT({longitude} {latitude})', 4326), 2927), ",
-                   "modified_datetime = {mod_dt}, modified_by = {mod_by} ",
-                   "WHERE location_id = {location_id} ",
-                   .con = con)
-    # Checkout a connection
-    DBI::dbExecute(con, qry)
+  # Insert coordinates to location_coordinates if previous entry does not exist
+  if ( is.na(selected_redd_data$latitude) & is.na(selected_redd_data$longitude) ) {
+    if ( !is.na(latitude) & !is.na(longitude) ) {
+      # Insert coordinates to location_coordinates
+      qry = glue_sql("INSERT INTO location_coordinates ",
+                     "(location_id, horizontal_accuracy, geom, created_by) ",
+                     "VALUES ({location_id}, {horizontal_accuracy}, ",
+                     "ST_Transform(ST_GeomFromText('POINT({longitude} {latitude})', 4326), 2927), ",
+                     "{created_by}) ",
+                     .con = con)
+      # Checkout a connection
+      DBI::dbExecute(con, qry)
+    }
+  # Otherwise update coordinates if previous entry does exist
+  } else if (!is.na(selected_redd_data$latitude) & !is.na(selected_redd_data$longitude) ) {
+    if ( !is.na(latitude) & !is.na(longitude) ) {
+      qry = glue_sql("UPDATE location_coordinates ",
+                     "SET horizontal_accuracy = {horizontal_accuracy}, ",
+                     "geom = ST_Transform(ST_GeomFromText('POINT({longitude} {latitude})', 4326), 2927), ",
+                     "modified_datetime = {mod_dt}, modified_by = {mod_by} ",
+                     "WHERE location_id = {location_id} ",
+                     .con = con)
+      # Checkout a connection
+      DBI::dbExecute(con, qry)
+    }
   }
   poolReturn(con)
 }

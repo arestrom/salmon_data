@@ -90,6 +90,10 @@ selected_redd_location_data = reactive({
                                   created_by = redd_location_data$created_by[redd_location_row],
                                   modified_date = redd_location_data$modified_date[redd_location_row],
                                   modified_by = redd_location_data$modified_by[redd_location_row])
+  print("selected_lat")
+  print(selected_redd_location$latitude)
+  print("selected_lon")
+  print(selected_redd_location$longitude)
   return(selected_redd_location)
 })
 
@@ -129,10 +133,10 @@ selected_redd_coords = reactive({
     redd_coords = NULL
     redd_location_id = remisc::get_uuid(1L)
   }
-  print("latitude")
-  print(redd_coords$latitude)
-  print("longitude")
-  print(redd_coords$longitude)
+  # print("latitude")
+  # print(redd_coords$latitude)
+  # print("longitude")
+  # print(redd_coords$longitude)
   if ( is.null(redd_coords) | length(redd_coords$latitude) == 0 | length(redd_coords$longitude) == 0 ) {
     redd_lat = center_lat
     redd_lon = center_lon
@@ -535,7 +539,7 @@ observeEvent(input$redd_loc_edit, {
 observeEvent(input$save_redd_loc_edits, {
   req(input$surveys_rows_selected)
   req(input$survey_events_rows_selected)
-  redd_location_update(redd_location_edit())
+  redd_location_update(redd_location_edit(), selected_redd_location_data())
   removeModal()
   # Collect parameters
   up_rm = selected_survey_data()$up_rm
