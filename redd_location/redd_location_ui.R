@@ -11,7 +11,7 @@ redd_location_ui = tags$div(
   tippy("<i style='color:#1a5e86;padding-left:8px', class='fas fa-info-circle'></i>",
         tooltip = glue("To track redds over time you must first enter at the very least ",
                        "a redd name (flag code) into the redd location table. Then to ",
-                       "associate a redd count to the redd location, first highlight the ",
+                       "associate a redd count with a redd location, first highlight the ",
                        "redd location row, then enter the redd count data below. ",
                        "Latitude and longitude are optional, but highly recommended.")),
   br(),

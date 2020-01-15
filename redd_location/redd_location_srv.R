@@ -610,6 +610,8 @@ redd_location_encounters = reactive({
   redd_enc_ids = paste0(paste0("'", redd_enc_ids, "'"), collapse = ", ")
   print("redd encounter_ids")
   print(redd_enc_ids)
+  print("redd_location_dependencies")
+  print(names(redd_location_dependencies()))
   return(redd_enc_ids)
 })
 
@@ -624,7 +626,7 @@ observeEvent(input$redd_loc_delete, {
   table_names = paste0(paste0("'", names(redd_loc_dependencies), "'"), collapse = ", ")
   redd_nm = selected_redd_coords()$redd_name
   # Customize the delete message depending on if other entries are linked to redd_name
-  if ( ncol(redd_loc_dependencies) > 1L ) {
+  if ( ncol(redd_loc_dependencies) > 0L ) {
     redd_delete_msg = glue("Other entries in {table_names} are linked to redd_name: '{redd_nm}'. ",
                            "Are you sure you want to delete this redd location data from the database?")
   } else {
