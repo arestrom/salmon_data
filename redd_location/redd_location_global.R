@@ -401,7 +401,7 @@ redd_location_update = function(redd_location_edit_values, selected_redd_data) {
 # Identify redd encounter IDs tied to redd location about to be deleted
 #======================================================================
 
-# Identify fish_encounter dependencies prior to delete
+# Identify redd_encounter dependencies prior to delete
 get_redd_encounter_ids = function(redd_location_id) {
   qry = glue("select ",
              "re.redd_encounter_id ",
@@ -418,25 +418,56 @@ get_redd_encounter_ids = function(redd_location_id) {
 # Identify redd location dependencies prior to delete
 #==============================================================
 
-# Identify fish_encounter dependencies prior to delete
+# Main redd_encounter query
 get_redd_location_dependencies = function(redd_location_id) {
-  qry = glue("select ",
-             "count(re.redd_encounter_id) as redd_encounter, ",
-             "count(ml.media_location_id) as media_location, ",
-             "count(oo.other_observation_id) as other_observation ",
-             "from location as loc ",
-             "left join redd_encounter as re on loc.location_id = re.redd_location_id ",
-             "left join media_location as ml on loc.location_id = ml.location_id ",
-             "left join other_observation as oo on loc.location_id = oo.observation_location_id ",
-             "where loc.location_id = '{redd_location_id}'")
+  qry = glue("select rd.redd_encounter_id, rd.redd_encounter_datetime as redd_encounter_time, ",
+             "rd.redd_count, rs.redd_status_short_description as redd_status, ",
+             "rd.redd_location_id, loc.location_name as redd_name, rd.comment_text as redd_comment, ",
+             "rd.created_datetime as created_date, rd.created_by, ",
+             "rd.modified_datetime as modified_date, rd.modified_by ",
+             "from redd_encounter as rd ",
+             "inner join redd_status_lut as rs on rd.redd_status_id = rs.redd_status_id ",
+             "left join location as loc on rd.redd_location_id = loc.location_id ",
+             "where rd.redd_location_id = '{redd_location_id}'")
   con = poolCheckout(pool)
-  redd_location_dependents = DBI::dbGetQuery(con, qry)
+  redd_encounters = DBI::dbGetQuery(con, qry)
   poolReturn(con)
-  has_entries = function(x) any(x > 0L)
-  redd_location_dependents = redd_location_dependents %>%
-    select_if(has_entries)
-  return(redd_location_dependents)
+  redd_encounters = redd_encounters %>%
+    mutate(redd_encounter_time = with_tz(redd_encounter_time, tzone = "America/Los_Angeles")) %>%
+    mutate(redd_encounter_date = format(redd_encounter_time, "%m/%d/%Y")) %>%
+    mutate(redd_encounter_time = format(redd_encounter_time, "%H:%M")) %>%
+    mutate(redd_status = if_else(redd_status == "Combined visible redds",
+                                 "Visible new and old redds combined", redd_status)) %>%
+    mutate(created_date = with_tz(created_date, tzone = "America/Los_Angeles")) %>%
+    mutate(created_dt = format(created_date, "%m/%d/%Y %H:%M")) %>%
+    mutate(modified_date = with_tz(modified_date, tzone = "America/Los_Angeles")) %>%
+    mutate(modified_dt = format(modified_date, "%m/%d/%Y %H:%M")) %>%
+    select(redd_encounter_id, redd_encounter_date, redd_encounter_time, redd_count,
+           redd_status, redd_location_id, redd_name, redd_comment, created_date,
+           created_dt, created_by, modified_date, modified_dt, modified_by) %>%
+    arrange(created_date)
+  return(redd_encounters)
 }
+
+# # Identify redd_encounter dependencies prior to delete
+# get_redd_location_dependencies = function(redd_location_id) {
+#   qry = glue("select ",
+#              "count(re.redd_encounter_id) as redd_encounter, ",
+#              "count(ml.media_location_id) as media_location, ",
+#              "count(oo.other_observation_id) as other_observation ",
+#              "from location as loc ",
+#              "left join redd_encounter as re on loc.location_id = re.redd_location_id ",
+#              "left join media_location as ml on loc.location_id = ml.location_id ",
+#              "left join other_observation as oo on loc.location_id = oo.observation_location_id ",
+#              "where loc.location_id = '{redd_location_id}'")
+#   con = poolCheckout(pool)
+#   redd_location_dependents = DBI::dbGetQuery(con, qry)
+#   poolReturn(con)
+#   has_entries = function(x) any(x > 0L)
+#   redd_location_dependents = redd_location_dependents %>%
+#     select_if(has_entries)
+#   return(redd_location_dependents)
+# }
 
 #========================================================
 # Delete callback
@@ -478,19 +509,10 @@ get_redd_location_dependencies = function(redd_location_id) {
 # }
 
 # Define delete callback
-redd_location_delete = function(location_dependencies, delete_values, redd_encounter_ids) {
+redd_location_delete = function(delete_values) {
   redd_location_id = delete_values$redd_location_id
   con = poolCheckout(pool)
-  # Set redd_location_ids to null for cases where redd_encounters are tied to redd_location
-  if ( !redd_encounter_ids == "''" ) {
-    update_result = dbSendStatement(
-      con, glue_sql("UPDATE redd_encounter SET redd_location_id = NULL ",
-                    "WHERE redd_encounter_id in ($1)"))
-    dbBind(update_result, list(redd_encounter_ids))
-    dbGetRowsAffected(update_result)
-    dbClearResult(update_result)
-  }
-  # Just delete otherwise
+  # New function...delete only after all dependencies are removed
   delete_result_one = dbSendStatement(
     con, glue_sql("DELETE FROM location_coordinates WHERE location_id = $1"))
   dbBind(delete_result_one, list(redd_location_id))
@@ -503,3 +525,30 @@ redd_location_delete = function(location_dependencies, delete_values, redd_encou
   dbClearResult(delete_result_two)
   poolReturn(con)
 }
+
+# # Define delete callback
+# redd_location_delete = function(location_dependencies, delete_values, redd_encounter_ids) {
+#   redd_location_id = delete_values$redd_location_id
+#   con = poolCheckout(pool)
+#   # Set redd_location_ids to null for cases where redd_encounters are tied to redd_location
+#   if ( !redd_encounter_ids == "''" ) {
+#     update_result = dbSendStatement(
+#       con, glue_sql("UPDATE redd_encounter SET redd_location_id = NULL ",
+#                     "WHERE redd_encounter_id in ($1)"))
+#     dbBind(update_result, list(redd_encounter_ids))
+#     dbGetRowsAffected(update_result)
+#     dbClearResult(update_result)
+#   }
+#   # Just delete otherwise
+#   delete_result_one = dbSendStatement(
+#     con, glue_sql("DELETE FROM location_coordinates WHERE location_id = $1"))
+#   dbBind(delete_result_one, list(redd_location_id))
+#   dbGetRowsAffected(delete_result_one)
+#   dbClearResult(delete_result_one)
+#   delete_result_two = dbSendStatement(
+#     con, glue_sql("DELETE FROM location WHERE location_id = $1"))
+#   dbBind(delete_result_two, list(redd_location_id))
+#   dbGetRowsAffected(delete_result_two)
+#   dbClearResult(delete_result_two)
+#   poolReturn(con)
+# }

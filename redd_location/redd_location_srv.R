@@ -29,7 +29,9 @@ output$redd_locations = renderDT({
   req(input$surveys_rows_selected)
   req(input$survey_events_rows_selected)
   redd_location_title = glue("{selected_survey_event_data()$species} redd locations for {input$stream_select} ",
-                             "from river mile {selected_survey_data()$up_rm} to {selected_survey_data()$lo_rm}")
+                             "from river mile {selected_survey_data()$up_rm} to {selected_survey_data()$lo_rm}, ",
+                             "for the period {format(as.Date(selected_survey_data()$survey_date) - months(4), '%m/%d/%Y')} ",
+                             "to {format(as.Date(selected_survey_data()$survey_date), '%m/%d/%Y')}")
   # Collect parameters
   up_rm = selected_survey_data()$up_rm
   lo_rm = selected_survey_data()$lo_rm
@@ -330,6 +332,14 @@ output$redd_location_modal_insert_vals = renderDT({
 # Modal for new redd locations
 observeEvent(input$redd_loc_add, {
   new_redd_location_vals = redd_location_create()
+  # Collect parameters for existing redd locations
+  up_rm = selected_survey_data()$up_rm
+  lo_rm = selected_survey_data()$lo_rm
+  survey_date = format(as.Date(selected_survey_data()$survey_date))
+  species_id = selected_survey_event_data()$species_id
+  old_redd_location_vals = get_redd_locations(waterbody_id(), up_rm, lo_rm, survey_date, species_id) %>%
+    filter(!redd_name %in% c("", "no location data")) %>%
+    pull(redd_name)
   showModal(
     # Verify required fields have data...none can be blank
     tags$div(id = "redd_location_insert_modal",
@@ -345,7 +355,16 @@ observeEvent(input$redd_loc_add, {
                  footer = NULL
                )
                # Write to DB
-             } else {
+             } else if ( new_redd_location_vals$redd_name %in% old_redd_location_vals ) {
+                 modalDialog (
+                   size = "m",
+                   title = "Warning",
+                   paste0("To enter a new redd name (flag code, or redd ID) it must be unique, for this reach and species, within the last four months"),
+                   easyClose = TRUE,
+                   footer = NULL
+                 )
+                 # Write to DB
+               } else {
                modalDialog (
                  size = 'l',
                  title = glue("Insert new redd location data to the database?"),
@@ -595,24 +614,41 @@ output$redd_location_modal_delete_vals = renderDT({
 redd_location_dependencies = reactive({
   redd_location_id = selected_redd_location_data()$redd_location_id
   redd_loc_dep = get_redd_location_dependencies(redd_location_id)
-  print("redd dependencies")
-  print(redd_loc_dep)
+  print("redd dependencies rows")
+  print(nrow(redd_loc_dep))
   print("redd name")
   print(selected_redd_coords()$redd_name)
   return(redd_loc_dep)
 })
 
-# Reactive to hold redd_encounter_ids tied to redd_location
-redd_location_encounters = reactive({
-  redd_location_id = selected_redd_location_data()$redd_location_id
-  redd_enc_ids = get_redd_encounter_ids(redd_location_id) %>%
-    pull(redd_encounter_id)
-  redd_enc_ids = paste0(paste0("'", redd_enc_ids, "'"), collapse = ", ")
-  print("redd encounter_ids")
-  print(redd_enc_ids)
-  print("redd_location_dependencies")
-  print(names(redd_location_dependencies()))
-  return(redd_enc_ids)
+# # Reactive to hold redd_encounter_ids tied to redd_location
+# redd_location_encounters = reactive({
+#   redd_location_id = selected_redd_location_data()$redd_location_id
+#   redd_enc_ids = get_redd_encounter_ids(redd_location_id) %>%
+#     pull(redd_encounter_id)
+#   redd_enc_ids = paste0(paste0("'", redd_enc_ids, "'"), collapse = ", ")
+#   print("redd encounter_ids")
+#   print(redd_enc_ids)
+#   print("redd_location_dependencies")
+#   print(names(redd_location_dependencies()))
+#   return(redd_enc_ids)
+# })
+
+# Generate values to show in modal
+output$redd_location_modal_dependency_vals = renderDT({
+  redd_location_modal_dep_vals = redd_location_dependencies() %>%
+    select(redd_encounter_date, redd_encounter_time, redd_status, redd_count,
+           redd_name, redd_comment)
+  # Generate table
+  datatable(redd_location_modal_dep_vals,
+            rownames = FALSE,
+            options = list(dom = 't',
+                           scrollX = T,
+                           ordering = FALSE,
+                           initComplete = JS(
+                             "function(settings, json) {",
+                             "$(this.api().table().header()).css({'background-color': '#9eb3d6'});",
+                             "}")))
 })
 
 observeEvent(input$redd_loc_delete, {
@@ -620,18 +656,10 @@ observeEvent(input$redd_loc_delete, {
   req(input$surveys_rows_selected)
   req(input$survey_events_rows_selected)
   req(input$redd_locations_rows_selected)
-  redd_encounter_ids = redd_location_encounters()
+  #redd_encounter_ids = redd_location_encounters()
   redd_location_id = selected_redd_location_data()$redd_location_id
   redd_loc_dependencies = redd_location_dependencies()
-  table_names = paste0(paste0("'", names(redd_loc_dependencies), "'"), collapse = ", ")
-  redd_nm = selected_redd_coords()$redd_name
-  # Customize the delete message depending on if other entries are linked to redd_name
-  if ( ncol(redd_loc_dependencies) > 0L ) {
-    redd_delete_msg = glue("Other entries in {table_names} are linked to redd_name: '{redd_nm}'. ",
-                           "Are you sure you want to delete this redd location data from the database?")
-  } else {
-    redd_delete_msg = "Are you sure you want to delete this redd location data from the database?"
-  }
+  #redd_nm = selected_redd_coords()$redd_name
   showModal(
     tags$div(id = "redd_location_delete_modal",
              if ( !length(input$redd_locations_rows_selected) == 1 ) {
@@ -642,10 +670,23 @@ observeEvent(input$redd_loc_delete, {
                  easyClose = TRUE,
                  footer = NULL
                )
+             } else if ( nrow(redd_loc_dependencies) > 0L ) {
+                 modalDialog (
+                   size = "l",
+                   title = paste("The redd count observation(s) listed below are linked to the redd location data you selected. ",
+                                 "Please edit or delete the dependent redd count data in the 'Redd counts' data entry ",
+                                 "screen below before deleting the selected redd location data."),
+                   fluidPage (
+                     DT::DTOutput("redd_location_modal_dependency_vals"),
+                     br()
+                   ),
+                   easyClose = TRUE,
+                   footer = NULL
+                 )
              } else {
                modalDialog (
                  size = 'l',
-                 title = redd_delete_msg,
+                 title = "Are you sure you want to delete this redd location data from the database?",
                  fluidPage (
                    DT::DTOutput("redd_location_modal_delete_vals"),
                    br(),
@@ -663,9 +704,7 @@ observeEvent(input$redd_loc_delete, {
 observeEvent(input$delete_redd_location, {
   req(input$surveys_rows_selected)
   req(input$survey_events_rows_selected)
-  redd_location_delete(redd_location_dependencies(),
-                       selected_redd_location_data(),
-                       redd_location_encounters())
+  redd_location_delete(selected_redd_location_data())
   removeModal()
   # Collect parameters
   up_rm = selected_survey_data()$up_rm

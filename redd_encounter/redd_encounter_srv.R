@@ -10,6 +10,42 @@ output$redd_status_select = renderUI({
                  width = "250px")
 })
 
+# Reactive to hold list of redd locations for past four months for species and reach
+current_redd_locations = reactive({
+  input$insert_redd_location
+  input$save_redd_loc_edits
+  input$delete_redd_location
+  up_rm = selected_survey_data()$up_rm
+  lo_rm = selected_survey_data()$lo_rm
+  survey_date = format(as.Date(selected_survey_data()$survey_date))
+  species_id = selected_survey_event_data()$species_id
+  redd_locs = get_redd_locations(waterbody_id(), up_rm, lo_rm, survey_date, species_id)
+  return(redd_locs)
+})
+
+output$redd_name_select = renderUI({
+  redd_name_list = current_redd_locations()$redd_name
+  redd_name_list = c("no location data", redd_name_list)
+  selectizeInput("redd_name_select", label = "redd_name",
+                 choices = redd_name_list, selected = NULL,
+                 width = "200px")
+})
+
+# output$redd_name_select = renderUI({
+#   input$insert_redd_location
+#   input$save_redd_loc_edits
+#   input$delete_redd_location
+#   up_rm = selected_survey_data()$up_rm
+#   lo_rm = selected_survey_data()$lo_rm
+#   survey_date = format(as.Date(selected_survey_data()$survey_date))
+#   species_id = selected_survey_event_data()$species_id
+#   redd_name_list = get_redd_locations(waterbody_id(), up_rm, lo_rm, survey_date, species_id)$redd_name
+#   redd_name_list = c("no location data", redd_name_list)
+#   selectizeInput("redd_name_select", label = "redd_name",
+#                  choices = redd_name_list, selected = NULL,
+#                  width = "200px")
+# })
+
 #========================================================
 # Primary datatable for redd_encounters
 #========================================================
@@ -88,6 +124,7 @@ observeEvent(input$redd_encounters_rows_selected, {
   sredat = selected_redd_encounter_data()
   updateTimeInput(session, "redd_encounter_time_select", value = sredat$redd_encounter_time)
   updateSelectizeInput(session, "redd_status_select", selected = sredat$redd_status)
+  updateSelectizeInput(session, "redd_name_select", selected = sredat$redd_name)
   updateNumericInput(session, "redd_count_input", value = sredat$redd_count)
   updateTextAreaInput(session, "redd_comment_input", value = sredat$redd_comment)
 })
@@ -122,13 +159,15 @@ redd_encounter_create = reactive({
       pull(redd_status_id)
   }
   # Redd name, location_id
-  loc_select = input$redd_locations_rows_selected
-  if ( is.null(loc_select) ) {
+  loc_select = input$redd_name_select
+  if ( is.null(loc_select) | is.na(loc_select) | loc_select == "" | loc_select == "no location data" ) {
     redd_location_id = NA
     redd_name_input = NA
   } else {
-    redd_location_id = selected_redd_location_data()$redd_location_id
-    redd_name_input = selected_redd_location_data()$redd_name
+    redd_location = current_redd_locations() %>%
+      filter(redd_name == loc_select)
+    redd_location_id = redd_location$redd_location_id
+    redd_name_input = redd_location$redd_name
   }
   print("loc_select")
   print(loc_select)
@@ -277,13 +316,15 @@ redd_encounter_edit = reactive({
       pull(redd_status_id)
   }
   # Redd name, location_id
-  loc_select = input$redd_locations_rows_selected
-  if ( is.null(loc_select) ) {
-    redd_location_id = selected_redd_encounter_data()$redd_location_id
-    redd_name_input = selected_redd_encounter_data()$redd_name
+  loc_select = input$redd_name_select
+  if ( is.null(loc_select) | is.na(loc_select) | loc_select == "" | loc_select == "no location data" ) {
+    redd_location_id = NA
+    redd_name_input = NA
   } else {
-    redd_location_id = selected_redd_location_data()$redd_location_id
-    redd_name_input = selected_redd_location_data()$redd_name
+    redd_location = current_redd_locations() %>%
+      filter(redd_name == loc_select)
+    redd_location_id = redd_location$redd_location_id
+    redd_name_input = redd_location$redd_name
   }
   edit_redd_encounter = tibble(redd_encounter_id = selected_redd_encounter_data()$redd_encounter_id,
                                # Need to create full datetime values below modal
@@ -380,7 +421,21 @@ observeEvent(input$save_redd_enc_edits, {
     select(redd_encounter_dt, redd_status, redd_count, redd_name, redd_comment,
            created_dt, created_by, modified_dt, modified_by)
   replaceData(redd_encounter_dt_proxy, post_redd_encounter_edit_vals)
-})
+}, priority = 9999)
+
+# Reload location DT after deleting encounter
+observeEvent(input$save_redd_enc_edits, {
+  # Collect parameters
+  up_rm = selected_survey_data()$up_rm
+  lo_rm = selected_survey_data()$lo_rm
+  survey_date = format(as.Date(selected_survey_data()$survey_date))
+  species_id = selected_survey_event_data()$species_id
+  redd_locations_after_encounter_edit = get_redd_locations(waterbody_id(), up_rm, lo_rm, survey_date, species_id) %>%
+    select(survey_dt, redd_name, redd_status, channel_type, orientation_type,
+           latitude, longitude, horiz_accuracy, location_description,
+           created_dt, created_by, modified_dt, modified_by)
+  replaceData(redd_location_dt_proxy, redd_locations_after_encounter_edit)
+}, priority = -1)
 
 #========================================================
 # Delete operations: reactives, observers and modals
