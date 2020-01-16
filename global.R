@@ -96,10 +96,11 @@
 #     Right now marker is sometimes off the screen.
 # 27. For old_redd_location query...survey_date needs to be converted
 #     back to UTC. Using interval + '1 day' kludge right now.
-# 28. Adding coords to existing redd_location is not working.
-#     All shows ok in the modal, but updates don't happen.
-
-# AS 2019-10-04
+# 28. See example code "current_redd_locations" in redd_encounter_srv.R
+#     as example of how to possibly simplify a bunch of repeat
+#     invocations of get_xxx global functions.
+#
+# AS 2020-01-15
 #==============================================================
 
 # Load libraries
