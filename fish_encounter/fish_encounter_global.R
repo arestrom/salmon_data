@@ -3,6 +3,7 @@
 get_fish_encounter = function(survey_event_id) {
   qry = glue("select fe.fish_encounter_id, fe.fish_encounter_datetime as fish_encounter_time, ",
              "fe.fish_count, fs.fish_status_description as fish_status, ",
+             "fe.fish_location_id, loc.location_name as fish_name, ",
              "sx.sex_description as sex, ma.maturity_short_description as maturity, ",
              "ori.origin_description as origin, cw.detection_status_description as cwt_status, ",
              "ad.adipose_clip_status_description as clip_status, ",
@@ -12,6 +13,7 @@ get_fish_encounter = function(survey_event_id) {
              "fe.modified_datetime as modified_date, fe.modified_by ",
              "from fish_encounter as fe ",
              "left join fish_status_lut as fs on fe.fish_status_id = fs.fish_status_id ",
+             "left join location as loc on fe.fish_location_id = loc.location_id ",
              "left join sex_lut as sx on fe.sex_id = sx.sex_id ",
              "left join maturity_lut as ma on fe.maturity_id = ma.maturity_id ",
              "left join origin_lut as ori on fe.origin_id = ori.origin_id ",
@@ -25,13 +27,14 @@ get_fish_encounter = function(survey_event_id) {
   fish_encounters = fish_encounters %>%
     mutate(fish_encounter_time = with_tz(fish_encounter_time, tzone = "America/Los_Angeles")) %>%
     mutate(fish_encounter_dt = format(fish_encounter_time, "%H:%M")) %>%
-    mutate(prev_counted = if_else(prev_counted == "0", "No", "Yes")) %>%
+    mutate(prev_counted = if_else(prev_counted == 0L, "No", "Yes")) %>%
     mutate(created_date = with_tz(created_date, tzone = "America/Los_Angeles")) %>%
     mutate(created_dt = format(created_date, "%m/%d/%Y %H:%M")) %>%
     mutate(modified_date = with_tz(modified_date, tzone = "America/Los_Angeles")) %>%
     mutate(modified_dt = format(modified_date, "%m/%d/%Y %H:%M")) %>%
-    select(fish_encounter_id, fish_encounter_time, fish_encounter_dt, fish_count, fish_status,
-           sex, maturity, origin, cwt_status, clip_status, fish_behavior, prev_counted, created_date,
+    select(fish_encounter_id, fish_encounter_time, fish_encounter_dt, fish_count,
+           fish_status, fish_location_id, fish_name, sex, maturity, origin,
+           cwt_status, clip_status, fish_behavior, prev_counted, created_date,
            created_dt, created_by, modified_date, modified_dt, modified_by) %>%
     arrange(created_date)
   return(fish_encounters)
@@ -146,6 +149,7 @@ fish_encounter_insert = function(new_fish_encounter_values) {
   # Pull out data
   survey_event_id = new_insert_values$survey_event_id
   fish_status_id = new_insert_values$fish_status_id
+  fish_location_id = new_insert_values$fish_location_id
   sex_id =  new_insert_values$sex_id
   maturity_id = new_insert_values$maturity_id
   origin_id = new_insert_values$origin_id
@@ -162,6 +166,7 @@ fish_encounter_insert = function(new_fish_encounter_values) {
   insert_result = dbSendStatement(
     con, glue_sql("INSERT INTO fish_encounter (",
                   "survey_event_id, ",
+                  "fish_location_id, ",
                   "fish_status_id, ",
                   "sex_id, ",
                   "maturity_id, ",
@@ -175,8 +180,8 @@ fish_encounter_insert = function(new_fish_encounter_values) {
                   "previously_counted_indicator, ",
                   "created_by) ",
                   "VALUES (",
-                  "$1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13)"))
-  dbBind(insert_result, list(survey_event_id, fish_status_id, sex_id,
+                  "$1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14)"))
+  dbBind(insert_result, list(survey_event_id, fish_location_id, fish_status_id, sex_id,
                              maturity_id, origin_id, cwt_detection_status_id,
                              adipose_clip_status_id, fish_behavior_type_id,
                              mortality_type_id, fish_encounter_datetime, fish_count,
@@ -195,6 +200,7 @@ fish_encounter_update = function(fish_encounter_edit_values) {
   edit_values = fish_encounter_edit_values
   # Pull out data
   fish_encounter_id = edit_values$fish_encounter_id
+  fish_location_id = edit_values$fish_location_id
   fish_status_id = edit_values$fish_status_id
   sex_id =  edit_values$sex_id
   maturity_id = edit_values$maturity_id
@@ -212,21 +218,22 @@ fish_encounter_update = function(fish_encounter_edit_values) {
   con = poolCheckout(pool)
   update_result = dbSendStatement(
     con, glue_sql("UPDATE fish_encounter SET ",
-                  "fish_status_id = $1, ",
-                  "sex_id = $2, ",
-                  "maturity_id = $3, ",
-                  "origin_id = $4, ",
-                  "cwt_detection_status_id = $5, ",
-                  "adipose_clip_status_id = $6, ",
-                  "fish_behavior_type_id = $7, ",
-                  "fish_encounter_datetime = $8, ",
-                  "fish_count = $9, ",
-                  "previously_counted_indicator = $10, ",
-                  "modified_datetime = $11, ",
-                  "modified_by = $12 ",
-                  "where fish_encounter_id = $13"))
-  dbBind(update_result, list(fish_status_id, sex_id, maturity_id, origin_id,
-                             cwt_detection_status_id, adipose_clip_status_id,
+                  "fish_location_id = $1, ",
+                  "fish_status_id = $2, ",
+                  "sex_id = $3, ",
+                  "maturity_id = $4, ",
+                  "origin_id = $5, ",
+                  "cwt_detection_status_id = $6, ",
+                  "adipose_clip_status_id = $7, ",
+                  "fish_behavior_type_id = $8, ",
+                  "fish_encounter_datetime = $9, ",
+                  "fish_count = $10, ",
+                  "previously_counted_indicator = $11, ",
+                  "modified_datetime = $12, ",
+                  "modified_by = $13 ",
+                  "where fish_encounter_id = $14"))
+  dbBind(update_result, list(fish_location_id, fish_status_id, sex_id, maturity_id,
+                             origin_id, cwt_detection_status_id, adipose_clip_status_id,
                              fish_behavior_type_id, fish_encounter_datetime,
                              fish_count, previously_counted_indicator,
                              mod_dt, mod_by, fish_encounter_id))

@@ -2,6 +2,27 @@
 # Generate lut select ui's
 #========================================================
 
+# Reactive to hold list of redd locations for past four months for species and reach
+current_fish_locations = reactive({
+  input$insert_fish_location
+  input$save_fish_loc_edits
+  input$delete_fish_location
+  up_rm = selected_survey_data()$up_rm
+  lo_rm = selected_survey_data()$lo_rm
+  survey_date = format(as.Date(selected_survey_data()$survey_date))
+  species_id = selected_survey_event_data()$species_id
+  fish_locs = get_fish_locations(waterbody_id(), up_rm, lo_rm, survey_date, species_id)
+  return(fish_locs)
+})
+
+output$fish_name_select = renderUI({
+  fish_name_list = current_fish_locations()$fish_name
+  fish_name_list = c("no location data", fish_name_list)
+  selectizeInput("fish_name_select", label = "fish_name",
+                 choices = fish_name_list, selected = NULL,
+                 width = "200px")
+})
+
 output$fish_status_select = renderUI({
   fish_status_list = get_fish_status()$fish_status
   fish_status_list = c("", fish_status_list)
@@ -72,7 +93,7 @@ output$fish_encounters = renderDT({
                               "{selected_survey_data()$survey_date} from river mile {selected_survey_data()$up_rm} ",
                               "to {selected_survey_data()$lo_rm}")
   fish_encounter_data = get_fish_encounter(selected_survey_event_data()$survey_event_id) %>%
-    select(fish_encounter_dt, fish_count, fish_status, sex, maturity, origin, cwt_status,
+    select(fish_encounter_dt, fish_count, fish_status, fish_name, sex, maturity, origin, cwt_status,
            clip_status, fish_behavior, prev_counted, created_dt, created_by, modified_dt,
            modified_by)
 
@@ -118,6 +139,7 @@ selected_fish_encounter_data = reactive({
                                    fish_encounter_time = fish_encounter_data$fish_encounter_time[fish_encounter_row],
                                    fish_count = fish_encounter_data$fish_count[fish_encounter_row],
                                    fish_status = fish_encounter_data$fish_status[fish_encounter_row],
+                                   fish_name = fish_encounter_data$fish_name[fish_encounter_row],
                                    sex = fish_encounter_data$sex[fish_encounter_row],
                                    maturity = fish_encounter_data$maturity[fish_encounter_row],
                                    origin = fish_encounter_data$origin[fish_encounter_row],
@@ -142,6 +164,7 @@ observeEvent(input$fish_encounters_rows_selected, {
   updateTimeInput(session, "fish_encounter_time_select", value = sfedat$fish_encounter_time)
   updateNumericInput(session, "fish_count_input", value = sfedat$fish_count)
   updateSelectizeInput(session, "fish_status_select", selected = sfedat$fish_status)
+  updateSelectizeInput(session, "fish_name_select", selected = sfedat$fish_name)
   updateSelectizeInput(session, "sex_select", selected = sfedat$sex)
   updateSelectizeInput(session, "maturity_select", selected = sfedat$maturity)
   updateSelectizeInput(session, "origin_select", selected = sfedat$origin)
@@ -180,6 +203,17 @@ fish_encounter_create = reactive({
     fish_status_id = fish_status_vals %>%
       filter(fish_status == fish_status_input) %>%
       pull(fish_status_id)
+  }
+  # Fish name, location_id
+  loc_select = input$fish_name_select
+  if ( is.null(loc_select) | is.na(loc_select) | loc_select == "" | loc_select == "no location data" ) {
+    fish_location_id = NA
+    fish_name_input = NA
+  } else {
+    fish_location = current_fish_locations() %>%
+      filter(fish_name == loc_select)
+    fish_location_id = fish_location$fish_location_id
+    fish_name_input = fish_location$fish_name
   }
   # Sex
   sex_input = input$sex_select
@@ -249,6 +283,8 @@ fish_encounter_create = reactive({
                               fish_count = input$fish_count_input,
                               fish_status = fish_status_input,
                               fish_status_id = fish_status_id,
+                              fish_name = fish_name_input,
+                              fish_location_id,
                               sex = sex_input,
                               sex_id = sex_id,
                               maturity = maturity_input,
@@ -261,7 +297,6 @@ fish_encounter_create = reactive({
                               adipose_clip_status_id = adipose_clip_status_id,
                               fish_behavior = fish_behavior_input,
                               fish_behavior_type_id = fish_behavior_type_id,
-                              # Need to create prev_counted boolean below modal
                               prev_counted = input$prev_counted_select,
                               created_dt = lubridate::with_tz(Sys.time(), "UTC"),
                               created_by = Sys.getenv("USERNAME"))
@@ -272,7 +307,7 @@ fish_encounter_create = reactive({
 output$fish_encounter_modal_insert_vals = renderDT({
   fish_encounter_modal_in_vals = fish_encounter_create() %>%
     mutate(fish_encounter_dt = format(fish_encounter_dt, "%H:%M")) %>%
-    select(fish_encounter_dt, fish_count, fish_status, sex, maturity, origin, cwt_status,
+    select(fish_encounter_dt, fish_count, fish_status, fish_name, sex, maturity, origin, cwt_status,
            clip_status, fish_behavior, prev_counted)
   # Generate table
   datatable(fish_encounter_modal_in_vals,
@@ -335,8 +370,8 @@ fish_encounter_insert_vals = reactive({
                                                     format(fish_encounter_dt, "%H:%M")),
                                              tz = "America/Los_Angeles"))) %>%
     mutate(fish_encounter_datetime = with_tz(fish_encounter_datetime, tzone = "UTC")) %>%
-    mutate(previously_counted_indicator = if_else(prev_counted == "No", 0L, 1L)) %>%
-    select(survey_event_id, fish_status_id, sex_id, maturity_id, origin_id,
+    mutate(previously_counted_indicator = if_else(prev_counted == "No", 1L, 0L)) %>%
+    select(survey_event_id, fish_location_id, fish_status_id, sex_id, maturity_id, origin_id,
            cwt_detection_status_id, adipose_clip_status_id, fish_behavior_type_id,
            fish_encounter_datetime, fish_count, previously_counted_indicator, created_by)
   return(new_fish_enc_values)
@@ -347,7 +382,7 @@ observeEvent(input$insert_fish_encounter, {
   fish_encounter_insert(fish_encounter_insert_vals())
   removeModal()
   post_fish_encounter_insert_vals = get_fish_encounter(selected_survey_event_data()$survey_event_id) %>%
-    select(fish_encounter_dt, fish_count, fish_status, sex, maturity, origin,
+    select(fish_encounter_dt, fish_count, fish_status, fish_name, sex, maturity, origin,
            cwt_status, clip_status, fish_behavior, prev_counted, created_dt,
            created_by, modified_dt, modified_by)
   replaceData(fish_encounter_dt_proxy, post_fish_encounter_insert_vals)
@@ -380,6 +415,17 @@ fish_encounter_edit = reactive({
     fish_status_id = fish_status_vals %>%
       filter(fish_status == fish_status_input) %>%
       pull(fish_status_id)
+  }
+  # Fish name, location_id
+  loc_select = input$fish_name_select
+  if ( is.null(loc_select) | is.na(loc_select) | loc_select == "" | loc_select == "no location data" ) {
+    fish_location_id = NA
+    fish_name_input = NA
+  } else {
+    fish_location = current_fish_locations() %>%
+      filter(fish_name == loc_select)
+    fish_location_id = fish_location$fish_location_id
+    fish_name_input = fish_location$fish_name
   }
   # Sex
   sex_input = input$sex_select
@@ -442,12 +488,13 @@ fish_encounter_edit = reactive({
       pull(fish_behavior_type_id)
   }
   edit_fish_encounter = tibble(fish_encounter_id = selected_fish_encounter_data()$fish_encounter_id,
-                               #fish_location_id = fish_location_input,
                                # Need to create full datetime values below modal
                                fish_encounter_dt = fish_encounter_dt,
                                fish_count = input$fish_count_input,
                                fish_status = fish_status_input,
                                fish_status_id = fish_status_id,
+                               fish_name = fish_name_input,
+                               fish_location_id = fish_location_id,
                                sex = sex_input,
                                sex_id = sex_id,
                                maturity = maturity_input,
@@ -478,7 +525,7 @@ fish_encounter_edit = reactive({
 output$fish_encounter_modal_update_vals = renderDT({
   fish_encounter_modal_up_vals = fish_encounter_edit() %>%
     mutate(fish_encounter_dt = format(fish_encounter_dt, "%H:%M")) %>%
-    select(fish_encounter_dt, fish_count, fish_status, sex, maturity, origin, cwt_status,
+    select(fish_encounter_dt, fish_count, fish_status, fish_name, sex, maturity, origin, cwt_status,
            clip_status, fish_behavior, prev_counted)
   # Generate table
   datatable(fish_encounter_modal_up_vals,
@@ -496,12 +543,12 @@ output$fish_encounter_modal_update_vals = renderDT({
 observeEvent(input$fish_enc_edit, {
   old_fish_encounter_vals = selected_fish_encounter_data() %>%
     mutate(fish_encounter_dt = format(fish_encounter_time, "%H:%M")) %>%
-    select(fish_encounter_dt, fish_count, fish_status, sex, maturity, origin, cwt_status,
+    select(fish_encounter_dt, fish_count, fish_status, fish_name, sex, maturity, origin, cwt_status,
            clip_status, fish_behavior, prev_counted)
   new_fish_encounter_vals = fish_encounter_edit() %>%
     mutate(fish_count = as.integer(fish_count)) %>%
     mutate(fish_encounter_dt = format(fish_encounter_dt, "%H:%M")) %>%
-    select(fish_encounter_dt, fish_count, fish_status, sex, maturity, origin, cwt_status,
+    select(fish_encounter_dt, fish_count, fish_status, fish_name, sex, maturity, origin, cwt_status,
            clip_status, fish_behavior, prev_counted)
   showModal(
     tags$div(id = "fish_encounter_update_modal",
@@ -543,11 +590,11 @@ observeEvent(input$save_fish_enc_edits, {
   fish_encounter_update(fish_encounter_edit())
   removeModal()
   post_fish_encounter_edit_vals = get_fish_encounter(selected_survey_event_data()$survey_event_id) %>%
-    select(fish_encounter_dt, fish_count, fish_status, sex, maturity, origin,
+    select(fish_encounter_dt, fish_count, fish_status, fish_name, sex, maturity, origin,
            cwt_status, clip_status, fish_behavior, prev_counted, created_dt,
            created_by, modified_dt, modified_by)
   replaceData(fish_encounter_dt_proxy, post_fish_encounter_edit_vals)
-})
+}, priority = 9999)
 
 #========================================================
 # Delete operations: reactives, observers and modals
@@ -558,7 +605,7 @@ output$fish_encounter_modal_delete_vals = renderDT({
   fish_encounter_modal_del_id = selected_fish_encounter_data()$fish_encounter_id
   fish_encounter_modal_del_vals = get_fish_encounter(selected_survey_event_data()$survey_event_id) %>%
     filter(fish_encounter_id == fish_encounter_modal_del_id) %>%
-    select(fish_encounter_dt, fish_count, fish_status, sex, maturity, origin, cwt_status,
+    select(fish_encounter_dt, fish_count, fish_status, fish_name, sex, maturity, origin, cwt_status,
            clip_status, fish_behavior, prev_counted)
   # Generate table
   datatable(fish_encounter_modal_del_vals,
@@ -608,7 +655,7 @@ observeEvent(input$delete_fish_encounter, {
   fish_encounter_delete(selected_fish_encounter_data())
   removeModal()
   fish_encounters_after_delete = get_fish_encounter(selected_survey_event_data()$survey_event_id) %>%
-    select(fish_encounter_dt, fish_count, fish_status, sex, maturity, origin,
+    select(fish_encounter_dt, fish_count, fish_status, fish_name, sex, maturity, origin,
            cwt_status, clip_status, fish_behavior, prev_counted, created_dt,
            created_by, modified_dt, modified_by)
   replaceData(fish_encounter_dt_proxy, fish_encounters_after_delete)

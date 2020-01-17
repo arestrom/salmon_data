@@ -99,8 +99,12 @@
 # 28. See example code "current_redd_locations" in redd_encounter_srv.R
 #     as example of how to possibly simplify a bunch of repeat
 #     invocations of get_xxx global functions.
+# 29. Stopped at deleting fish_locations with encounters attached. Need
+#     to fix modal display to include DT:: with dependent data.
+# 30. Need to speed up query for fish_locations. Maybe query from
+#     a view instead. Likely to just a few encounters with locs.
 #
-# AS 2020-01-15
+# AS 2020-01-17
 #==============================================================
 
 # Load libraries

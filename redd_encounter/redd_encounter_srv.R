@@ -169,12 +169,6 @@ redd_encounter_create = reactive({
     redd_location_id = redd_location$redd_location_id
     redd_name_input = redd_location$redd_name
   }
-  print("loc_select")
-  print(loc_select)
-  print("redd_location_id")
-  print(redd_location_id)
-  print("redd_name")
-  print(redd_name_input)
   new_redd_encounter = tibble(survey_event_id = survey_event_id_input,
                               survey_date = survey_date,
                               # Need to create full datetime values below modal
