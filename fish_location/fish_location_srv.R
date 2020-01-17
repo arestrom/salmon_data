@@ -91,7 +91,6 @@ selected_fish_location_data = reactive({
                                   created_by = fish_location_data$created_by[fish_location_row],
                                   modified_date = fish_location_data$modified_date[fish_location_row],
                                   modified_by = fish_location_data$modified_by[fish_location_row])
-  print(selected_fish_location)
   return(selected_fish_location)
 })
 
@@ -247,41 +246,6 @@ observeEvent(input$fish_loc_map, {
     )
   )
 })
-
-# # Modal for new fish locations...add or edit a point...write coordinates to lat, lon
-# observeEvent(input$fish_loc_map, {
-#   showModal(
-#     # Verify required fields have data...none can be blank
-#     tags$div(id = "fish_location_map_modal",
-#              modalDialog (
-#                size = 'l',
-#                title = glue("Add or edit fish location"),
-#                fluidPage (
-#                  fluidRow(
-#                    column(width = 12,
-#                           leafletOutput("fish_map", height = 500),
-#                           br()
-#                    )
-#                  ),
-#                  fluidRow(
-#                    column(width = 3,
-#                           actionButton("capture_fish_loc", "Capture fish location")),
-#                    tippy("<i style='color:#1a5e86;padding-left:8px', class='fas fa-info-circle'></i>",
-#                          tooltip = glue("You can zoom in on the map and drag the marker to the ",
-#                                         "correct carcass location. Click on the marker to set ",
-#                                         "the coordinates. Then click on the button to capture ",
-#                                         "the location and send the coordinates to the data ",
-#                                         "entry screen.")),
-#                    column(width = 9,
-#                           htmlOutput("fish_coordinates"))
-#                  )
-#                ),
-#                easyClose = TRUE,
-#                footer = NULL
-#              )
-#     )
-#   )
-# })
 
 #======================================================================
 # Update fish location coordinate inputs to coordinates selected on map
@@ -623,6 +587,11 @@ observeEvent(input$save_fish_loc_edits, {
 # Generate values to show in modal
 output$fish_location_modal_delete_vals = renderDT({
   fish_location_modal_del_id = selected_fish_location_data()$fish_location_id
+  # Collect parameters
+  up_rm = selected_survey_data()$up_rm
+  lo_rm = selected_survey_data()$lo_rm
+  survey_date = format(as.Date(selected_survey_data()$survey_date))
+  species_id = selected_survey_event_data()$species_id
   fish_location_modal_del_vals = get_fish_locations(waterbody_id(), up_rm, lo_rm, survey_date, species_id) %>%
     filter(fish_location_id == fish_location_modal_del_id) %>%
     select(fish_name, channel_type, orientation_type, latitude,
@@ -650,7 +619,7 @@ observeEvent(input$fish_loc_delete, {
   req(input$tabs == "data_entry")
   req(input$surveys_rows_selected)
   req(input$survey_events_rows_selected)
-  req(input$redd_locations_rows_selected)
+  req(input$fish_locations_rows_selected)
   fish_location_id = selected_fish_location_data()$fish_location_id
   fish_loc_dependencies = fish_location_dependencies()
   showModal(
