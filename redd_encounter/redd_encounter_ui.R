@@ -12,7 +12,7 @@ redd_encounter_ui = tags$div(
                        "location data first. Then to associate any new redd data with ",
                        "a redd location, select the 'redd_name' in the drop-down menu.",
                        "To enter counts only (no location), or to edit observations to drop ",
-                       "any redd location association, select 'no location data'.")),
+                       "the redd location association, select 'no location data'.")),
   br(),
   br(),
   timeInput(inputId = "redd_encounter_time_select", "encounter_time", seconds = FALSE),

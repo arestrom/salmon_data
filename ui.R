@@ -82,7 +82,7 @@ ui = dashboardPagePlus(
                       id = 4,
                       title = "Fish location",
                       color = "purple",
-                      collapsed = TRUE,
+                      collapsed = FALSE,
                       fish_location_ui
                     ),
                     accordionItem(

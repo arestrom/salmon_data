@@ -92,10 +92,6 @@ selected_redd_location_data = reactive({
                                   created_by = redd_location_data$created_by[redd_location_row],
                                   modified_date = redd_location_data$modified_date[redd_location_row],
                                   modified_by = redd_location_data$modified_by[redd_location_row])
-  print("selected_lat")
-  print(selected_redd_location$latitude)
-  print("selected_lon")
-  print(selected_redd_location$longitude)
   return(selected_redd_location)
 })
 
@@ -135,10 +131,6 @@ selected_redd_coords = reactive({
     redd_coords = NULL
     redd_location_id = remisc::get_uuid(1L)
   }
-  # print("latitude")
-  # print(redd_coords$latitude)
-  # print("longitude")
-  # print(redd_coords$longitude)
   if ( is.null(redd_coords) | length(redd_coords$latitude) == 0 | length(redd_coords$longitude) == 0 ) {
     redd_lat = center_lat
     redd_lon = center_lon
@@ -354,17 +346,17 @@ observeEvent(input$redd_loc_add, {
                  easyClose = TRUE,
                  footer = NULL
                )
-               # Write to DB
+               # Verify redd name is unique for species, reach, and period
              } else if ( new_redd_location_vals$redd_name %in% old_redd_location_vals ) {
-                 modalDialog (
-                   size = "m",
-                   title = "Warning",
-                   paste0("To enter a new redd name (flag code, or redd ID) it must be unique, for this reach and species, within the last four months"),
-                   easyClose = TRUE,
-                   footer = NULL
-                 )
-                 # Write to DB
-               } else {
+               modalDialog (
+                 size = "m",
+                 title = "Warning",
+                 paste0("To enter a new redd name (flag code, or redd ID) it must be unique, for this reach and species, within the last four months"),
+                 easyClose = TRUE,
+                 footer = NULL
+               )
+               # Write to DB
+             } else {
                modalDialog (
                  size = 'l',
                  title = glue("Insert new redd location data to the database?"),
@@ -656,10 +648,8 @@ observeEvent(input$redd_loc_delete, {
   req(input$surveys_rows_selected)
   req(input$survey_events_rows_selected)
   req(input$redd_locations_rows_selected)
-  #redd_encounter_ids = redd_location_encounters()
   redd_location_id = selected_redd_location_data()$redd_location_id
   redd_loc_dependencies = redd_location_dependencies()
-  #redd_nm = selected_redd_coords()$redd_name
   showModal(
     tags$div(id = "redd_location_delete_modal",
              if ( !length(input$redd_locations_rows_selected) == 1 ) {

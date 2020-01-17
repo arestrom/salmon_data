@@ -28,14 +28,18 @@ output$fish_locations = renderDT({
   req(input$tabs == "data_entry")
   req(input$surveys_rows_selected)
   req(input$survey_events_rows_selected)
-  req(input$fish_encounters_rows_selected)
-  req(!is.na(selected_fish_encounter_data()$fish_encounter_id))
-  fish_location_title = glue("{selected_survey_event_data()$species} fish locations for {input$stream_select} on ",
-                             "{selected_survey_data()$survey_date} from river mile {selected_survey_data()$up_rm} ",
-                             "to {selected_survey_data()$lo_rm}")
-  fish_location_data = get_fish_location(selected_fish_encounter_data()$fish_encounter_id) %>%
-    select(fish_name, channel_type, orientation_type, latitude,
-           longitude, horiz_accuracy, location_description,
+  fish_location_title = glue("{selected_survey_event_data()$species} carcass locations for {input$stream_select} ",
+                             "from river mile {selected_survey_data()$up_rm} to {selected_survey_data()$lo_rm}, ",
+                             "for the period {format(as.Date(selected_survey_data()$survey_date) - months(3), '%m/%d/%Y')} ",
+                             "to {format(as.Date(selected_survey_data()$survey_date), '%m/%d/%Y')}")
+  # Collect parameters
+  up_rm = selected_survey_data()$up_rm
+  lo_rm = selected_survey_data()$lo_rm
+  survey_date = format(as.Date(selected_survey_data()$survey_date))
+  species_id = selected_survey_event_data()$species_id
+  fish_location_data = get_fish_locations(waterbody_id(), up_rm, lo_rm, survey_date, species_id) %>%
+    select(survey_dt, fish_name, fish_status, channel_type, orientation_type,
+           latitude, longitude, horiz_accuracy, location_description,
            created_dt, created_by, modified_dt, modified_by)
 
   # Generate table
@@ -66,10 +70,13 @@ selected_fish_location_data = reactive({
   req(input$tabs == "data_entry")
   req(input$surveys_rows_selected)
   req(input$survey_events_rows_selected)
-  req(input$fish_encounters_rows_selected)
   req(input$fish_locations_rows_selected)
-  req(!is.na(selected_fish_encounter_data()$fish_encounter_id))
-  fish_location_data = get_fish_location(selected_fish_encounter_data()$fish_encounter_id)
+  # Collect parameters
+  up_rm = selected_survey_data()$up_rm
+  lo_rm = selected_survey_data()$lo_rm
+  survey_date = format(as.Date(selected_survey_data()$survey_date))
+  species_id = selected_survey_event_data()$species_id
+  fish_location_data = get_fish_locations(waterbody_id(), up_rm, lo_rm, survey_date, species_id)
   fish_location_row = input$fish_locations_rows_selected
   selected_fish_location = tibble(fish_location_id = fish_location_data$fish_location_id[fish_location_row],
                                   location_coordinates_id = fish_location_data$location_coordinates_id[fish_location_row],
@@ -84,7 +91,7 @@ selected_fish_location_data = reactive({
                                   created_by = fish_location_data$created_by[fish_location_row],
                                   modified_date = fish_location_data$modified_date[fish_location_row],
                                   modified_by = fish_location_data$modified_by[fish_location_row])
-  #print(selected_fish_location)
+  print(selected_fish_location)
   return(selected_fish_location)
 })
 
@@ -113,23 +120,27 @@ selected_fish_coords = reactive({
   req(input$tabs == "data_entry")
   req(input$surveys_rows_selected)
   req(input$survey_events_rows_selected)
-  req(input$fish_encounters_rows_selected)
-  req(!is.na(selected_fish_encounter_data()$fish_encounter_id))
   # Get centroid of stream....always available if stream is selected
   center_lat = selected_stream_centroid()$center_lat
   center_lon = selected_stream_centroid()$center_lon
-  # Get location_coordinates data should be nrow == 0 if no coordiinates present
-  fish_coords = get_fish_coordinates(selected_fish_encounter_data()$fish_encounter_id)
-  if ( nrow(fish_coords) == 0 ) {
+  # Get location_coordinates data should be nrow == 0 if no coordinates present
+  if (!is.null(input$fish_locations_rows_selected) ) {
+    fish_coords = get_fish_coordinates(selected_fish_location_data()$fish_location_id)
+    fish_location_id = selected_fish_location_data()$fish_location_id
+  } else {
+    fish_coords = NULL
+    fish_location_id = remisc::get_uuid(1L)
+  }
+  if ( is.null(fish_coords) | length(fish_coords$latitude) == 0 | length(fish_coords$longitude) == 0 ) {
     fish_lat = center_lat
     fish_lon = center_lon
-    fish_name = "need fish name"
+    fish_name = "none"
   } else {
     fish_lat = fish_coords$latitude
     fish_lon = fish_coords$longitude
     fish_name = selected_fish_location_data()$fish_name
   }
-  fish_coords = tibble(fish_encounter_id = selected_fish_encounter_data()$fish_encounter_id,
+  fish_coords = tibble(fish_location_id = fish_location_id,
                        fish_name = fish_name,
                        fish_lat = fish_lat,
                        fish_lon = fish_lon)
@@ -143,7 +154,7 @@ output$fish_map <- renderLeaflet({
   fish_lat = fish_loc_data$fish_lat
   fish_lon = fish_loc_data$fish_lon
   fish_name = fish_loc_data$fish_name
-  fish_encounter_id = fish_loc_data$fish_encounter_id
+  fish_location_id = fish_loc_data$fish_location_id
   m = leaflet() %>%
     setView(
       lng = selected_stream_centroid()$center_lon,
@@ -167,7 +178,7 @@ output$fish_map <- renderLeaflet({
     addCircleMarkers(
       lng = fish_lon,
       lat = fish_lat,
-      layerId = fish_encounter_id,
+      layerId = fish_location_id,
       popup = fish_name,
       radius = 8,
       color = "red",
@@ -202,7 +213,7 @@ output$fish_coordinates = renderUI({
   }
 })
 
-# Modal for new fish locations...add or edit a point...write coordinates to lat, lon
+# Modal for new redd locations...add or edit a point...write coordinates to lat, lon
 observeEvent(input$fish_loc_map, {
   showModal(
     # Verify required fields have data...none can be blank
@@ -218,9 +229,15 @@ observeEvent(input$fish_loc_map, {
                    )
                  ),
                  fluidRow(
-                   column(width = 2,
-                          actionButton("capture_fish_loc", "Capture fish location")),
-                   column(width = 10,
+                   column(width = 3,
+                          actionButton("capture_fish_loc", "Capture carcass location"),
+                          tippy("<i style='color:#1a5e86;padding-left:8px', class='fas fa-info-circle'></i>",
+                                tooltip = glue("You can zoom in on the map and drag the marker to the ",
+                                               "correct carcass location. Click on the marker to set ",
+                                               "the coordinates. Then click on the button to capture ",
+                                               "the location and send the coordinates to the data ",
+                                               "entry screen."))),
+                   column(width = 9,
                           htmlOutput("fish_coordinates"))
                  )
                ),
@@ -230,6 +247,41 @@ observeEvent(input$fish_loc_map, {
     )
   )
 })
+
+# # Modal for new fish locations...add or edit a point...write coordinates to lat, lon
+# observeEvent(input$fish_loc_map, {
+#   showModal(
+#     # Verify required fields have data...none can be blank
+#     tags$div(id = "fish_location_map_modal",
+#              modalDialog (
+#                size = 'l',
+#                title = glue("Add or edit fish location"),
+#                fluidPage (
+#                  fluidRow(
+#                    column(width = 12,
+#                           leafletOutput("fish_map", height = 500),
+#                           br()
+#                    )
+#                  ),
+#                  fluidRow(
+#                    column(width = 3,
+#                           actionButton("capture_fish_loc", "Capture fish location")),
+#                    tippy("<i style='color:#1a5e86;padding-left:8px', class='fas fa-info-circle'></i>",
+#                          tooltip = glue("You can zoom in on the map and drag the marker to the ",
+#                                         "correct carcass location. Click on the marker to set ",
+#                                         "the coordinates. Then click on the button to capture ",
+#                                         "the location and send the coordinates to the data ",
+#                                         "entry screen.")),
+#                    column(width = 9,
+#                           htmlOutput("fish_coordinates"))
+#                  )
+#                ),
+#                easyClose = TRUE,
+#                footer = NULL
+#              )
+#     )
+#   )
+# })
 
 #======================================================================
 # Update fish location coordinate inputs to coordinates selected on map
@@ -247,28 +299,11 @@ observeEvent(input$capture_fish_loc, {
 # Insert operations: reactives, observers and modals
 #========================================================
 
-# Disable "New" button if a row of coordinates already exists
-observe({
-  req(!is.na(selected_fish_encounter_data()$fish_encounter_id))
-  input$insert_fish_location
-  input$delete_fish_location
-  fish_loc_data = get_fish_location(selected_fish_encounter_data()$fish_encounter_id)
-  if (nrow(fish_loc_data) >= 1L) {
-    shinyjs::disable("fish_loc_add")
-  } else {
-    shinyjs::enable("fish_loc_add")
-  }
-})
-
 # Create reactive to collect input values for insert actions
 fish_location_create = reactive({
   req(input$tabs == "data_entry")
   req(input$surveys_rows_selected)
   req(input$survey_events_rows_selected)
-  req(input$fish_encounters_rows_selected)
-  req(!is.na(selected_fish_encounter_data()$fish_encounter_id))
-  # fish_encounter_id
-  fish_encounter_id_input = selected_fish_encounter_data()$fish_encounter_id
   # Channel type
   fish_channel_type_input = input$fish_channel_type_select
   if ( fish_channel_type_input == "" ) {
@@ -289,8 +324,7 @@ fish_location_create = reactive({
       filter(orientation_type == fish_orientation_type_input) %>%
       pull(location_orientation_type_id)
   }
-  new_fish_location = tibble(fish_encounter_id = fish_encounter_id_input,
-                             fish_name = input$fish_name_input,
+  new_fish_location = tibble(fish_name = input$fish_name_input,
                              channel_type = fish_channel_type_input,
                              stream_channel_type_id = stream_channel_type_id,
                              orientation_type = fish_orientation_type_input,
@@ -324,6 +358,14 @@ output$fish_location_modal_insert_vals = renderDT({
 # Modal for new redd locations
 observeEvent(input$fish_loc_add, {
   new_fish_location_vals = fish_location_create()
+  # Collect parameters for existing fish locations
+  up_rm = selected_survey_data()$up_rm
+  lo_rm = selected_survey_data()$lo_rm
+  survey_date = format(as.Date(selected_survey_data()$survey_date))
+  species_id = selected_survey_event_data()$species_id
+  old_fish_location_vals = get_fish_locations(waterbody_id(), up_rm, lo_rm, survey_date, species_id) %>%
+    filter(!fish_name %in% c("", "no location data")) %>%
+    pull(fish_name)
   showModal(
     # Verify required fields have data...none can be blank
     tags$div(id = "fish_location_insert_modal",
@@ -335,6 +377,15 @@ observeEvent(input$fish_loc_add, {
                  size = "m",
                  title = "Warning",
                  paste0("Values are required for channel, orientation, and coordinates"),
+                 easyClose = TRUE,
+                 footer = NULL
+               )
+               # Verify fish name is unique for species, reach, and period
+             } else if ( new_fish_location_vals$fish_name %in% old_fish_location_vals ) {
+               modalDialog (
+                 size = "m",
+                 title = "Warning",
+                 paste0("To enter a new fish name (carcass code, or fish ID) it must be unique, for this reach and species, within the last three months"),
                  easyClose = TRUE,
                  footer = NULL
                )
@@ -362,7 +413,7 @@ fish_location_insert_vals = reactive({
     mutate(waterbody_id = waterbody_id()) %>%
     mutate(wria_id = wria_id()) %>%
     mutate(location_type_id = "c8c4020f-36ac-46ec-b158-6d07a3812bc8") %>%     # fish encounter
-    select(fish_encounter_id, waterbody_id, wria_id, location_type_id,
+    select(waterbody_id, wria_id, location_type_id,
            stream_channel_type_id, location_orientation_type_id,
            fish_name, location_description, latitude, longitude,
            horiz_accuracy, created_by)
@@ -371,11 +422,18 @@ fish_location_insert_vals = reactive({
 
 # Update DB and reload DT
 observeEvent(input$insert_fish_location, {
+  req(input$surveys_rows_selected)
+  req(input$survey_events_rows_selected)
   fish_location_insert(fish_location_insert_vals())
   removeModal()
-  post_fish_location_insert_vals = get_fish_location(selected_fish_encounter_data()$fish_encounter_id) %>%
-    select(fish_name, channel_type, orientation_type, latitude,
-           longitude, horiz_accuracy, location_description,
+  # Collect parameters
+  up_rm = selected_survey_data()$up_rm
+  lo_rm = selected_survey_data()$lo_rm
+  survey_date = format(as.Date(selected_survey_data()$survey_date))
+  species_id = selected_survey_event_data()$species_id
+  post_fish_location_insert_vals = get_fish_locations(waterbody_id(), up_rm, lo_rm, survey_date, species_id) %>%
+    select(survey_dt, fish_name, fish_status, channel_type, orientation_type,
+           latitude, longitude, horiz_accuracy, location_description,
            created_dt, created_by, modified_dt, modified_by)
   replaceData(fish_location_dt_proxy, post_fish_location_insert_vals)
 }, priority = 9999)
@@ -389,7 +447,6 @@ fish_location_edit = reactive({
   req(input$tabs == "data_entry")
   req(input$surveys_rows_selected)
   req(input$survey_events_rows_selected)
-  req(input$fish_encounters_rows_selected)
   req(input$fish_locations_rows_selected)
   req(!is.na(selected_fish_location_data()$fish_location_id))
   # Channel type
@@ -428,7 +485,6 @@ fish_location_edit = reactive({
 })
 
 dependent_fish_location_surveys = reactive({
-  req(!is.na(selected_fish_location_data()$fish_location_id))
   fish_loc_id = selected_fish_location_data()$fish_location_id
   fish_loc_srv = get_fish_location_surveys(fish_loc_id)
   return(fish_loc_srv)
@@ -526,14 +582,39 @@ observeEvent(input$fish_loc_edit, {
 
 # Update DB and reload DT
 observeEvent(input$save_fish_loc_edits, {
-  fish_location_update(fish_location_edit())
+  req(input$surveys_rows_selected)
+  req(input$survey_events_rows_selected)
+  fish_location_update(fish_location_edit(), selected_fish_location_data())
   removeModal()
-  post_fish_location_edit_vals = get_fish_location(selected_fish_encounter_data()$fish_encounter_id) %>%
-    select(fish_name, channel_type, orientation_type, latitude,
-           longitude, horiz_accuracy, location_description,
+  # Collect parameters
+  up_rm = selected_survey_data()$up_rm
+  lo_rm = selected_survey_data()$lo_rm
+  survey_date = format(as.Date(selected_survey_data()$survey_date))
+  species_id = selected_survey_event_data()$species_id
+  # Update redd location table
+  post_fish_location_edit_vals = get_fish_locations(waterbody_id(), up_rm, lo_rm, survey_date, species_id) %>%
+    select(survey_dt, fish_name, fish_status, channel_type, orientation_type,
+           latitude, longitude, horiz_accuracy, location_description,
            created_dt, created_by, modified_dt, modified_by)
   replaceData(fish_location_dt_proxy, post_fish_location_edit_vals)
-}, priority = 9999)
+  # Update fish encounter table if something in fish location changed
+  post_fish_encounter_edit_vals = get_fish_encounter(selected_survey_event_data()$survey_event_id) %>%
+    select(fish_encounter_dt, fish_count, fish_status, sex, maturity, origin,
+           cwt_status, clip_status, fish_behavior, prev_counted, created_dt,
+           created_by, modified_dt, modified_by)
+  replaceData(fish_encounter_dt_proxy, post_fish_encounter_edit_vals)
+})
+
+# # Update DB and reload DT
+# observeEvent(input$save_fish_loc_edits, {
+#   fish_location_update(fish_location_edit())
+#   removeModal()
+#   post_fish_location_edit_vals = get_fish_locations(waterbody_id(), up_rm, lo_rm, survey_date, species_id) %>%
+#     select(fish_name, channel_type, orientation_type, latitude,
+#            longitude, horiz_accuracy, location_description,
+#            created_dt, created_by, modified_dt, modified_by)
+#   replaceData(fish_location_dt_proxy, post_fish_location_edit_vals)
+# }, priority = 9999)
 
 #========================================================
 # Delete operations: reactives, observers and modals
@@ -542,7 +623,7 @@ observeEvent(input$save_fish_loc_edits, {
 # Generate values to show in modal
 output$fish_location_modal_delete_vals = renderDT({
   fish_location_modal_del_id = selected_fish_location_data()$fish_location_id
-  fish_location_modal_del_vals = get_fish_location(selected_fish_encounter_data()$fish_encounter_id) %>%
+  fish_location_modal_del_vals = get_fish_locations(waterbody_id(), up_rm, lo_rm, survey_date, species_id) %>%
     filter(fish_location_id == fish_location_modal_del_id) %>%
     select(fish_name, channel_type, orientation_type, latitude,
            longitude, horiz_accuracy, location_description)
@@ -566,30 +647,39 @@ fish_location_dependencies = reactive({
 })
 
 observeEvent(input$fish_loc_delete, {
+  req(input$tabs == "data_entry")
+  req(input$surveys_rows_selected)
+  req(input$survey_events_rows_selected)
+  req(input$redd_locations_rows_selected)
   fish_location_id = selected_fish_location_data()$fish_location_id
   fish_loc_dependencies = fish_location_dependencies()
-  table_names = paste0(paste0("'", names(fish_loc_dependencies), "'"), collapse = ", ")
-  # Customize the delete message depending on if other entries are linked to location
-  if (ncol(fish_loc_dependencies) > 1L | fish_loc_dependencies$fish_encounter[1] > 1L) {
-    fish_delete_msg = glue("Other entries in {table_names} are linked to this location. ",
-                           "Only the link to the fish location will be deleted.")
-  } else {
-    fish_delete_msg = "Are you sure you want to delete this fish location data from the database?"
-  }
   showModal(
     tags$div(id = "fish_location_delete_modal",
-             if ( length(fish_location_id) == 0 ) {
+             if ( !length(input$fish_locations_rows_selected) == 1 ) {
                modalDialog (
                  size = "m",
                  title = "Warning",
-                 glue("Please select a row to delete!"),
+                 paste("Please select a row to edit!"),
+                 easyClose = TRUE,
+                 footer = NULL
+               )
+             } else if ( nrow(fish_loc_dependencies) > 0L ) {
+               modalDialog (
+                 size = "l",
+                 title = paste("The fish count observation(s) listed below are linked to the carcass location data you selected. ",
+                               "Please edit or delete the dependent fish count data in the 'Fish counts' data entry ",
+                               "screen below before deleting the selected carcass location data."),
+                 fluidPage (
+                   DT::DTOutput("fish_location_modal_dependency_vals"),
+                   br()
+                 ),
                  easyClose = TRUE,
                  footer = NULL
                )
              } else {
                modalDialog (
                  size = 'l',
-                 title = fish_delete_msg,
+                 title = "Are you sure you want to delete this carcass location data from the database?",
                  fluidPage (
                    DT::DTOutput("fish_location_modal_delete_vals"),
                    br(),
@@ -603,15 +693,47 @@ observeEvent(input$fish_loc_delete, {
     ))
 })
 
-# Update DB and reload DT
+# Update redd_location DB and reload location DT
 observeEvent(input$delete_fish_location, {
-  fish_location_delete(fish_location_dependencies(),
-                       selected_fish_location_data(),
-                       selected_fish_encounter_data())
+  req(input$surveys_rows_selected)
+  req(input$survey_events_rows_selected)
+  fish_location_delete(selected_fish_location_data())
   removeModal()
-  fish_locations_after_delete = get_fish_location(selected_fish_encounter_data()$fish_encounter_id) %>%
-    select(fish_name, channel_type, orientation_type, latitude,
-           longitude, horiz_accuracy, location_description,
+  # Collect parameters
+  up_rm = selected_survey_data()$up_rm
+  lo_rm = selected_survey_data()$lo_rm
+  survey_date = format(as.Date(selected_survey_data()$survey_date))
+  species_id = selected_survey_event_data()$species_id
+  fish_locations_after_delete = get_fish_locations(waterbody_id(), up_rm, lo_rm, survey_date, species_id) %>%
+    select(survey_dt, fish_name, fish_status, channel_type, orientation_type,
+           latitude, longitude, horiz_accuracy, location_description,
            created_dt, created_by, modified_dt, modified_by)
   replaceData(fish_location_dt_proxy, fish_locations_after_delete)
 }, priority = 9999)
+
+# Reload location DT after deleting encounter
+observeEvent(input$delete_fish_encounter, {
+  # Collect parameters
+  up_rm = selected_survey_data()$up_rm
+  lo_rm = selected_survey_data()$lo_rm
+  survey_date = format(as.Date(selected_survey_data()$survey_date))
+  species_id = selected_survey_event_data()$species_id
+  fish_locations_after_encounter_delete = get_fish_locations(waterbody_id(), up_rm, lo_rm, survey_date, species_id) %>%
+    select(survey_dt, fish_name, fish_status, channel_type, orientation_type,
+           latitude, longitude, horiz_accuracy, location_description,
+           created_dt, created_by, modified_dt, modified_by)
+  replaceData(fish_location_dt_proxy, fish_locations_after_encounter_delete)
+}, priority = -1)
+
+# # Update DB and reload DT
+# observeEvent(input$delete_fish_location, {
+#   fish_location_delete(fish_location_dependencies(),
+#                        selected_fish_location_data(),
+#                        selected_fish_encounter_data())
+#   removeModal()
+#   fish_locations_after_delete = get_fish_locations(waterbody_id(), up_rm, lo_rm, survey_date, species_id) %>%
+#     select(survey_dt, fish_name, fish_status, channel_type, orientation_type,
+#            latitude, longitude, horiz_accuracy, location_description,
+#            created_dt, created_by, modified_dt, modified_by)
+#   replaceData(fish_location_dt_proxy, fish_locations_after_delete)
+# }, priority = 9999)

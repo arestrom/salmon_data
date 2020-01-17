@@ -51,13 +51,14 @@ get_redd_locations = function(waterbody_id, up_rm, lo_rm, survey_date, species_i
              "left join location_coordinates as lc on rloc.location_id = lc.location_id ",
              "left join stream_channel_type_lut as sc on rloc.stream_channel_type_id = sc.stream_channel_type_id ",
              "left join location_orientation_type_lut as lo on rloc.location_orientation_type_id = lo.location_orientation_type_id ",
-             "where loloc.waterbody_id = '{waterbody_id}' ",
+             "where rd.redd_location_id is not null ",
+             "and loloc.waterbody_id = '{waterbody_id}' ",
              "and uploc.river_mile_measure <= {up_rm} ",
              "and loloc.river_mile_measure >= {lo_rm} ",
              "and se.species_id = '{species_id}' ",
              "and s.survey_datetime < '{survey_date}'::date + interval '1 day' ",
              "and s.survey_datetime >= '{survey_date}'::date - interval '4 months' ",
-             "and not redd_status_short_description in ('Previous redd, not visible')")
+             "and not rs.redd_status_short_description in ('Previous redd, not visible')")
   con = poolCheckout(pool)
   old_redd_locations = DBI::dbGetQuery(con, qry)
   poolReturn(con)
@@ -245,7 +246,6 @@ redd_location_insert = function(new_redd_location_values) {
                    "ST_Transform(ST_GeomFromText('POINT({longitude} {latitude})', 4326), 2927), ",
                    "{created_by}) ",
                    .con = con)
-    # Checkout a connection
     DBI::dbExecute(con, qry)
   }
   poolReturn(con)
@@ -255,7 +255,7 @@ redd_location_insert = function(new_redd_location_values) {
 # Identify redd location surveys prior to update or delete
 #==============================================================
 
-# Identify fish_encounter dependencies prior to delete
+# Identify redd_encounter dependencies prior to delete
 get_redd_location_surveys = function(redd_location_id) {
   qry = glue("select s.survey_datetime as survey_date, ",
              "s.observer_last_name as observer, ",
@@ -269,7 +269,7 @@ get_redd_location_surveys = function(redd_location_id) {
              "left join media_type_lut as mt on ml.media_type_id = mt.media_type_id ",
              "left join other_observation as oo on loc.location_id = oo.observation_location_id ",
              "left join observation_type_lut as ot on oo.observation_type_id = ot.observation_type_id ",
-             "where loc.location_id = '{redd_location_id}'")
+             "where re.redd_location_id is not null and loc.location_id = '{redd_location_id}'")
   con = poolCheckout(pool)
   redd_loc_surveys = DBI::dbGetQuery(con, qry)
   poolReturn(con)
@@ -333,7 +333,7 @@ get_redd_location_surveys = function(redd_location_id) {
 # }
 
 # Define update callback
-redd_location_update = function(redd_location_edit_values, selected_redd_data) {
+redd_location_update = function(redd_location_edit_values, selected_redd_location_data) {
   edit_values = redd_location_edit_values
   # Pull out data for location table
   location_id = edit_values$redd_location_id
@@ -369,7 +369,7 @@ redd_location_update = function(redd_location_edit_values, selected_redd_data) {
   dbGetRowsAffected(update_result)
   dbClearResult(update_result)
   # Insert coordinates to location_coordinates if previous entry does not exist
-  if ( is.na(selected_redd_data$latitude) & is.na(selected_redd_data$longitude) ) {
+  if ( is.na(selected_redd_location_data$latitude) & is.na(selected_redd_location_data$longitude) ) {
     if ( !is.na(latitude) & !is.na(longitude) ) {
       # Insert coordinates to location_coordinates
       qry = glue_sql("INSERT INTO location_coordinates ",
@@ -378,11 +378,10 @@ redd_location_update = function(redd_location_edit_values, selected_redd_data) {
                      "ST_Transform(ST_GeomFromText('POINT({longitude} {latitude})', 4326), 2927), ",
                      "{created_by}) ",
                      .con = con)
-      # Checkout a connection
       DBI::dbExecute(con, qry)
     }
   # Otherwise update coordinates if previous entry does exist
-  } else if (!is.na(selected_redd_data$latitude) & !is.na(selected_redd_data$longitude) ) {
+  } else if (!is.na(selected_redd_location_data$latitude) & !is.na(selected_redd_location_data$longitude) ) {
     if ( !is.na(latitude) & !is.na(longitude) ) {
       qry = glue_sql("UPDATE location_coordinates ",
                      "SET horizontal_accuracy = {horizontal_accuracy}, ",
@@ -390,35 +389,34 @@ redd_location_update = function(redd_location_edit_values, selected_redd_data) {
                      "modified_datetime = {mod_dt}, modified_by = {mod_by} ",
                      "WHERE location_id = {location_id} ",
                      .con = con)
-      # Checkout a connection
       DBI::dbExecute(con, qry)
     }
   }
   poolReturn(con)
 }
 
-#======================================================================
-# Identify redd encounter IDs tied to redd location about to be deleted
-#======================================================================
-
-# Identify redd_encounter dependencies prior to delete
-get_redd_encounter_ids = function(redd_location_id) {
-  qry = glue("select ",
-             "re.redd_encounter_id ",
-             "from redd_encounter as re ",
-             "inner join location as loc on re.redd_location_id = loc.location_id ",
-             "where loc.location_id = '{redd_location_id}'")
-  con = poolCheckout(pool)
-  redd_encounters = DBI::dbGetQuery(con, qry)
-  poolReturn(con)
-  return(redd_encounters)
-}
+# #======================================================================
+# # Identify redd encounter IDs tied to redd location about to be deleted
+# #======================================================================
+#
+# # Identify redd_encounter dependencies prior to delete
+# get_redd_encounter_ids = function(redd_location_id) {
+#   qry = glue("select ",
+#              "re.redd_encounter_id ",
+#              "from redd_encounter as re ",
+#              "inner join location as loc on re.redd_location_id = loc.location_id ",
+#              "where loc.location_id = '{redd_location_id}'")
+#   con = poolCheckout(pool)
+#   redd_encounters = DBI::dbGetQuery(con, qry)
+#   poolReturn(con)
+#   return(redd_encounters)
+# }
 
 #==============================================================
 # Identify redd location dependencies prior to delete
 #==============================================================
 
-# Main redd_encounter query
+# Identify redd location dependencies prior to delete
 get_redd_location_dependencies = function(redd_location_id) {
   qry = glue("select rd.redd_encounter_id, rd.redd_encounter_datetime as redd_encounter_time, ",
              "rd.redd_count, rs.redd_status_short_description as redd_status, ",
@@ -428,7 +426,7 @@ get_redd_location_dependencies = function(redd_location_id) {
              "from redd_encounter as rd ",
              "inner join redd_status_lut as rs on rd.redd_status_id = rs.redd_status_id ",
              "left join location as loc on rd.redd_location_id = loc.location_id ",
-             "where rd.redd_location_id = '{redd_location_id}'")
+             "where rd.redd_location_id is not null and rd.redd_location_id = '{redd_location_id}'")
   con = poolCheckout(pool)
   redd_encounters = DBI::dbGetQuery(con, qry)
   poolReturn(con)
