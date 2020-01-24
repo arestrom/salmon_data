@@ -102,7 +102,9 @@
 # 29. Stopped at deleting fish_locations with encounters attached. Need
 #     to fix modal display to include DT:: with dependent data.
 # 30. Need to speed up query for fish_locations. Maybe query from
-#     a view instead. Likely to just a few encounters with locs.
+#     a view instead. Likely to be just a few encounters with locs.
+# 31. Edit a fish_name in location...then see what happens in fish_counts
+#     Need to speed up queries and refresh data after fish_name edit.
 #
 # AS 2020-01-17
 #==============================================================

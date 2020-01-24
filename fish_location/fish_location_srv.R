@@ -454,7 +454,7 @@ dependent_fish_location_surveys = reactive({
   return(fish_loc_srv)
 })
 
-# Generate values to show check modal
+# Generate values to show in check modal
 output$fish_loc_surveys = renderDT({
   fish_loc_srv = dependent_fish_location_surveys()
   fish_location_warning = glue("WARNING: All  carcasses, photo's, or observations linked to this ",

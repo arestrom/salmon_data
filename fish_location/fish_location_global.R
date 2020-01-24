@@ -4,25 +4,25 @@
 get_fish_locations = function(waterbody_id, up_rm, lo_rm, survey_date, species_id) {
   # Define query for new fish locations...no attached surveys yet...finds new entries or orphan entries
   qry_one = glue("select floc.location_id as fish_location_id, ",
-             "floc.location_name as fish_name, ",
-             "lc.location_coordinates_id, ",
-             "st_x(st_transform(lc.geom, 4326)) as longitude, ",
-             "st_y(st_transform(lc.geom, 4326)) as latitude, ",
-             "lc.horizontal_accuracy as horiz_accuracy, ",
-             "sc.channel_type_description as channel_type, ",
-             "lo.orientation_type_description as orientation_type, ",
-             "floc.location_description, ",
-             "floc.created_datetime as created_date, floc.created_by, ",
-             "floc.modified_datetime as modified_date, floc.modified_by ",
-             "from location as floc ",
-             "left join location_coordinates as lc on floc.location_id = lc.location_id ",
-             "left join stream_channel_type_lut as sc on floc.stream_channel_type_id = sc.stream_channel_type_id ",
-             "left join location_orientation_type_lut as lo on floc.location_orientation_type_id = lo.location_orientation_type_id ",
-             "left join fish_encounter as fd on floc.location_id = fd.fish_location_id ",
-             "left join location_type_lut as lt on floc.location_type_id = lt.location_type_id ",
-             "where floc.waterbody_id = '{waterbody_id}' ",
-             "and lt.location_type_description = 'Fish encounter' ",
-             "and fd.fish_encounter_id is null")
+                 "floc.location_name as fish_name, ",
+                 "lc.location_coordinates_id, ",
+                 "st_x(st_transform(lc.geom, 4326)) as longitude, ",
+                 "st_y(st_transform(lc.geom, 4326)) as latitude, ",
+                 "lc.horizontal_accuracy as horiz_accuracy, ",
+                 "sc.channel_type_description as channel_type, ",
+                 "lo.orientation_type_description as orientation_type, ",
+                 "floc.location_description, ",
+                 "floc.created_datetime as created_date, floc.created_by, ",
+                 "floc.modified_datetime as modified_date, floc.modified_by ",
+                 "from location as floc ",
+                 "left join location_coordinates as lc on floc.location_id = lc.location_id ",
+                 "left join stream_channel_type_lut as sc on floc.stream_channel_type_id = sc.stream_channel_type_id ",
+                 "left join location_orientation_type_lut as lo on floc.location_orientation_type_id = lo.location_orientation_type_id ",
+                 "left join fish_encounter as fd on floc.location_id = fd.fish_location_id ",
+                 "left join location_type_lut as lt on floc.location_type_id = lt.location_type_id ",
+                 "where lt.location_type_description = 'Fish encounter' ",
+                 "and floc.waterbody_id = '{waterbody_id}' ",
+                 "and fd.fish_encounter_id is null")
   con = poolCheckout(pool)
   new_fish_locations = DBI::dbGetQuery(con, qry_one)
   poolReturn(con)
@@ -265,7 +265,7 @@ fish_location_insert = function(new_fish_location_values) {
 # Identify fish_encounter dependencies prior to delete
 get_fish_location_surveys = function(fish_location_id) {
   qry = glue("select s.survey_datetime as survey_date, ",
-             "s.observer_last_name as observer, ",
+             "s.observer_last_name as observer, loc.location_name as fish_name, ",
              "fe.fish_count, mt.media_type_code as media_type, ",
              "ot.observation_type_name as other_observation_type ",
              "from location as loc ",
