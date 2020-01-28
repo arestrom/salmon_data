@@ -23,9 +23,12 @@ get_fish_locations = function(waterbody_id, up_rm, lo_rm, survey_date, species_i
                  "where lt.location_type_description = 'Fish encounter' ",
                  "and floc.waterbody_id = '{waterbody_id}' ",
                  "and fd.fish_encounter_id is null")
+  print("fish-one")
+  strt = Sys.time()
   con = poolCheckout(pool)
+  nd = Sys.time()
+  nd - strt
   new_fish_locations = DBI::dbGetQuery(con, qry_one)
-  poolReturn(con)
   # Define query for fish locations already tied to surveys
   qry_two = glue("select s.survey_datetime as survey_date, se.species_id, ",
              "uploc.river_mile_measure as up_rm, loloc.river_mile_measure as lo_rm, ",
@@ -59,8 +62,11 @@ get_fish_locations = function(waterbody_id, up_rm, lo_rm, survey_date, species_i
              "and s.survey_datetime < '{survey_date}'::date + interval '1 day' ",
              "and s.survey_datetime >= '{survey_date}'::date - interval '3 months' ",
              "and not fs.fish_status_description in ('Live')")
-  con = poolCheckout(pool)
+  print("fish-two")
+  strt = Sys.time()
   old_fish_locations = DBI::dbGetQuery(con, qry_two)
+  nd = Sys.time()
+  print(nd - strt)
   poolReturn(con)
   fish_locations = bind_rows(new_fish_locations, old_fish_locations) %>%
     mutate(latitude = round(latitude, 7)) %>%

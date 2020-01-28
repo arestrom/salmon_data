@@ -24,8 +24,11 @@ get_redd_locations = function(waterbody_id, up_rm, lo_rm, survey_date, species_i
              "and lt.location_type_description = 'Redd encounter' ",
              "and rd.redd_encounter_id is null")
   con = poolCheckout(pool)
+  print("redd-one")
+  strt = Sys.time()
   new_redd_locations = DBI::dbGetQuery(con, qry)
-  poolReturn(con)
+  nd = Sys.time()
+  print(nd - strt)
   # Define query for redd locations already tied to surveys
   qry = glue("select s.survey_datetime as survey_date, se.species_id, ",
              "uploc.river_mile_measure as up_rm, loloc.river_mile_measure as lo_rm, ",
@@ -59,8 +62,11 @@ get_redd_locations = function(waterbody_id, up_rm, lo_rm, survey_date, species_i
              "and s.survey_datetime < '{survey_date}'::date + interval '1 day' ",
              "and s.survey_datetime >= '{survey_date}'::date - interval '4 months' ",
              "and not rs.redd_status_short_description in ('Previous redd, not visible')")
-  con = poolCheckout(pool)
+  print("redd-two")
+  strt = Sys.time()
   old_redd_locations = DBI::dbGetQuery(con, qry)
+  nd = Sys.time()
+  print(nd - strt)
   poolReturn(con)
   redd_locations = bind_rows(new_redd_locations, old_redd_locations) %>%
     mutate(latitude = round(latitude, 7)) %>%

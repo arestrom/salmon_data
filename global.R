@@ -105,6 +105,9 @@
 #     a view instead. Likely to be just a few encounters with locs.
 # 31. Edit a fish_name in location...then see what happens in fish_counts
 #     Need to speed up queries and refresh data after fish_name edit.
+#     Print statements show second part of query is slow part. Just
+#     use two year location queries, then filter in memory using
+#     reactives.
 #
 # AS 2020-01-17
 #==============================================================
