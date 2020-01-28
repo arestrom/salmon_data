@@ -80,6 +80,7 @@ selected_survey_event_data = reactive({
   survey_event_data = get_survey_event(selected_survey_data()$survey_id)
   survey_event_row = input$survey_events_rows_selected
   selected_survey_event = tibble(survey_event_id = survey_event_data$survey_event_id[survey_event_row],
+                                 species_id = survey_event_data$species_id[survey_event_row],
                                  species = survey_event_data$species[survey_event_row],
                                  survey_design = survey_event_data$survey_design[survey_event_row],
                                  cwt_detect_method = survey_event_data$cwt_detect_method[survey_event_row],

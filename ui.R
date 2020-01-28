@@ -66,35 +66,41 @@ ui = dashboardPagePlus(
                   closable = FALSE,
                   collapsible = TRUE,
                   solidHeader = FALSE,
-                  collapsed = TRUE,
+                  collapsed = FALSE,
                   survey_event_ui,
                   width = 12
                 ),
                 boxPlus(
-                  title = "Fish encounter",
+                  title = "Fish encounters",
                   closable = FALSE,
                   collapsible = TRUE,
                   solidHeader = FALSE,
-                  collapsed = TRUE,
-                  fish_encounter_ui,
+                  collapsed = FALSE,
                   width = 12,
                   accordion(
                     accordionItem(
                       id = 4,
                       title = "Fish location",
                       color = "purple",
-                      collapsed = TRUE,
+                      collapsed = FALSE,
                       fish_location_ui
                     ),
                     accordionItem(
                       id = 5,
+                      title = "Fish counts",
+                      color = "purple",
+                      collapsed = FALSE,
+                      fish_encounter_ui
+                    ),
+                    accordionItem(
+                      id = 6,
                       title = "Individual fish",
                       color = "purple",
                       collapsed = TRUE,
                       individual_fish_ui
                     ),
                     accordionItem(
-                      id = 6,
+                      id = 7,
                       title = "Fish length measurement",
                       color = "purple",
                       collapsed = TRUE,
@@ -103,30 +109,36 @@ ui = dashboardPagePlus(
                   )
                 ),
                 boxPlus(
-                  title = "Redd encounter",
+                  title = "Redd encounters",
                   closable = FALSE,
                   collapsible = TRUE,
                   solidHeader = FALSE,
-                  collapsed = TRUE,
-                  redd_encounter_ui,
+                  collapsed = FALSE,
                   width = 12,
                   accordion(
                     accordionItem(
-                      id = 7,
+                      id = 8,
                       title = "Redd location",
                       color = "purple",
-                      collapsed = TRUE,
+                      collapsed = FALSE,
                       redd_location_ui
                     ),
                     accordionItem(
-                      id = 8,
+                      id = 9,
+                      title = "Redd counts",
+                      color = "purple",
+                      collapsed = FALSE,
+                      redd_encounter_ui
+                    ),
+                    accordionItem(
+                      id = 10,
                       title = "Individual redd",
                       color = "purple",
                       collapsed = TRUE,
                       individual_redd_ui
                     ),
                     accordionItem(
-                      id = 9,
+                      id = 11,
                       title = "Redd substrate",
                       color = "purple",
                       collapsed = TRUE,

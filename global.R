@@ -94,9 +94,22 @@
 #     updated methods with fish locations.
 # 26. Zoom to stream extent when setting locations via map.
 #     Right now marker is sometimes off the screen.
-# 27.
-
-# AS 2019-10-04
+# 27. For old_redd_location query...survey_date needs to be converted
+#     back to UTC. Using interval + '1 day' kludge right now.
+# 28. See example code "current_redd_locations" in redd_encounter_srv.R
+#     as example of how to possibly simplify a bunch of repeat
+#     invocations of get_xxx global functions.
+# 29. Stopped at deleting fish_locations with encounters attached. Need
+#     to fix modal display to include DT:: with dependent data.
+# 30. Need to speed up query for fish_locations. Maybe query from
+#     a view instead. Likely to be just a few encounters with locs.
+# 31. Edit a fish_name in location...then see what happens in fish_counts
+#     Need to speed up queries and refresh data after fish_name edit.
+#     Print statements show second part of query is slow part. Just
+#     use two year location queries, then filter in memory using
+#     reactives.
+#
+# AS 2020-01-17
 #==============================================================
 
 # Load libraries
@@ -105,7 +118,8 @@ library(shinydashboard)
 library(shinydashboardPlus)
 library(shinyTime)
 library(shinyjs)
-library(odbc)
+library(tippy)
+library(RPostgres)
 library(glue)
 library(tibble)
 library(DBI)
@@ -149,10 +163,10 @@ source("individual_fish/individual_fish_ui.R")
 source("individual_fish/individual_fish_global.R")
 source("fish_length_measurement/fish_length_measurement_ui.R")
 source("fish_length_measurement/fish_length_measurement_global.R")
-source("redd_encounter/redd_encounter_ui.R")
-source("redd_encounter/redd_encounter_global.R")
 source("redd_location/redd_location_ui.R")
 source("redd_location/redd_location_global.R")
+source("redd_encounter/redd_encounter_ui.R")
+source("redd_encounter/redd_encounter_global.R")
 source("individual_redd/individual_redd_ui.R")
 source("individual_redd/individual_redd_global.R")
 source("redd_substrate/redd_substrate_ui.R")
@@ -163,17 +177,6 @@ source("reach_point/reach_point_ui.R")
 source("reach_point/reach_point_global.R")
 
 # Define globals ================================================================
-
-# # Define dsns
-# salmon_db = "local_spawn"
-#
-# # Set up dsn connection
-# pool = pool::dbPool(drv = odbc::odbc(), timezone = "UTC", dsn = salmon_db)
-
-# # # Function to get pw for database
-# # pg_host <- function(host_label) {
-# #   Sys.getenv(host_label)
-# # }
 
 # Function to get user for database
 pg_user <- function(user_label) {

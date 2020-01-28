@@ -16,6 +16,6 @@ wria_stream_ui = tags$div(
   br(),
   br(),
   br(),
-  div(id = "year_text", p("Select survey year(s):")),
+  div(id = "year_text", p("Select survey year:")),
   uiOutput("year_select")
 )

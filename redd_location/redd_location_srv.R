@@ -23,27 +23,31 @@ output$orientation_type_select = renderUI({
 # Primary datatable for redd_locations
 #========================================================
 
-# Primary DT datatable for survey_intent
+# Primary DT datatable for redd locations...pulling in redds by species and stream for 4 months past
 output$redd_locations = renderDT({
   req(input$tabs == "data_entry")
   req(input$surveys_rows_selected)
   req(input$survey_events_rows_selected)
-  req(input$redd_encounters_rows_selected)
-  req(!is.na(selected_redd_encounter_data()$redd_encounter_id))
-  redd_location_title = glue("{selected_survey_event_data()$species} redd locations for {input$stream_select} on ",
-                             "{selected_survey_data()$survey_date} from river mile {selected_survey_data()$up_rm} ",
-                             "to {selected_survey_data()$lo_rm}")
-  redd_location_data = get_redd_location(selected_redd_encounter_data()$redd_encounter_id) %>%
-    select(redd_name, channel_type, orientation_type, latitude,
-           longitude, horiz_accuracy, location_description,
+  redd_location_title = glue("{selected_survey_event_data()$species} redd locations for {input$stream_select} ",
+                             "from river mile {selected_survey_data()$up_rm} to {selected_survey_data()$lo_rm}, ",
+                             "for the period {format(as.Date(selected_survey_data()$survey_date) - months(4), '%m/%d/%Y')} ",
+                             "to {format(as.Date(selected_survey_data()$survey_date), '%m/%d/%Y')}")
+  # Collect parameters
+  up_rm = selected_survey_data()$up_rm
+  lo_rm = selected_survey_data()$lo_rm
+  survey_date = format(as.Date(selected_survey_data()$survey_date))
+  species_id = selected_survey_event_data()$species_id
+  redd_location_data = get_redd_locations(waterbody_id(), up_rm, lo_rm, survey_date, species_id) %>%
+    select(survey_dt, redd_name, redd_status, channel_type, orientation_type,
+           latitude, longitude, horiz_accuracy, location_description,
            created_dt, created_by, modified_dt, modified_by)
 
   # Generate table
   datatable(redd_location_data,
             selection = list(mode = 'single'),
-            options = list(dom = 'ltp',
+            options = list(dom = 'lftp',
                            pageLength = 5,
-                           lengthMenu = c(1, 5, 10, 20),
+                           lengthMenu = c(1, 5, 10, 20, 50),
                            scrollX = T,
                            initComplete = JS(
                              "function(settings, json) {",
@@ -66,14 +70,18 @@ selected_redd_location_data = reactive({
   req(input$tabs == "data_entry")
   req(input$surveys_rows_selected)
   req(input$survey_events_rows_selected)
-  req(input$redd_encounters_rows_selected)
   req(input$redd_locations_rows_selected)
-  req(!is.na(selected_redd_encounter_data()$redd_encounter_id))
-  redd_location_data = get_redd_location(selected_redd_encounter_data()$redd_encounter_id)
+  # Collect parameters
+  up_rm = selected_survey_data()$up_rm
+  lo_rm = selected_survey_data()$lo_rm
+  survey_date = format(as.Date(selected_survey_data()$survey_date))
+  species_id = selected_survey_event_data()$species_id
+  redd_location_data = get_redd_locations(waterbody_id(), up_rm, lo_rm, survey_date, species_id)
   redd_location_row = input$redd_locations_rows_selected
   selected_redd_location = tibble(redd_location_id = redd_location_data$redd_location_id[redd_location_row],
                                   location_coordinates_id = redd_location_data$location_coordinates_id[redd_location_row],
                                   redd_name = redd_location_data$redd_name[redd_location_row],
+                                  redd_status = redd_location_data$redd_status[redd_location_row],
                                   channel_type = redd_location_data$channel_type[redd_location_row],
                                   orientation_type = redd_location_data$orientation_type[redd_location_row],
                                   latitude = redd_location_data$latitude[redd_location_row],
@@ -84,7 +92,6 @@ selected_redd_location_data = reactive({
                                   created_by = redd_location_data$created_by[redd_location_row],
                                   modified_date = redd_location_data$modified_date[redd_location_row],
                                   modified_by = redd_location_data$modified_by[redd_location_row])
-  #print(selected_redd_location)
   return(selected_redd_location)
 })
 
@@ -108,28 +115,32 @@ observeEvent(input$redd_locations_rows_selected, {
 # Get either selected redd coordinates or default stream centroid
 #================================================================
 
-# Get centroid of stream for setting view of redd_map
+# Get centroid of stream for setting view of redd_map....might be null if no location entered
 selected_redd_coords = reactive({
   req(input$tabs == "data_entry")
   req(input$surveys_rows_selected)
   req(input$survey_events_rows_selected)
-  req(input$redd_encounters_rows_selected)
-  req(!is.na(selected_redd_encounter_data()$redd_encounter_id))
   # Get centroid of stream....always available if stream is selected
   center_lat = selected_stream_centroid()$center_lat
   center_lon = selected_stream_centroid()$center_lon
-  # Get location_coordinates data should be nrow == 0 if no coordiinates present
-  redd_coords = get_redd_coordinates(selected_redd_encounter_data()$redd_encounter_id)
-  if ( nrow(redd_coords) == 0 ) {
+  # Get location_coordinates data should be nrow == 0 if no coordinates present
+  if (!is.null(input$redd_locations_rows_selected) ) {
+    redd_coords = get_redd_coordinates(selected_redd_location_data()$redd_location_id)
+    redd_location_id = selected_redd_location_data()$redd_location_id
+  } else {
+    redd_coords = NULL
+    redd_location_id = remisc::get_uuid(1L)
+  }
+  if ( is.null(redd_coords) | length(redd_coords$latitude) == 0 | length(redd_coords$longitude) == 0 ) {
     redd_lat = center_lat
     redd_lon = center_lon
-    redd_name = "need redd name"
+    redd_name = "none"
   } else {
     redd_lat = redd_coords$latitude
     redd_lon = redd_coords$longitude
-    redd_name = selected_redd_encounter_data()$redd_name
+    redd_name = selected_redd_location_data()$redd_name
   }
-  redd_coords = tibble(redd_encounter_id = selected_redd_encounter_data()$redd_encounter_id,
+  redd_coords = tibble(redd_location_id = redd_location_id,
                        redd_name = redd_name,
                        redd_lat = redd_lat,
                        redd_lon = redd_lon)
@@ -143,7 +154,7 @@ output$redd_map <- renderLeaflet({
   redd_lat = redd_loc_data$redd_lat
   redd_lon = redd_loc_data$redd_lon
   redd_name = redd_loc_data$redd_name
-  redd_encounter_id = redd_loc_data$redd_encounter_id
+  redd_location_id = redd_loc_data$redd_location_id
   m = leaflet() %>%
     setView(
       lng = selected_stream_centroid()$center_lon,
@@ -167,7 +178,7 @@ output$redd_map <- renderLeaflet({
     addCircleMarkers(
       lng = redd_lon,
       lat = redd_lat,
-      layerId = redd_encounter_id,
+      layerId = redd_location_id,
       popup = redd_name,
       radius = 8,
       color = "red",
@@ -219,9 +230,15 @@ observeEvent(input$redd_loc_map, {
                    )
                  ),
                  fluidRow(
-                   column(width = 2,
-                          actionButton("capture_redd_loc", "Capture redd location")),
-                   column(width = 10,
+                   column(width = 3,
+                          actionButton("capture_redd_loc", "Capture redd location"),
+                          tippy("<i style='color:#1a5e86;padding-left:8px', class='fas fa-info-circle'></i>",
+                                tooltip = glue("You can zoom in on the map and drag the marker to the ",
+                                               "correct redd location. Click on the marker to set ",
+                                               "the coordinates. Then click on the button to capture ",
+                                               "the location and send the coordinates to the data ",
+                                               "entry screen."))),
+                   column(width = 9,
                           htmlOutput("redd_coordinates"))
                  )
                ),
@@ -248,27 +265,11 @@ observeEvent(input$capture_redd_loc, {
 # Insert operations: reactives, observers and modals
 #========================================================
 
-# Disable "New" button if a row of comments already exists
-observe({
-  req(!is.na(selected_redd_encounter_data()$redd_encounter_id))
-  input$insert_redd_location
-  redd_loc_data = get_redd_location(selected_redd_encounter_data()$redd_encounter_id)
-  if (nrow(redd_loc_data) >= 1L) {
-    shinyjs::disable("redd_loc_add")
-  } else {
-    shinyjs::enable("redd_loc_add")
-  }
-})
-
 # Create reactive to collect input values for insert actions
 redd_location_create = reactive({
   req(input$tabs == "data_entry")
   req(input$surveys_rows_selected)
   req(input$survey_events_rows_selected)
-  req(input$redd_encounters_rows_selected)
-  req(!is.na(selected_redd_encounter_data()$redd_encounter_id))
-  # Redd_encounter_id
-  redd_encounter_id_input = selected_redd_encounter_data()$redd_encounter_id
   # Channel type
   channel_type_input = input$channel_type_select
   if ( channel_type_input == "" ) {
@@ -289,8 +290,7 @@ redd_location_create = reactive({
       filter(orientation_type == orientation_type_input) %>%
       pull(location_orientation_type_id)
   }
-  new_redd_location = tibble(redd_encounter_id = redd_encounter_id_input,
-                             redd_name = input$redd_name_input,
+  new_redd_location = tibble(redd_name = input$redd_name_input,
                              channel_type = channel_type_input,
                              stream_channel_type_id = stream_channel_type_id,
                              orientation_type = orientation_type_input,
@@ -324,19 +324,34 @@ output$redd_location_modal_insert_vals = renderDT({
 # Modal for new redd locations
 observeEvent(input$redd_loc_add, {
   new_redd_location_vals = redd_location_create()
+  # Collect parameters for existing redd locations
+  up_rm = selected_survey_data()$up_rm
+  lo_rm = selected_survey_data()$lo_rm
+  survey_date = format(as.Date(selected_survey_data()$survey_date))
+  species_id = selected_survey_event_data()$species_id
+  old_redd_location_vals = get_redd_locations(waterbody_id(), up_rm, lo_rm, survey_date, species_id) %>%
+    filter(!redd_name %in% c("", "no location data")) %>%
+    pull(redd_name)
   showModal(
     # Verify required fields have data...none can be blank
     tags$div(id = "redd_location_insert_modal",
              if ( is.na(new_redd_location_vals$redd_name) |
                   new_redd_location_vals$redd_name == "" |
-                  is.na(new_redd_location_vals$channel_type) |
-                  is.na(new_redd_location_vals$orientation_type) |
-                  is.na(new_redd_location_vals$latitude) |
-                  is.na(new_redd_location_vals$longitude) ) {
+                  is.na(new_redd_location_vals$stream_channel_type_id) |
+                  is.na(new_redd_location_vals$location_orientation_type_id) ) {
                modalDialog (
                  size = "m",
                  title = "Warning",
-                 paste0("Values are required in all but the last two fields"),
+                 paste0("At minimum, values are required for redd name (flag code or redd ID), channel type, and orientation type"),
+                 easyClose = TRUE,
+                 footer = NULL
+               )
+               # Verify redd name is unique for species, reach, and period
+             } else if ( new_redd_location_vals$redd_name %in% old_redd_location_vals ) {
+               modalDialog (
+                 size = "m",
+                 title = "Warning",
+                 paste0("To enter a new redd name (flag code, or redd ID) it must be unique, for this reach and species, within the last four months"),
                  easyClose = TRUE,
                  footer = NULL
                )
@@ -364,7 +379,7 @@ redd_location_insert_vals = reactive({
     mutate(waterbody_id = waterbody_id()) %>%
     mutate(wria_id = wria_id()) %>%
     mutate(location_type_id = "d5edb1c0-f645-4e82-92af-26f5637b2de0") %>%     # Redd encounter
-    select(redd_encounter_id, waterbody_id, wria_id, location_type_id,
+    select(waterbody_id, wria_id, location_type_id,
            stream_channel_type_id, location_orientation_type_id,
            redd_name, location_description, latitude, longitude,
            horiz_accuracy, created_by)
@@ -373,11 +388,18 @@ redd_location_insert_vals = reactive({
 
 # Update DB and reload DT
 observeEvent(input$insert_redd_location, {
+  req(input$surveys_rows_selected)
+  req(input$survey_events_rows_selected)
   redd_location_insert(redd_location_insert_vals())
   removeModal()
-  post_redd_location_insert_vals = get_redd_location(selected_redd_encounter_data()$redd_encounter_id) %>%
-    select(redd_name, channel_type, orientation_type, latitude,
-           longitude, horiz_accuracy, location_description,
+  # Collect parameters
+  up_rm = selected_survey_data()$up_rm
+  lo_rm = selected_survey_data()$lo_rm
+  survey_date = format(as.Date(selected_survey_data()$survey_date))
+  species_id = selected_survey_event_data()$species_id
+  post_redd_location_insert_vals = get_redd_locations(waterbody_id(), up_rm, lo_rm, survey_date, species_id) %>%
+    select(survey_dt, redd_name, redd_status, channel_type, orientation_type,
+           latitude, longitude, horiz_accuracy, location_description,
            created_dt, created_by, modified_dt, modified_by)
   replaceData(redd_location_dt_proxy, post_redd_location_insert_vals)
 }, priority = 9999)
@@ -391,7 +413,6 @@ redd_location_edit = reactive({
   req(input$tabs == "data_entry")
   req(input$surveys_rows_selected)
   req(input$survey_events_rows_selected)
-  req(input$redd_encounters_rows_selected)
   req(input$redd_locations_rows_selected)
   req(!is.na(selected_redd_location_data()$redd_location_id))
   # Channel type
@@ -527,13 +548,26 @@ observeEvent(input$redd_loc_edit, {
 
 # Update DB and reload DT
 observeEvent(input$save_redd_loc_edits, {
-  redd_location_update(redd_location_edit())
+  req(input$surveys_rows_selected)
+  req(input$survey_events_rows_selected)
+  redd_location_update(redd_location_edit(), selected_redd_location_data())
   removeModal()
-  post_redd_location_edit_vals = get_redd_location(selected_redd_encounter_data()$redd_encounter_id) %>%
-    select(redd_name, channel_type, orientation_type, latitude,
-           longitude, horiz_accuracy, location_description,
+  # Collect parameters
+  up_rm = selected_survey_data()$up_rm
+  lo_rm = selected_survey_data()$lo_rm
+  survey_date = format(as.Date(selected_survey_data()$survey_date))
+  species_id = selected_survey_event_data()$species_id
+  # Update redd location table
+  post_redd_location_edit_vals = get_redd_locations(waterbody_id(), up_rm, lo_rm, survey_date, species_id) %>%
+    select(survey_dt, redd_name, redd_status, channel_type, orientation_type,
+           latitude, longitude, horiz_accuracy, location_description,
            created_dt, created_by, modified_dt, modified_by)
   replaceData(redd_location_dt_proxy, post_redd_location_edit_vals)
+  # Update redd encounter table if something in redd location changed
+  post_redd_encounter_edit_vals = get_redd_encounter(selected_survey_event_data()$survey_event_id) %>%
+    select(redd_encounter_dt, redd_status, redd_count, redd_name, redd_comment,
+           created_dt, created_by, modified_dt, modified_by)
+  replaceData(redd_encounter_dt_proxy, post_redd_encounter_edit_vals)
 })
 
 #========================================================
@@ -542,8 +576,17 @@ observeEvent(input$save_redd_loc_edits, {
 
 # Generate values to show in modal
 output$redd_location_modal_delete_vals = renderDT({
+  req(input$tabs == "data_entry")
+  req(input$surveys_rows_selected)
+  req(input$survey_events_rows_selected)
+  req(input$redd_locations_rows_selected)
+  # Collect parameters
+  up_rm = selected_survey_data()$up_rm
+  lo_rm = selected_survey_data()$lo_rm
+  survey_date = format(as.Date(selected_survey_data()$survey_date))
+  species_id = selected_survey_event_data()$species_id
   redd_location_modal_del_id = selected_redd_location_data()$redd_location_id
-  redd_location_modal_del_vals = get_redd_location(selected_redd_encounter_data()$redd_encounter_id) %>%
+  redd_location_modal_del_vals = get_redd_locations(waterbody_id(), up_rm, lo_rm, survey_date, species_id) %>%
     filter(redd_location_id == redd_location_modal_del_id) %>%
     select(redd_name, channel_type, orientation_type, latitude,
            longitude, horiz_accuracy, location_description)
@@ -563,21 +606,50 @@ output$redd_location_modal_delete_vals = renderDT({
 redd_location_dependencies = reactive({
   redd_location_id = selected_redd_location_data()$redd_location_id
   redd_loc_dep = get_redd_location_dependencies(redd_location_id)
+  print("redd dependencies rows")
+  print(nrow(redd_loc_dep))
+  print("redd name")
+  print(selected_redd_coords()$redd_name)
   return(redd_loc_dep)
 })
 
+# # Reactive to hold redd_encounter_ids tied to redd_location
+# redd_location_encounters = reactive({
+#   redd_location_id = selected_redd_location_data()$redd_location_id
+#   redd_enc_ids = get_redd_encounter_ids(redd_location_id) %>%
+#     pull(redd_encounter_id)
+#   redd_enc_ids = paste0(paste0("'", redd_enc_ids, "'"), collapse = ", ")
+#   print("redd encounter_ids")
+#   print(redd_enc_ids)
+#   print("redd_location_dependencies")
+#   print(names(redd_location_dependencies()))
+#   return(redd_enc_ids)
+# })
+
+# Generate values to show in modal
+output$redd_location_modal_dependency_vals = renderDT({
+  redd_location_modal_dep_vals = redd_location_dependencies() %>%
+    select(redd_encounter_date, redd_encounter_time, redd_status, redd_count,
+           redd_name, redd_comment)
+  # Generate table
+  datatable(redd_location_modal_dep_vals,
+            rownames = FALSE,
+            options = list(dom = 't',
+                           scrollX = T,
+                           ordering = FALSE,
+                           initComplete = JS(
+                             "function(settings, json) {",
+                             "$(this.api().table().header()).css({'background-color': '#9eb3d6'});",
+                             "}")))
+})
+
 observeEvent(input$redd_loc_delete, {
+  req(input$tabs == "data_entry")
+  req(input$surveys_rows_selected)
+  req(input$survey_events_rows_selected)
+  req(input$redd_locations_rows_selected)
   redd_location_id = selected_redd_location_data()$redd_location_id
   redd_loc_dependencies = redd_location_dependencies()
-  table_names = paste0(paste0("'", names(redd_loc_dependencies), "'"), collapse = ", ")
-  redd_nm = selected_redd_coords()$redd_name
-  # Customize the delete message depending on if other entries are linked to redd_name
-  if (ncol(redd_loc_dependencies) > 1L | redd_loc_dependencies$redd_encounter[1] > 1L) {
-    redd_delete_msg = glue("Other entries in {table_names} are linked to redd_name: '{redd_nm}'. ",
-                           "Only the link to the redd location will be deleted.")
-  } else {
-    redd_delete_msg = "Are you sure you want to delete this redd location data from the database?"
-  }
   showModal(
     tags$div(id = "redd_location_delete_modal",
              if ( !length(input$redd_locations_rows_selected) == 1 ) {
@@ -588,10 +660,23 @@ observeEvent(input$redd_loc_delete, {
                  easyClose = TRUE,
                  footer = NULL
                )
+             } else if ( nrow(redd_loc_dependencies) > 0L ) {
+                 modalDialog (
+                   size = "l",
+                   title = paste("The redd count observation(s) listed below are linked to the redd location data you selected. ",
+                                 "Please edit or delete the dependent redd count data in the 'Redd counts' data entry ",
+                                 "screen below before deleting the selected redd location data."),
+                   fluidPage (
+                     DT::DTOutput("redd_location_modal_dependency_vals"),
+                     br()
+                   ),
+                   easyClose = TRUE,
+                   footer = NULL
+                 )
              } else {
                modalDialog (
                  size = 'l',
-                 title = redd_delete_msg,
+                 title = "Are you sure you want to delete this redd location data from the database?",
                  fluidPage (
                    DT::DTOutput("redd_location_modal_delete_vals"),
                    br(),
@@ -605,15 +690,34 @@ observeEvent(input$redd_loc_delete, {
     ))
 })
 
-# Update DB and reload DT
+# Update redd_location DB and reload location DT
 observeEvent(input$delete_redd_location, {
-  redd_location_delete(redd_location_dependencies(),
-                       selected_redd_location_data(),
-                       selected_redd_encounter_data())
+  req(input$surveys_rows_selected)
+  req(input$survey_events_rows_selected)
+  redd_location_delete(selected_redd_location_data())
   removeModal()
-  redd_locations_after_delete = get_redd_location(selected_redd_encounter_data()$redd_encounter_id) %>%
-    select(redd_name, channel_type, orientation_type, latitude,
-           longitude, horiz_accuracy, location_description,
+  # Collect parameters
+  up_rm = selected_survey_data()$up_rm
+  lo_rm = selected_survey_data()$lo_rm
+  survey_date = format(as.Date(selected_survey_data()$survey_date))
+  species_id = selected_survey_event_data()$species_id
+  redd_locations_after_delete = get_redd_locations(waterbody_id(), up_rm, lo_rm, survey_date, species_id) %>%
+    select(survey_dt, redd_name, redd_status, channel_type, orientation_type,
+           latitude, longitude, horiz_accuracy, location_description,
            created_dt, created_by, modified_dt, modified_by)
   replaceData(redd_location_dt_proxy, redd_locations_after_delete)
 }, priority = 9999)
+
+# Reload location DT after deleting encounter
+observeEvent(input$delete_redd_encounter, {
+  # Collect parameters
+  up_rm = selected_survey_data()$up_rm
+  lo_rm = selected_survey_data()$lo_rm
+  survey_date = format(as.Date(selected_survey_data()$survey_date))
+  species_id = selected_survey_event_data()$species_id
+  redd_locations_after_encounter_delete = get_redd_locations(waterbody_id(), up_rm, lo_rm, survey_date, species_id) %>%
+    select(survey_dt, redd_name, redd_status, channel_type, orientation_type,
+           latitude, longitude, horiz_accuracy, location_description,
+           created_dt, created_by, modified_dt, modified_by)
+  replaceData(redd_location_dt_proxy, redd_locations_after_encounter_delete)
+}, priority = -1)
