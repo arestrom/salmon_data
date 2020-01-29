@@ -20,15 +20,16 @@ get_fish_locations = function(waterbody_id, up_rm, lo_rm, survey_date, species_i
                  "left join location_orientation_type_lut as lo on floc.location_orientation_type_id = lo.location_orientation_type_id ",
                  "left join fish_encounter as fd on floc.location_id = fd.fish_location_id ",
                  "left join location_type_lut as lt on floc.location_type_id = lt.location_type_id ",
-                 "where lt.location_type_description = 'Fish encounter' ",
-                 "and floc.waterbody_id = '{waterbody_id}' ",
+                 "where floc.waterbody_id = '{waterbody_id}' ",
+                 "and lt.location_type_description = 'Fish encounter' ",
                  "and fd.fish_encounter_id is null")
+  # Checkout connection
+  con = poolCheckout(pool)
   print("fish-one")
   strt = Sys.time()
-  con = poolCheckout(pool)
-  nd = Sys.time()
-  nd - strt
   new_fish_locations = DBI::dbGetQuery(con, qry_one)
+  nd = Sys.time()
+  print(nd - strt)
   # Define query for fish locations already tied to surveys
   qry_two = glue("select s.survey_datetime as survey_date, se.species_id, ",
              "uploc.river_mile_measure as up_rm, loloc.river_mile_measure as lo_rm, ",
@@ -86,44 +87,6 @@ get_fish_locations = function(waterbody_id, up_rm, lo_rm, survey_date, species_i
     arrange(created_date)
   return(fish_locations)
 }
-
-# # Main redd_encounter query
-# get_fish_location = function(fish_encounter_id) {
-#   qry = glue("select loc.location_id as fish_location_id, ",
-#              "lc.location_coordinates_id, ",
-#              "loc.location_name as fish_name, ",
-#              "st_x(st_transform(lc.geom, 4326)) as longitude, ",
-#              "st_y(st_transform(lc.geom, 4326)) as latitude, ",
-#              "lc.horizontal_accuracy as horiz_accuracy, ",
-#              "sc.channel_type_description as channel_type, ",
-#              "lo.orientation_type_description as orientation_type, ",
-#              "loc.location_description, ",
-#              "loc.created_datetime as created_date, loc.created_by, ",
-#              "loc.modified_datetime as modified_date, loc.modified_by ",
-#              "from fish_encounter as fe ",
-#              "inner join location as loc on fe.fish_location_id = loc.location_id ",
-#              "left join location_coordinates as lc on loc.location_id = lc.location_id ",
-#              "left join stream_channel_type_lut as sc on loc.stream_channel_type_id = sc.stream_channel_type_id ",
-#              "left join location_orientation_type_lut as lo on loc.location_orientation_type_id = lo.location_orientation_type_id ",
-#              "where fe.fish_encounter_id = '{fish_encounter_id}'")
-#   con = poolCheckout(pool)
-#   fish_locations = DBI::dbGetQuery(con, qry)
-#   poolReturn(con)
-#   fish_locations = fish_locations %>%
-#     mutate(latitude = round(latitude, 6)) %>%
-#     mutate(longitude = round(longitude, 6)) %>%
-#     mutate(created_date = with_tz(created_date, tzone = "America/Los_Angeles")) %>%
-#     mutate(created_dt = format(created_date, "%m/%d/%Y %H:%M")) %>%
-#     mutate(modified_date = with_tz(modified_date, tzone = "America/Los_Angeles")) %>%
-#     mutate(modified_dt = format(modified_date, "%m/%d/%Y %H:%M")) %>%
-#     select(fish_location_id, location_coordinates_id, fish_name,
-#            latitude, longitude, horiz_accuracy, channel_type,
-#            orientation_type, location_description, created_date,
-#            created_dt, created_by, modified_date, modified_dt,
-#            modified_by) %>%
-#     arrange(created_date)
-#   return(fish_locations)
-# }
 
 #==========================================================================
 # Get just the redd_coordinates
