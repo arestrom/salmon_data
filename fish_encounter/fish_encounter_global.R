@@ -281,14 +281,3 @@ fish_encounter_delete = function(delete_values) {
   poolReturn(con)
 }
 
-
-
-
-
-
-
-
-
-
-
-

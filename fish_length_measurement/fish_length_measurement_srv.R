@@ -240,18 +240,6 @@ output$length_measurement_modal_update_vals = renderDT({
                              "}")))
 })
 
-# output$chk_edit = renderText({
-#   old_length_measurement_vals = selected_length_measurement_data() %>%
-#     select(length_type, length_cm) %>%
-#     mutate(length_cm = as.numeric(length_cm))
-#   new_length_measurement_vals = length_measurement_edit() %>%
-#     select(length_type, length_cm) %>%
-#     mutate(length_cm = as.numeric(length_cm))
-#   print(old_length_measurement_vals)
-#   print(new_length_measurement_vals)
-#   return(unlist(old_length_measurement_vals))
-# })
-
 observeEvent(input$fish_meas_edit, {
   old_length_measurement_vals = selected_length_measurement_data() %>%
     select(length_type, length_cm) %>%

@@ -49,7 +49,6 @@ survey_intent_dt_proxy = dataTableProxy(outputId = "survey_intents")
 #========================================================
 
 # Create reactive to collect input values for update and delete actions
-# Absolutely needed req() here to avoid errors !!!!!!!!!!!!!!!!!
 selected_survey_intent_data = reactive({
   req(input$tabs == "data_entry")
   req(input$surveys_rows_selected)

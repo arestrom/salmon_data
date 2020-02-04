@@ -42,7 +42,6 @@ waterbody_measure_dt_proxy = dataTableProxy(outputId = "waterbody_measure")
 #======================================================================
 
 # Create reactive to collect input values for update and delete actions
-# Absolutely needed req() here to avoid errors !!!!!!!!!!!!!!!!!
 selected_waterbody_meas_data = reactive({
   req(input$tabs == "data_entry")
   req(input$surveys_rows_selected)

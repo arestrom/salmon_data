@@ -635,10 +635,6 @@ output$redd_location_modal_delete_vals = renderDT({
 redd_location_dependencies = reactive({
   redd_location_id = selected_redd_location_data()$redd_location_id
   redd_loc_dep = get_redd_location_dependencies(redd_location_id)
-  # print("redd dependencies rows")
-  # print(nrow(redd_loc_dep))
-  # print("redd name")
-  # print(selected_redd_coords()$redd_name)
   return(redd_loc_dep)
 })
 

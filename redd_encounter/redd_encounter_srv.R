@@ -31,21 +31,6 @@ output$redd_name_select = renderUI({
                  width = "200px")
 })
 
-# output$redd_name_select = renderUI({
-#   input$insert_redd_location
-#   input$save_redd_loc_edits
-#   input$delete_redd_location
-#   up_rm = selected_survey_data()$up_rm
-#   lo_rm = selected_survey_data()$lo_rm
-#   survey_date = format(as.Date(selected_survey_data()$survey_date))
-#   species_id = selected_survey_event_data()$species_id
-#   redd_name_list = get_redd_locations(waterbody_id(), up_rm, lo_rm, survey_date, species_id)$redd_name
-#   redd_name_list = c("no location data", redd_name_list)
-#   selectizeInput("redd_name_select", label = "redd_name",
-#                  choices = redd_name_list, selected = NULL,
-#                  width = "200px")
-# })
-
 #========================================================
 # Primary datatable for redd_encounters
 #========================================================

@@ -634,9 +634,6 @@ fish_location_dependencies = reactive({
 
 observeEvent(input$fish_loc_delete, {
   req(input$tabs == "data_entry")
-  # req(input$surveys_rows_selected)
-  # req(input$survey_events_rows_selected)
-  # req(input$fish_locations_rows_selected)
   fish_location_id = selected_fish_location_data()$fish_location_id
   fish_loc_dependencies = fish_location_dependencies()
   showModal(
