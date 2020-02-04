@@ -59,7 +59,11 @@ get_fish_locations = function(waterbody_id, up_rm, lo_rm, survey_date, species_i
                  "and uploc.river_mile_measure <= {up_rm} ",
                  "and loloc.river_mile_measure >= {lo_rm} ",
                  "and se.species_id = '{species_id}'")
+  print("fish-two")
+  strt = Sys.time()
   fish_loc_two = DBI::dbGetQuery(con, qry_two)
+  nd = Sys.time()
+  print(nd - strt)
   poolReturn(con)
   # Dump entries in fish_loc_one that have surveys attached
   fish_loc_one = fish_loc_one %>%
@@ -319,53 +323,6 @@ fish_location_update = function(fish_location_edit_values, selected_fish_locatio
   poolReturn(con)
 }
 
-# # Define update callback
-# fish_location_update = function(fish_location_edit_values) {
-#   edit_values = fish_location_edit_values
-#   # Pull out data for location table
-#   location_id = edit_values$fish_location_id
-#   stream_channel_type_id = edit_values$stream_channel_type_id
-#   location_orientation_type_id = edit_values$location_orientation_type_id
-#   location_name = edit_values$fish_name
-#   location_description = edit_values$location_description
-#   if (is.na(location_name) | location_name == "") { location_name = NA }
-#   if (is.na(location_description) | location_description == "") { location_description = NA }
-#   mod_dt = lubridate::with_tz(Sys.time(), "UTC")
-#   mod_by = Sys.getenv("USERNAME")
-#   # Pull out data for location_coordinates table
-#   horizontal_accuracy = edit_values$horiz_accuracy
-#   latitude = edit_values$latitude
-#   longitude = edit_values$longitude
-#   # Checkout a connection
-#   con = poolCheckout(pool)
-#   update_result = dbSendStatement(
-#     con, glue_sql("UPDATE location SET ",
-#                   "stream_channel_type_id = $1, ",
-#                   "location_orientation_type_id = $2, ",
-#                   "location_name = $3, ",
-#                   "location_description = $4, ",
-#                   "modified_datetime = $5, ",
-#                   "modified_by = $6 ",
-#                   "where location_id = $7"))
-#   dbBind(update_result, list(stream_channel_type_id,
-#                              location_orientation_type_id,
-#                              location_name, location_description,
-#                              mod_dt, mod_by,
-#                              location_id))
-#   dbGetRowsAffected(update_result)
-#   dbClearResult(update_result)
-#   # Update coordinates to location_coordinates
-#   qry = glue_sql("UPDATE location_coordinates ",
-#                  "SET horizontal_accuracy = {horizontal_accuracy}, ",
-#                  "geom = ST_Transform(ST_GeomFromText('POINT({longitude} {latitude})', 4326), 2927), ",
-#                  "modified_datetime = {mod_dt}, modified_by = {mod_by} ",
-#                  "WHERE location_id = {location_id} ",
-#                  .con = con)
-#   # Checkout a connection
-#   DBI::dbExecute(con, qry)
-#   poolReturn(con)
-# }
-
 #========================================================
 # Identify fish location dependencies prior to delete
 #========================================================
@@ -421,37 +378,3 @@ fish_location_delete = function(delete_values) {
   poolReturn(con)
 }
 
-# # Define delete callback
-# fish_location_delete = function(location_dependencies, delete_values, encounter_values) {
-#   fish_location_id = delete_values$fish_location_id
-#   fish_encounter_id = encounter_values$fish_encounter_id
-#   if ( ncol(location_dependencies) > 1L | location_dependencies$fish_encounter[1] > 1L) {
-#     con = poolCheckout(pool)
-#     update_result = dbSendStatement(
-#       con, glue_sql("UPDATE fish_encounter SET fish_location_id = NULL ",
-#                     "WHERE fish_encounter_id = $1"))
-#     dbBind(update_result, list(fish_encounter_id))
-#     dbGetRowsAffected(update_result)
-#     dbClearResult(update_result)
-#     poolReturn(con)
-#   } else {
-#     con = poolCheckout(pool)
-#     update_result = dbSendStatement(
-#       con, glue_sql("UPDATE fish_encounter SET fish_location_id = NULL ",
-#                     "WHERE fish_encounter_id = $1"))
-#     dbBind(update_result, list(fish_encounter_id))
-#     dbGetRowsAffected(update_result)
-#     dbClearResult(update_result)
-#     delete_result_one = dbSendStatement(
-#       con, glue_sql("DELETE FROM location_coordinates WHERE location_id = $1"))
-#     dbBind(delete_result_one, list(fish_location_id))
-#     dbGetRowsAffected(delete_result_one)
-#     dbClearResult(delete_result_one)
-#     delete_result_two = dbSendStatement(
-#       con, glue_sql("DELETE FROM location WHERE location_id = $1"))
-#     dbBind(delete_result_two, list(fish_location_id))
-#     dbGetRowsAffected(delete_result_two)
-#     dbClearResult(delete_result_two)
-#     poolReturn(con)
-#   }
-# }

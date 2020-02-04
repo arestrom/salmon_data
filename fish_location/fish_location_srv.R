@@ -402,6 +402,23 @@ observeEvent(input$insert_fish_location, {
   replaceData(fish_location_dt_proxy, post_fish_location_insert_vals)
 }, priority = 9999)
 
+# Update DB and reload DT
+observeEvent(input$insert_fish_encounter, {
+  req(input$surveys_rows_selected)
+  req(input$survey_events_rows_selected)
+  # Collect parameters
+  up_rm = selected_survey_data()$up_rm
+  lo_rm = selected_survey_data()$lo_rm
+  survey_date = format(as.Date(selected_survey_data()$survey_date))
+  species_id = selected_survey_event_data()$species_id
+  # Update fish location table
+  fish_locs_after_fish_count_insert = get_fish_locations(waterbody_id(), up_rm, lo_rm, survey_date, species_id) %>%
+    select(survey_dt, fish_name, fish_status, channel_type, orientation_type,
+           latitude, longitude, horiz_accuracy, location_description,
+           created_dt, created_by, modified_dt, modified_by)
+  replaceData(fish_location_dt_proxy, fish_locs_after_fish_count_insert)
+}, priority = -1)
+
 #========================================================
 # Edit operations: reactives, observers and modals
 #========================================================
@@ -617,9 +634,9 @@ fish_location_dependencies = reactive({
 
 observeEvent(input$fish_loc_delete, {
   req(input$tabs == "data_entry")
-  req(input$surveys_rows_selected)
-  req(input$survey_events_rows_selected)
-  req(input$fish_locations_rows_selected)
+  # req(input$surveys_rows_selected)
+  # req(input$survey_events_rows_selected)
+  # req(input$fish_locations_rows_selected)
   fish_location_id = selected_fish_location_data()$fish_location_id
   fish_loc_dependencies = fish_location_dependencies()
   showModal(

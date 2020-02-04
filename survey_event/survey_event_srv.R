@@ -358,10 +358,6 @@ observeEvent(input$survey_event_edit, {
   old_survey_event_vals = selected_survey_event_data() %>%
     select(species, survey_design, cwt_detect_method, run, run_year,
            pct_fish_seen, species_comment)
-  all_survey_event_vals = get_survey_event(selected_survey_data()$survey_id) %>%
-    select(species, survey_design, cwt_detect_method, run, run_year,
-           pct_fish_seen, species_comment)
-  dup_event_flag = dup_survey_event(new_survey_event_vals, all_survey_event_vals)
   showModal(
     tags$div(id = "survey_event_update_modal",
              if ( !length(input$survey_events_rows_selected) == 1 ) {
@@ -377,14 +373,6 @@ observeEvent(input$survey_event_edit, {
                  size = "m",
                  title = "Warning",
                  paste("Please change at least one value!"),
-                 easyClose = TRUE,
-                 footer = NULL
-               )
-             } else if ( dup_event_flag == TRUE ) {
-               modalDialog (
-                 size = "m",
-                 title = "Warning",
-                 paste0("Species data already exists. Please edit either species, survey_design, run, or run_year before proceeding." ),
                  easyClose = TRUE,
                  footer = NULL
                )

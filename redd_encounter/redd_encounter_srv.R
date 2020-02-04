@@ -259,28 +259,6 @@ observeEvent(input$insert_redd_encounter, {
   replaceData(redd_encounter_dt_proxy, post_redd_encounter_insert_vals)
 })
 
-# Update DB and reload DT
-observeEvent(input$insert_redd_encounter, {
-  # Collect parameters
-  up_rm = selected_survey_data()$up_rm
-  lo_rm = selected_survey_data()$lo_rm
-  survey_date = format(as.Date(selected_survey_data()$survey_date))
-  species_id = selected_survey_event_data()$species_id
-  post_redd_location_insert_encounter_vals = get_redd_locations(waterbody_id(), up_rm, lo_rm, survey_date, species_id) %>%
-    select(survey_dt, redd_name, redd_status, channel_type, orientation_type,
-           latitude, longitude, horiz_accuracy, location_description,
-           created_dt, created_by, modified_dt, modified_by)
-  replaceData(redd_location_dt_proxy, post_redd_location_insert_encounter_vals)
-}, priority = -1)
-
-# # Update DB and reload DT
-# observeEvent(input$insert_redd_location, {
-#   post_redd_location_insert_encounter_vals = get_redd_encounter(selected_survey_event_data()$survey_event_id) %>%
-#     select(redd_encounter_dt, redd_status, redd_count, redd_name, redd_comment,
-#            created_dt, created_by, modified_dt, modified_by)
-#   replaceData(redd_encounter_dt_proxy, post_redd_location_insert_encounter_vals)
-# }, priority = -1)
-
 #========================================================
 # Edit operations: reactives, observers and modals
 #========================================================
@@ -418,17 +396,12 @@ observeEvent(input$save_redd_enc_edits, {
 }, priority = 9999)
 
 # Reload location DT after deleting encounter
-observeEvent(input$save_redd_enc_edits, {
-  # Collect parameters
-  up_rm = selected_survey_data()$up_rm
-  lo_rm = selected_survey_data()$lo_rm
-  survey_date = format(as.Date(selected_survey_data()$survey_date))
+observeEvent(input$save_redd_loc_edits, {
   species_id = selected_survey_event_data()$species_id
-  redd_locations_after_encounter_edit = get_redd_locations(waterbody_id(), up_rm, lo_rm, survey_date, species_id) %>%
-    select(survey_dt, redd_name, redd_status, channel_type, orientation_type,
-           latitude, longitude, horiz_accuracy, location_description,
+  redd_counts_after_location_edit = get_redd_encounter(selected_survey_event_data()$survey_event_id) %>%
+    select(redd_encounter_dt, redd_status, redd_count, redd_name, redd_comment,
            created_dt, created_by, modified_dt, modified_by)
-  replaceData(redd_location_dt_proxy, redd_locations_after_encounter_edit)
+  replaceData(redd_encounter_dt_proxy, redd_counts_after_location_edit)
 }, priority = -1)
 
 #========================================================
@@ -501,12 +474,3 @@ observeEvent(input$delete_redd_encounter, {
            created_dt, created_by, modified_dt, modified_by)
   replaceData(redd_encounter_dt_proxy, redd_encounters_after_delete)
 })
-
-# Reload DT
-observeEvent(input$delete_redd_location, {
-  redd_encounters_after_location_delete = get_redd_encounter(selected_survey_event_data()$survey_event_id) %>%
-    select(redd_encounter_dt, redd_status, redd_count, redd_name, redd_comment,
-           created_dt, created_by, modified_dt, modified_by)
-  replaceData(redd_encounter_dt_proxy, redd_encounters_after_location_delete)
-}, priority = -1)
-

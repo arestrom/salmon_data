@@ -89,7 +89,7 @@ ui = dashboardPagePlus(
                       id = 5,
                       title = "Fish counts",
                       color = "purple",
-                      collapsed = FALSE,
+                      collapsed = TRUE,
                       fish_encounter_ui
                     ),
                     accordionItem(
@@ -127,7 +127,7 @@ ui = dashboardPagePlus(
                       id = 9,
                       title = "Redd counts",
                       color = "purple",
-                      collapsed = TRUE,
+                      collapsed = FALSE,
                       redd_encounter_ui
                     ),
                     accordionItem(

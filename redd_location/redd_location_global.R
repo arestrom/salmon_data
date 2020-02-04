@@ -22,7 +22,11 @@ get_redd_locations = function(waterbody_id, up_rm, lo_rm, survey_date, species_i
              "where lt.location_type_description = 'Redd encounter' ",
              "and rloc.waterbody_id = '{waterbody_id}'")
   con = poolCheckout(pool)
+  print("redd-one")
+  strt = Sys.time()
   redd_loc_one = DBI::dbGetQuery(con, qry)
+  nd = Sys.time()
+  print(nd - strt)
   # Pull out location_ids for second query
   loc_ids = paste0(paste0("'", unique(redd_loc_one$redd_location_id), "'"), collapse = ", ")
   # Define query for redd locations already tied to surveys
@@ -55,7 +59,11 @@ get_redd_locations = function(waterbody_id, up_rm, lo_rm, survey_date, species_i
              "and loloc.river_mile_measure >= {lo_rm} ",
              "and se.species_id = '{species_id}' ",
              "and not rs.redd_status_short_description in ('Previous redd, not visible')")
+  print("redd-two")
+  strt = Sys.time()
   redd_loc_two = DBI::dbGetQuery(con, qry)
+  nd = Sys.time()
+  print(nd - strt)
   poolReturn(con)
   # Dump entries in fish_loc_one that have surveys attached
   redd_loc_one = redd_loc_one %>%
