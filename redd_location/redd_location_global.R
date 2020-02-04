@@ -15,22 +15,18 @@ get_redd_locations = function(waterbody_id, up_rm, lo_rm, survey_date, species_i
              "rloc.created_datetime as created_date, rloc.created_by, ",
              "rloc.modified_datetime as modified_date, rloc.modified_by ",
              "from location as rloc ",
+             "inner join location_type_lut as lt on rloc.location_type_id = lt.location_type_id ",
              "left join location_coordinates as lc on rloc.location_id = lc.location_id ",
-             "left join stream_channel_type_lut as sc on rloc.stream_channel_type_id = sc.stream_channel_type_id ",
-             "left join location_orientation_type_lut as lo on rloc.location_orientation_type_id = lo.location_orientation_type_id ",
-             "left join redd_encounter as rd on rloc.location_id = rd.redd_location_id ",
-             "left join location_type_lut as lt on rloc.location_type_id = lt.location_type_id ",
-             "where rloc.waterbody_id = '{waterbody_id}' ",
-             "and lt.location_type_description = 'Redd encounter' ",
-             "and rd.redd_encounter_id is null")
+             "inner join stream_channel_type_lut as sc on rloc.stream_channel_type_id = sc.stream_channel_type_id ",
+             "inner join location_orientation_type_lut as lo on rloc.location_orientation_type_id = lo.location_orientation_type_id ",
+             "where lt.location_type_description = 'Redd encounter' ",
+             "and rloc.waterbody_id = '{waterbody_id}'")
   con = poolCheckout(pool)
-  print("redd-one")
-  strt = Sys.time()
-  new_redd_locations = DBI::dbGetQuery(con, qry)
-  nd = Sys.time()
-  print(nd - strt)
+  redd_loc_one = DBI::dbGetQuery(con, qry)
+  # Pull out location_ids for second query
+  loc_ids = paste0(paste0("'", unique(redd_loc_one$redd_location_id), "'"), collapse = ", ")
   # Define query for redd locations already tied to surveys
-  qry = glue("select s.survey_datetime as survey_date, se.species_id, ",
+  qry = glue("select s.survey_datetime as redd_survey_date, se.species_id, ",
              "uploc.river_mile_measure as up_rm, loloc.river_mile_measure as lo_rm, ",
              "rloc.location_id as redd_location_id, ",
              "rloc.location_name as redd_name, ",
@@ -45,40 +41,38 @@ get_redd_locations = function(waterbody_id, up_rm, lo_rm, survey_date, species_i
              "rloc.created_datetime as created_date, rloc.created_by, ",
              "rloc.modified_datetime as modified_date, rloc.modified_by ",
              "from survey as s ",
-             "inner join survey_event as se on s.survey_id = se.survey_id ",
              "inner join location as uploc on s.upper_end_point_id = uploc.location_id ",
              "inner join location as loloc on s.lower_end_point_id = loloc.location_id ",
+             "inner join survey_event as se on s.survey_id = se.survey_id ",
              "inner join redd_encounter as rd on se.survey_event_id = rd.survey_event_id ",
              "inner join redd_status_lut as rs on rd.redd_status_id = rs.redd_status_id ",
              "inner join location as rloc on rd.redd_location_id = rloc.location_id ",
              "left join location_coordinates as lc on rloc.location_id = lc.location_id ",
-             "left join stream_channel_type_lut as sc on rloc.stream_channel_type_id = sc.stream_channel_type_id ",
-             "left join location_orientation_type_lut as lo on rloc.location_orientation_type_id = lo.location_orientation_type_id ",
-             "where rd.redd_location_id is not null ",
-             "and loloc.waterbody_id = '{waterbody_id}' ",
+             "inner join stream_channel_type_lut as sc on rloc.stream_channel_type_id = sc.stream_channel_type_id ",
+             "inner join location_orientation_type_lut as lo on rloc.location_orientation_type_id = lo.location_orientation_type_id ",
+             "where rd.redd_location_id in ({loc_ids}) ",
              "and uploc.river_mile_measure <= {up_rm} ",
              "and loloc.river_mile_measure >= {lo_rm} ",
              "and se.species_id = '{species_id}' ",
-             "and s.survey_datetime < '{survey_date}'::date + interval '1 day' ",
-             "and s.survey_datetime >= '{survey_date}'::date - interval '4 months' ",
              "and not rs.redd_status_short_description in ('Previous redd, not visible')")
-  print("redd-two")
-  strt = Sys.time()
-  old_redd_locations = DBI::dbGetQuery(con, qry)
-  nd = Sys.time()
-  print(nd - strt)
+  redd_loc_two = DBI::dbGetQuery(con, qry)
   poolReturn(con)
-  redd_locations = bind_rows(new_redd_locations, old_redd_locations) %>%
+  # Dump entries in fish_loc_one that have surveys attached
+  redd_loc_one = redd_loc_one %>%
+    anti_join(redd_loc_two, by = "redd_location_id")
+  redd_locations = bind_rows(redd_loc_one, redd_loc_two) %>%
     mutate(latitude = round(latitude, 7)) %>%
     mutate(longitude = round(longitude, 7)) %>%
-    mutate(survey_date = with_tz(survey_date, tzone = "America/Los_Angeles")) %>%
-    mutate(survey_dt = format(survey_date, "%m/%d/%Y")) %>%
+    mutate(redd_survey_date = with_tz(redd_survey_date, tzone = "America/Los_Angeles")) %>%
+    mutate(survey_dt = format(redd_survey_date, "%m/%d/%Y")) %>%
+    filter( is.na(redd_survey_date) | redd_survey_date >= (as.Date(survey_date) - months(4)) ) %>%
+    filter( is.na(redd_survey_date) | redd_survey_date <= as.Date(survey_date) ) %>%
     mutate(created_date = with_tz(created_date, tzone = "America/Los_Angeles")) %>%
     mutate(created_dt = format(created_date, "%m/%d/%Y %H:%M")) %>%
     mutate(modified_date = with_tz(modified_date, tzone = "America/Los_Angeles")) %>%
     mutate(modified_dt = format(modified_date, "%m/%d/%Y %H:%M")) %>%
     select(redd_location_id, location_coordinates_id,
-           survey_date, survey_dt, redd_name, redd_status,
+           survey_date = redd_survey_date, survey_dt, redd_name, redd_status,
            latitude, longitude, horiz_accuracy, channel_type,
            orientation_type, location_description, created_date,
            created_dt, created_by, modified_date, modified_dt,

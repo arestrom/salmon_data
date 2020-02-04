@@ -561,24 +561,24 @@ observeEvent(input$save_fish_loc_edits, {
            latitude, longitude, horiz_accuracy, location_description,
            created_dt, created_by, modified_dt, modified_by)
   replaceData(fish_location_dt_proxy, post_fish_location_edit_vals)
-  # Update fish encounter table if something in fish location changed
-  post_fish_encounter_edit_vals = get_fish_encounter(selected_survey_event_data()$survey_event_id) %>%
-    select(fish_encounter_dt, fish_count, fish_status, sex, maturity, origin,
-           cwt_status, clip_status, fish_behavior, prev_counted, created_dt,
-           created_by, modified_dt, modified_by)
-  replaceData(fish_encounter_dt_proxy, post_fish_encounter_edit_vals)
-})
+}, priority = 9999)
 
-# # Update DB and reload DT
-# observeEvent(input$save_fish_loc_edits, {
-#   fish_location_update(fish_location_edit())
-#   removeModal()
-#   post_fish_location_edit_vals = get_fish_locations(waterbody_id(), up_rm, lo_rm, survey_date, species_id) %>%
-#     select(fish_name, channel_type, orientation_type, latitude,
-#            longitude, horiz_accuracy, location_description,
-#            created_dt, created_by, modified_dt, modified_by)
-#   replaceData(fish_location_dt_proxy, post_fish_location_edit_vals)
-# }, priority = 9999)
+# Update DB and reload DT
+observeEvent(input$save_fish_enc_edits, {
+  req(input$surveys_rows_selected)
+  req(input$survey_events_rows_selected)
+  # Collect parameters
+  up_rm = selected_survey_data()$up_rm
+  lo_rm = selected_survey_data()$lo_rm
+  survey_date = format(as.Date(selected_survey_data()$survey_date))
+  species_id = selected_survey_event_data()$species_id
+  # Update redd location table
+  fish_locs_after_fish_count_edit = get_fish_locations(waterbody_id(), up_rm, lo_rm, survey_date, species_id) %>%
+    select(survey_dt, fish_name, fish_status, channel_type, orientation_type,
+           latitude, longitude, horiz_accuracy, location_description,
+           created_dt, created_by, modified_dt, modified_by)
+  replaceData(fish_location_dt_proxy, fish_locs_after_fish_count_edit)
+}, priority = -1)
 
 #========================================================
 # Delete operations: reactives, observers and modals
@@ -662,7 +662,7 @@ observeEvent(input$fish_loc_delete, {
     ))
 })
 
-# Update redd_location DB and reload location DT
+# Update redd_location DB and reload location DT....This works and is the model for others
 observeEvent(input$delete_fish_location, {
   req(input$surveys_rows_selected)
   req(input$survey_events_rows_selected)
@@ -693,16 +693,3 @@ observeEvent(input$delete_fish_encounter, {
            created_dt, created_by, modified_dt, modified_by)
   replaceData(fish_location_dt_proxy, fish_locations_after_encounter_delete)
 }, priority = -1)
-
-# # Update DB and reload DT
-# observeEvent(input$delete_fish_location, {
-#   fish_location_delete(fish_location_dependencies(),
-#                        selected_fish_location_data(),
-#                        selected_fish_encounter_data())
-#   removeModal()
-#   fish_locations_after_delete = get_fish_locations(waterbody_id(), up_rm, lo_rm, survey_date, species_id) %>%
-#     select(survey_dt, fish_name, fish_status, channel_type, orientation_type,
-#            latitude, longitude, horiz_accuracy, location_description,
-#            created_dt, created_by, modified_dt, modified_by)
-#   replaceData(fish_location_dt_proxy, fish_locations_after_delete)
-# }, priority = 9999)

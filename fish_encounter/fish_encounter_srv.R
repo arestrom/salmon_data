@@ -596,6 +596,15 @@ observeEvent(input$save_fish_enc_edits, {
   replaceData(fish_encounter_dt_proxy, post_fish_encounter_edit_vals)
 }, priority = 9999)
 
+# Update fish encounter table if something in fish location changed
+observeEvent(input$save_fish_loc_edits, {
+fish_counts_after_location_edit = get_fish_encounter(selected_survey_event_data()$survey_event_id) %>%
+  select(fish_encounter_dt, fish_count, fish_status, fish_name, sex, maturity, origin,
+         cwt_status, clip_status, fish_behavior, prev_counted, created_dt,
+         created_by, modified_dt, modified_by)
+replaceData(fish_encounter_dt_proxy, fish_counts_after_location_edit)
+}, priority = -1)
+
 #========================================================
 # Delete operations: reactives, observers and modals
 #========================================================

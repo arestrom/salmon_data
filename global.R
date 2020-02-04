@@ -106,8 +106,10 @@
 # 31. Edit a fish_name in location...then see what happens in fish_counts
 #     Need to speed up queries and refresh data after fish_name edit.
 #     Print statements show second part of query is slow part. Just
-#     use two year location queries, then filter in memory using
-#     reactives.
+#     use two year location queries for all carcass locations WRIA
+#     and stream. Then filter in memory using reactives?
+# 32. To pre-run location queries for fish and redds, print stats
+#     on n-surveys, n-redds, n-carcasses on front-page
 #
 # AS 2020-01-17
 #==============================================================
