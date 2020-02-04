@@ -7,8 +7,6 @@ get_reach_point = function(waterbody_id) {
              "loc.location_code as reach_point_code, ",
              "loc.location_name as reach_point_name, ",
              "lt.location_type_description as reach_point_type, ",
-             #"sc.channel_type_description as channel_type, ",
-             #"lo.orientation_type_description as orientation_type, ",
              "st_x(st_transform(lc.geom, 4326)) as longitude, ",
              "st_y(st_transform(lc.geom, 4326)) as latitude, ",
              "lc.horizontal_accuracy as horiz_accuracy, ",
@@ -17,8 +15,6 @@ get_reach_point = function(waterbody_id) {
              "loc.modified_datetime as modified_date, loc.modified_by ",
              "from location as loc ",
              "left join location_type_lut as lt on loc.location_type_id = lt.location_type_id ",
-             # "left join stream_channel_type_lut as sc on loc.stream_channel_type_id = sc.stream_channel_type_id ",
-             # "left join location_orientation_type_lut as lo on loc.location_orientation_type_id = lo.location_orientation_type_id ",
              "left join location_coordinates as lc on loc.location_id = lc.location_id ",
              "where loc.waterbody_id = '{waterbody_id}' ",
              "and lt.location_type_description in ('Reach boundary point', 'Section break point')")
@@ -36,7 +32,7 @@ get_reach_point = function(waterbody_id) {
     mutate(modified_date = with_tz(modified_date, tzone = "America/Los_Angeles")) %>%
     mutate(modified_dt = format(modified_date, "%m/%d/%Y %H:%M")) %>%
     select(location_id, location_coordinates_id, reach_point_code,
-           river_mile, reach_point_name, reach_point_type, #channel_type, orientation_type,
+           river_mile, reach_point_name, reach_point_type,
            latitude, longitude, horiz_accuracy, reach_point_description,
            created_date, created_dt, created_by, modified_date, modified_dt,
            modified_by) %>%

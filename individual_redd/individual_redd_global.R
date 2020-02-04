@@ -172,7 +172,6 @@ individual_redd_update = function(individual_redd_edit_values) {
   poolReturn(con)
 }
 
-
 #========================================================
 # Delete callback
 #========================================================

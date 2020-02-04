@@ -11,22 +11,6 @@ output$reach_point_type_select = renderUI({
                  width = "175px")
 })
 
-# output$reach_point_channel_type_select = renderUI({
-#   channel_type_list = get_channel_type()$channel_type
-#   channel_type_list = c("", channel_type_list)
-#   selectizeInput("reach_point_channel_type_select", label = "channel_type",
-#                  choices = channel_type_list, selected = NULL,
-#                  width = "250px")
-# })
-#
-# output$reach_point_orientation_type_select = renderUI({
-#   orientation_type_list = get_orientation_type()$orientation_type
-#   orientation_type_list = c("", orientation_type_list)
-#   selectizeInput("reach_point_orientation_type_select", label = "orientation_type",
-#                  choices = orientation_type_list, selected = NULL,
-#                  width = "275px")
-# })
-
 #========================================================
 # Primary datatable for reach points
 #========================================================
@@ -73,8 +57,6 @@ selected_reach_point_data = reactive({
                                 reach_point_type = reach_point_data$reach_point_type[reach_point_row],
                                 reach_point_code = reach_point_data$reach_point_code[reach_point_row],
                                 reach_point_name = reach_point_data$reach_point_name[reach_point_row],
-                                # channel_type = reach_point_data$channel_type[reach_point_row],
-                                # orientation_type = reach_point_data$orientation_type[reach_point_row],
                                 latitude = reach_point_data$latitude[reach_point_row],
                                 longitude = reach_point_data$longitude[reach_point_row],
                                 horiz_accuracy = reach_point_data$horiz_accuracy[reach_point_row],
@@ -97,8 +79,6 @@ observeEvent(input$reach_points_rows_selected, {
   updateSelectizeInput(session, "reach_point_type_select", selected = srpdat$reach_point_type)
   updateTextInput(session, "reach_point_code_input", value = srpdat$reach_point_code)
   updateTextInput(session, "reach_point_name_input", value = srpdat$reach_point_name)
-  # updateSelectizeInput(session, "reach_point_channel_type_select", selected = srpdat$channel_type)
-  # updateSelectizeInput(session, "reach_point_orientation_type_select", selected = srpdat$orientation_type)
   updateNumericInput(session, "reach_point_latitude_input", value = srpdat$latitude)
   updateNumericInput(session, "reach_point_longitude_input", value = srpdat$longitude)
   updateNumericInput(session, "reach_point_horiz_accuracy_input", value = srpdat$horiz_accuracy)
@@ -214,9 +194,15 @@ observeEvent(input$use_reach_point_map, {
                    )
                  ),
                  fluidRow(
-                   column(width = 2,
-                          actionButton("capture_reach_point", "Capture reach point")),
-                   column(width = 10,
+                   column(width = 3,
+                          actionButton("capture_reach_point", "Capture reach point"),
+                          tippy("<i style='color:#1a5e86;padding-left:8px', class='fas fa-info-circle'></i>",
+                                tooltip = glue("You can zoom in on the map and drag the marker to the ",
+                                               "correct reach end-point location. Click on the marker ",
+                                               "to set the coordinates. Then click on the button to ",
+                                               "capture the location and send the coordinates to the ",
+                                               "data entry screen."))),
+                   column(width = 9,
                           htmlOutput("reach_point_coordinates"))
                  )
                ),

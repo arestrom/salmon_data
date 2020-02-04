@@ -6,7 +6,8 @@
 output$wria_select = renderUI({
   wria_list = get_wrias()
   selectizeInput("wria_select", label = NULL,
-                 choices = wria_list, selected = "23 Upper Chehalis",
+                 choices = wria_list,
+                 selected = "23 Upper Chehalis",
                  width = "100%")
 })
 

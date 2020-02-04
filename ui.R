@@ -89,7 +89,7 @@ ui = dashboardPagePlus(
                       id = 5,
                       title = "Fish counts",
                       color = "purple",
-                      collapsed = TRUE,
+                      collapsed = FALSE,
                       fish_encounter_ui
                     ),
                     accordionItem(
@@ -159,6 +159,90 @@ ui = dashboardPagePlus(
                   solidHeader = FALSE,
                   collapsed = FALSE,
                   reach_point_ui,
+                  width = 12
+                )
+              )
+      ),
+      tabItem(tabName = "mobile_import",
+              fluidRow(
+                br(),
+                br(),
+                boxPlus(
+                  title = "Import from Mobile API (ToDo)",
+                  closable = FALSE,
+                  collapsible = TRUE,
+                  solidHeader = FALSE,
+                  collapsed = FALSE,
+                  width = 12
+                )
+              )
+      ),
+      tabItem(tabName = "file_import",
+              fluidRow(
+                br(),
+                br(),
+                boxPlus(
+                  title = "Import from external file or database (ToDo)",
+                  closable = FALSE,
+                  collapsible = TRUE,
+                  solidHeader = FALSE,
+                  collapsed = FALSE,
+                  width = 12
+                )
+              )
+      ),
+      tabItem(tabName = "data_query",
+              fluidRow(
+                br(),
+                br(),
+                boxPlus(
+                  title = "Export data using interactive query generator (ToDo)",
+                  closable = FALSE,
+                  collapsible = TRUE,
+                  solidHeader = FALSE,
+                  collapsed = FALSE,
+                  width = 12
+                )
+              )
+      ),
+      tabItem(tabName = "reports",
+              fluidRow(
+                br(),
+                br(),
+                boxPlus(
+                  title = "Generate automated reports (ToDo)",
+                  closable = FALSE,
+                  collapsible = TRUE,
+                  solidHeader = FALSE,
+                  collapsed = FALSE,
+                  width = 12
+                )
+              )
+      ),
+      tabItem(tabName = "waterbody_edit",
+              fluidRow(
+                br(),
+                br(),
+                boxPlus(
+                  title = "Edit waterbody geometries (ToDo)",
+                  closable = FALSE,
+                  collapsible = TRUE,
+                  solidHeader = FALSE,
+                  collapsed = FALSE,
+                  width = 12
+                )
+              )
+      ),
+      tabItem(tabName = "about",
+              fluidRow(
+                br(),
+                br(),
+                boxPlus(
+                  title = "About (ToDo)",
+                  closable = FALSE,
+                  collapsible = TRUE,
+                  solidHeader = FALSE,
+                  collapsed = FALSE,
                   width = 12
                 )
               )

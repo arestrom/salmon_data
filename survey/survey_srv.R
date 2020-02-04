@@ -61,7 +61,6 @@ output$surveys = renderDT({
 survey_dt_proxy = dataTableProxy(outputId = "surveys")
 
 # Set row selection to NULL if tab changes
-# Update DB and reload DT
 observeEvent(input$tabs, {
   if (input$tabs == "wria_stream") {
     selectRows(survey_dt_proxy, NULL)

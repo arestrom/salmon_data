@@ -313,23 +313,11 @@ output$redd_substrate_modal_update_vals = renderDT({
                              "}")))
 })
 
-# output$chk_substrate_edit = renderText({
-#   old_redd_substrate_vals = selected_redd_substrate_data() %>%
-#     select(substrate_level, substrate_type, substrate_pct)
-#   old_redd_substrate_vals[] = lapply(old_redd_substrate_vals, remisc::set_na)
-#   new_redd_substrate_vals = redd_substrate_edit() %>%
-#     mutate(substrate_pct = as.integer(substrate_pct)) %>%
-#     select(substrate_level, substrate_type, substrate_pct)
-#   new_redd_substrate_vals[] = lapply(new_redd_substrate_vals, remisc::set_na)
-#   print(old_redd_substrate_vals)
-#   print(new_redd_substrate_vals)
-#   return(unlist(old_redd_substrate_vals))
-# })
-
 # Edit modal
 observeEvent(input$substrate_edit, {
   old_redd_substrate_vals = selected_redd_substrate_data() %>%
     select(substrate_level, substrate_type, substrate_pct)
+  current_type = old_redd_substrate_vals$substrate_type
   old_redd_substrate_vals[] = lapply(old_redd_substrate_vals, remisc::set_na)
   new_redd_substrate_vals = redd_substrate_edit() %>%
     mutate(substrate_pct = as.integer(substrate_pct)) %>%
@@ -360,7 +348,7 @@ observeEvent(input$substrate_edit, {
                  footer = NULL
                )
                # Verify no substrate types are repeated
-             } else if ( new_type %in% old_types ) {
+             } else if ( !new_type == current_type & new_type %in% old_types ) {
                modalDialog (
                  size = "m",
                  title = "Warning",

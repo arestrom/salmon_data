@@ -202,7 +202,7 @@ observeEvent(input$ind_redd_add, {
   showModal(
     tags$div(id = "individual_redd_insert_modal",
              # Verify required fields have data...none can be blank
-             if ( is.na(new_individual_redd_vals$redd_shape) ) {
+             if ( is.na(new_individual_redd_vals$redd_shape) | new_individual_redd_vals$redd_shape == "" ) {
                modalDialog (
                  size = "m",
                  title = "Warning",

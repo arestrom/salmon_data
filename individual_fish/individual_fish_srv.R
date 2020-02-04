@@ -484,30 +484,6 @@ output$individual_fish_modal_update_vals = renderDT({
                              "}")))
 })
 
-# output$chk_edit = renderText({
-#   old_individual_fish_vals = selected_individual_fish_data() %>%
-#     select(fish_condition, fish_trauma, gill_condition, spawn_condition, fish_sample_num, scale_card_num,
-#            scale_position_num, age_code, snout_sample_num, cwt_tag_code, cwt_result, genetic_sample_num,
-#            otolith_sample_num, pct_eggs, eggs_gram, eggs_number, fish_comment)
-#   old_individual_fish_vals[] = lapply(old_individual_fish_vals, remisc::set_empty)
-#   old_individual_fish_vals = old_individual_fish_vals %>%
-#     mutate(pct_eggs = as.integer(pct_eggs)) %>%
-#     mutate(eggs_gram = as.numeric(eggs_gram)) %>%
-#     mutate(eggs_number = as.integer(eggs_number))
-#   new_individual_fish_vals = individual_fish_edit() %>%
-#     select(fish_condition, fish_trauma, gill_condition, spawn_condition, fish_sample_num, scale_card_num,
-#            scale_position_num, age_code, snout_sample_num, cwt_tag_code, cwt_result, genetic_sample_num,
-#            otolith_sample_num, pct_eggs, eggs_gram, eggs_number, fish_comment)
-#   new_individual_fish_vals[] = lapply(new_individual_fish_vals, remisc::set_empty)
-#   new_individual_fish_vals = new_individual_fish_vals %>%
-#     mutate(pct_eggs = as.integer(pct_eggs)) %>%
-#     mutate(eggs_gram = as.numeric(eggs_gram)) %>%
-#     mutate(eggs_number = as.integer(eggs_number))
-#   print(old_individual_fish_vals)
-#   print(new_individual_fish_vals)
-#   return(unlist(old_individual_fish_vals))
-# })
-
 observeEvent(input$ind_fish_edit, {
   old_individual_fish_vals = selected_individual_fish_data() %>%
     select(fish_condition, fish_trauma, gill_condition, spawn_condition, fish_sample_num, scale_card_num,

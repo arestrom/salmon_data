@@ -400,8 +400,6 @@ fish_encounter_edit = reactive({
   req(!is.na(selected_fish_encounter_data()$fish_encounter_id))
   # Survey date
   survey_date = selected_survey_data()$survey_date
-  # # Location....NA for now
-  # fish_location_input = NA
   # Fish encounter time
   fish_encounter_dt = format(input$fish_encounter_time_select)
   if (nchar(fish_encounter_dt) < 16) { fish_encounter_dt = NA_character_ }

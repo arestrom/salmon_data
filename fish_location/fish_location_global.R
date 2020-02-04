@@ -23,11 +23,7 @@ get_fish_locations = function(waterbody_id, up_rm, lo_rm, survey_date, species_i
                  "and floc.waterbody_id = '{waterbody_id}'")
   # Checkout connection
   con = poolCheckout(pool)
-  print("fish-one")
-  strt = Sys.time()
   fish_loc_one = DBI::dbGetQuery(con, qry_one)
-  nd = Sys.time()
-  print(nd - strt)
   # Pull out location_ids for second query
   loc_ids = paste0(paste0("'", unique(fish_loc_one$fish_location_id), "'"), collapse = ", ")
   # Define query for fish locations already tied to surveys
@@ -59,11 +55,7 @@ get_fish_locations = function(waterbody_id, up_rm, lo_rm, survey_date, species_i
                  "and uploc.river_mile_measure <= {up_rm} ",
                  "and loloc.river_mile_measure >= {lo_rm} ",
                  "and se.species_id = '{species_id}'")
-  print("fish-two")
-  strt = Sys.time()
   fish_loc_two = DBI::dbGetQuery(con, qry_two)
-  nd = Sys.time()
-  print(nd - strt)
   poolReturn(con)
   # Dump entries in fish_loc_one that have surveys attached
   fish_loc_one = fish_loc_one %>%
@@ -377,4 +369,3 @@ fish_location_delete = function(delete_values) {
   dbClearResult(delete_result_two)
   poolReturn(con)
 }
-
