@@ -99,15 +99,10 @@
 # 28. See example code "current_redd_locations" in redd_encounter_srv.R
 #     as example of how to possibly simplify a bunch of repeat
 #     invocations of get_xxx global functions.
-# 29. Stopped at deleting fish_locations with encounters attached. Need
-#     to fix modal display to include DT:: with dependent data.
-# 30. Need to speed up query for fish_locations. Maybe query from
-#     a view instead. Likely to be just a few encounters with locs.
-# 31. Edit a fish_name in location...then see what happens in fish_counts
-#     Need to speed up queries and refresh data after fish_name edit.
-#     Print statements show second part of query is slow part. Just
-#     use two year location queries, then filter in memory using
-#     reactives.
+# 29. Try to use two year location queries for all carcass locations,
+#     WRIA and stream. Then filter in memory using reactives? To
+#     pre-run location queries for fish and redds, print stats
+#     on n-surveys, n-redds, n-carcasses on front-page
 #
 # AS 2020-01-17
 #==============================================================

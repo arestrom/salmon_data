@@ -196,12 +196,12 @@ output$redd_map <- renderLeaflet({
 })
 
 # Create reactive to hold click data
-marker_data = reactive({
+redd_marker_data = reactive({
   req(input$redd_map_marker_click)
-  click_data = input$redd_map_marker_click
-  mark_dat = tibble(latitude = round(as.numeric(click_data$lat), digits = 6),
-                    longitude = round(as.numeric(click_data$lng), digits = 6))
-  return(mark_dat)
+  redd_click_data = input$redd_map_marker_click
+  redd_mark_dat = tibble(latitude = round(as.numeric(redd_click_data$lat), digits = 6),
+                    longitude = round(as.numeric(redd_click_data$lng), digits = 6))
+  return(redd_mark_dat)
 })
 
 # Get dataframe of updated locations
@@ -210,7 +210,7 @@ output$redd_coordinates = renderUI({
   if ( length(input$redd_map_marker_click) == 0L ) {
   HTML("Drag marker to edit location. Click on marker to set coordinates")
 } else {
-  HTML(glue("Redd location: ", {marker_data()$latitude}, ": ", {marker_data()$longitude}))
+  HTML(glue("Redd location: ", {redd_marker_data()$latitude}, ": ", {redd_marker_data()$longitude}))
 }
 })
 
@@ -255,9 +255,9 @@ observeEvent(input$redd_loc_map, {
 
 # Update all input values to values in selected row
 observeEvent(input$capture_redd_loc, {
-  coord_data = marker_data()
-  updateNumericInput(session, "latitude_input", value = coord_data$latitude)
-  updateNumericInput(session, "longitude_input", value = coord_data$longitude)
+  redd_coord_data = redd_marker_data()
+  updateNumericInput(session, "latitude_input", value = redd_coord_data$latitude)
+  updateNumericInput(session, "longitude_input", value = redd_coord_data$longitude)
   removeModal()
 })
 
@@ -403,6 +403,23 @@ observeEvent(input$insert_redd_location, {
            created_dt, created_by, modified_dt, modified_by)
   replaceData(redd_location_dt_proxy, post_redd_location_insert_vals)
 }, priority = 9999)
+
+# Update DB and reload DT
+observeEvent(input$insert_redd_encounter, {
+  req(input$surveys_rows_selected)
+  req(input$survey_events_rows_selected)
+  # Collect parameters
+  up_rm = selected_survey_data()$up_rm
+  lo_rm = selected_survey_data()$lo_rm
+  survey_date = format(as.Date(selected_survey_data()$survey_date))
+  species_id = selected_survey_event_data()$species_id
+  # Update redd location table
+  redd_locs_after_redd_count_insert = get_redd_locations(waterbody_id(), up_rm, lo_rm, survey_date, species_id) %>%
+    select(survey_dt, redd_name, redd_status, channel_type, orientation_type,
+           latitude, longitude, horiz_accuracy, location_description,
+           created_dt, created_by, modified_dt, modified_by)
+  replaceData(redd_location_dt_proxy, redd_locs_after_redd_count_insert)
+}, priority = -1)
 
 #========================================================
 # Edit operations: reactives, observers and modals
@@ -563,12 +580,24 @@ observeEvent(input$save_redd_loc_edits, {
            latitude, longitude, horiz_accuracy, location_description,
            created_dt, created_by, modified_dt, modified_by)
   replaceData(redd_location_dt_proxy, post_redd_location_edit_vals)
-  # Update redd encounter table if something in redd location changed
-  post_redd_encounter_edit_vals = get_redd_encounter(selected_survey_event_data()$survey_event_id) %>%
-    select(redd_encounter_dt, redd_status, redd_count, redd_name, redd_comment,
+}, priority = 9999)
+
+# Update DB and reload DT
+observeEvent(input$save_redd_enc_edits, {
+  req(input$surveys_rows_selected)
+  req(input$survey_events_rows_selected)
+  # Collect parameters
+  up_rm = selected_survey_data()$up_rm
+  lo_rm = selected_survey_data()$lo_rm
+  survey_date = format(as.Date(selected_survey_data()$survey_date))
+  species_id = selected_survey_event_data()$species_id
+  # Update redd location table
+  redd_locs_after_redd_count_edit = get_redd_locations(waterbody_id(), up_rm, lo_rm, survey_date, species_id) %>%
+    select(survey_dt, redd_name, redd_status, channel_type, orientation_type,
+           latitude, longitude, horiz_accuracy, location_description,
            created_dt, created_by, modified_dt, modified_by)
-  replaceData(redd_encounter_dt_proxy, post_redd_encounter_edit_vals)
-})
+  replaceData(redd_location_dt_proxy, redd_locs_after_redd_count_edit)
+}, priority = -1)
 
 #========================================================
 # Delete operations: reactives, observers and modals
@@ -606,28 +635,16 @@ output$redd_location_modal_delete_vals = renderDT({
 redd_location_dependencies = reactive({
   redd_location_id = selected_redd_location_data()$redd_location_id
   redd_loc_dep = get_redd_location_dependencies(redd_location_id)
-  print("redd dependencies rows")
-  print(nrow(redd_loc_dep))
-  print("redd name")
-  print(selected_redd_coords()$redd_name)
+  # print("redd dependencies rows")
+  # print(nrow(redd_loc_dep))
+  # print("redd name")
+  # print(selected_redd_coords()$redd_name)
   return(redd_loc_dep)
 })
 
-# # Reactive to hold redd_encounter_ids tied to redd_location
-# redd_location_encounters = reactive({
-#   redd_location_id = selected_redd_location_data()$redd_location_id
-#   redd_enc_ids = get_redd_encounter_ids(redd_location_id) %>%
-#     pull(redd_encounter_id)
-#   redd_enc_ids = paste0(paste0("'", redd_enc_ids, "'"), collapse = ", ")
-#   print("redd encounter_ids")
-#   print(redd_enc_ids)
-#   print("redd_location_dependencies")
-#   print(names(redd_location_dependencies()))
-#   return(redd_enc_ids)
-# })
-
 # Generate values to show in modal
 output$redd_location_modal_dependency_vals = renderDT({
+  req(input$tabs == "data_entry")
   redd_location_modal_dep_vals = redd_location_dependencies() %>%
     select(redd_encounter_date, redd_encounter_time, redd_status, redd_count,
            redd_name, redd_comment)

@@ -1,4 +1,4 @@
-# Main survey intent query
+# Main survey event query
 get_survey_event = function(survey_id) {
   qry = glue("select se.survey_event_id, se.species_id, sp.common_name as species, ",
              "sd.survey_design_type_code as survey_design, ",
@@ -86,10 +86,10 @@ get_run = function() {
 }
 
 #==========================================================================
-# Validate survey_intent create operations
+# Validate survey_event insert operations
 #==========================================================================
 
-# Check for existing duplicate survey_intent prior to survey_intent insert operation
+# Check for existing duplicate survey_event prior to survey_event insert operation
 dup_survey_event = function(new_survey_event_vals, existing_survey_event_vals) {
   new_survey_event_vals = new_survey_event_vals %>%
     select(species, survey_design, run, run_year)
