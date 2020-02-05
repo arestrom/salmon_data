@@ -82,6 +82,7 @@
 #     difference in river_mile. Then leave historical data alone.
 # 23. Find css to narrow sidebar in header boxplus.
 # 24. Add spinners or progress bar when loading locations.
+# 25. Add colored background to required inputs.
 # 26. Zoom to stream extent when setting locations via map.
 #     Right now marker is sometimes off the screen.
 # 28. See example code "current_redd_locations" in redd_encounter_srv.R
@@ -91,6 +92,7 @@
 #     WRIA and stream. Then filter in memory using reactives? To
 #     pre-run location queries for fish and redds, print stats
 #     on n-surveys, n-redds, n-carcasses on front-page
+# 30. Set defaults for all required inputs.
 #
 # AS 2020-01-17
 #==============================================================
