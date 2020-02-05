@@ -474,7 +474,10 @@ observeEvent(input$reach_point_edit, {
                modalDialog (
                  size = "m",
                  title = "Warning",
-                 paste("Edits would alter data for both historical and more recent surveys. Please contact the data manager."),
+                 paste0("Edits would alter data for both historical and more recent surveys. ",
+                       "Please contact the data manager to request the updates. Another option ",
+                       "would be to enter a new reach end-point that differs by 0.01 Mile (52 ft) ",
+                       "from any existing end point on the stream."),
                  fluidPage (
                    br(),
                    br(),

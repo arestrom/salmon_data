@@ -55,9 +55,7 @@
 # 11. Check that select inputs are ordered optimally. Use
 #     example code in redd_substrate_global as example to
 #     order by levels.
-# 12. If tracking of individual_carcass over time is needed,
-#     we can add fish_name_select to fish_encounter ui. Set
-#     up similar to redd-tracking in redd_encounter/location.
+# 12. Use descriptions in Data Source drop-down. Codes too cryptic.
 # 13. Need to add code to edit modals to make sure all
 #     required fields have values entered. See fish_location.
 #     Or use validate...need?
@@ -70,32 +68,22 @@
 #     measurements to the number of items in length_type
 #     lut list.
 # 17. Verify all screens...especially edit, do not remove
-#     required values by backspacing and updating.
+#     required values by backspacing and updating. !!!!!
 # 18. Change select for year in wria_stream_ui.R to
 #     shinywidgets pickerSelect multiple.
 # 19. Need css for radius on textInput boxes
 # 20. Get rid of extra channel and orientation lut function
 #     for fish in fish_location_global.R. Can reuse
 #     function from redd_location.
-# 21. May want to edit reach_point_srv.R to allow
-#     multiple edits to point on reach_point_map
-#     without having to update either lat-lon inputs
-#     or selecting a different row in DT. Could use
-#     model for wria_stream code instead of modal.
+# 21. Update all DT column names to more readable versions?
 # 22. For editing reach points...only allow editing coordinates
 #     for one year previous. Otherwise send request to data manager.
 #     Done....Can also suggest adding new point with one decimal
 #     difference in river_mile. Then leave historical data alone.
 # 23. Find css to narrow sidebar in header boxplus.
-# 25. Need to fix data entry of redd encounter, redd location.
-#     Getting duplicates of redd encounter during CRUD. May
-#     need to limit redd_name to unique per new redd. Or only
-#     set redd_name in the redd_location interface. Use same
-#     updated methods with fish locations.
+# 24. Add spinners or progress bar when loading locations.
 # 26. Zoom to stream extent when setting locations via map.
 #     Right now marker is sometimes off the screen.
-# 27. For old_redd_location query...survey_date needs to be converted
-#     back to UTC. Using interval + '1 day' kludge right now.
 # 28. See example code "current_redd_locations" in redd_encounter_srv.R
 #     as example of how to possibly simplify a bunch of repeat
 #     invocations of get_xxx global functions.
