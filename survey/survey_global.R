@@ -1,7 +1,9 @@
 # Function to get header data...use multiselect for year
 get_surveys = function(waterbody_id, survey_years) {
-  qry = glue("select s.survey_id, s.survey_datetime as survey_date,  ",
-             "ds.data_source_code, du.data_source_unit_name as data_unit, ",
+  qry = glue("select s.survey_id, s.survey_datetime as survey_date, ",
+             "ds.data_source_code, ",
+             "data_source_code || ': ' || data_source_name as data_source, ",
+             "du.data_source_unit_name as data_source_unit, ",
              "sm.survey_method_code as survey_method, ",
              "dr.data_review_status_description as data_review, ",
              "locu.river_mile_measure as upper_rm, ",
@@ -45,8 +47,8 @@ get_surveys = function(waterbody_id, survey_years) {
     mutate(survey_date = as.Date(survey_date)) %>%
     select(survey_id, survey_date, survey_date_dt, survey_method, up_rm = upper_rm,
            lo_rm = lower_rm, start_time, start_time_dt, end_time, end_time_dt,
-           observer, submitter, data_source = data_source_code, data_unit,
-           data_review, completion, created_date, created_dt,
+           observer, submitter, data_source_code, data_source, data_source_unit,
+           data_review, completion, incomplete_type, created_date, created_dt,
            created_by, modified_date, modified_dt, modified_by) %>%
     arrange(survey_date, start_time, end_time, created_date)
   return(surveys)
@@ -58,15 +60,28 @@ get_surveys = function(waterbody_id, survey_years) {
 
 # Data source
 get_data_source = function() {
-  qry = glue("select data_source_id, data_source_code ",
+  qry = glue("select data_source_id, data_source_code || ': ' || data_source_name as data_source ",
              "from data_source_lut ",
              "where obsolete_datetime is null")
   con = poolCheckout(pool)
-  data_source = DBI::dbGetQuery(con, qry) %>%
-    arrange(data_source_code) %>%
-    select(data_source_id, data_source_code)
+  data_source_list = DBI::dbGetQuery(con, qry) %>%
+    arrange(data_source) %>%
+    select(data_source_id, data_source)
   poolReturn(con)
-  return(data_source)
+  return(data_source_list)
+}
+
+# Data source unit
+get_data_source_unit = function() {
+  qry = glue("select data_source_unit_id, data_source_unit_name as data_source_unit ",
+             "from data_source_unit_lut ",
+             "where obsolete_datetime is null")
+  con = poolCheckout(pool)
+  data_source_unit_list = DBI::dbGetQuery(con, qry) %>%
+    arrange(data_source_unit) %>%
+    select(data_source_unit_id, data_source_unit)
+  poolReturn(con)
+  return(data_source_unit_list)
 }
 
 # Survey method
@@ -108,6 +123,19 @@ get_completion_status = function() {
   return(completion_list)
 }
 
+# Incomplete type
+get_incomplete_type = function() {
+  qry = glue("select incomplete_survey_type_id, incomplete_survey_description as incomplete_type ",
+             "from incomplete_survey_type_lut ",
+             "where obsolete_datetime is null")
+  con = poolCheckout(pool)
+  incomplete_type_list = DBI::dbGetQuery(con, qry) %>%
+    arrange(incomplete_type) %>%
+    select(incomplete_survey_type_id, incomplete_type)
+  poolReturn(con)
+  return(incomplete_type_list)
+}
+
 #==========================================================================
 # Validate survey create operations
 #==========================================================================
@@ -134,9 +162,6 @@ dup_survey = function(new_survey_vals, existing_survey_vals) {
 
 # Define the insert callback
 survey_insert = function(new_values) {
-  new_values = new_values %>%
-    mutate(incomplete_survey_type_id = "cde5d9fb-bb33-47c6-9018-177cd65d15f5") %>%   # Not applicable
-    mutate(data_source_unit_id = "e2d51ceb-398c-49cb-9aa5-d20a839e9ad9")             # Not applicable
   # Pull out data
   survey_datetime = new_values$survey_dt
   data_source_id = new_values$data_source_id
@@ -195,11 +220,13 @@ survey_update = function(edit_values) {
   # Pull out data
   survey_datetime = edit_values$survey_datetime
   data_source_id = edit_values$data_source_id
+  data_source_unit_id = edit_values$data_source_unit_id
   survey_method_id = edit_values$survey_method_id
   data_review_status_id = edit_values$data_review_status_id
   upper_end_point_id = edit_values$upper_end_point_id
   lower_end_point_id = edit_values$lower_end_point_id
   survey_completion_status_id = edit_values$survey_completion_status_id
+  incomplete_survey_type_id = edit_values$incomplete_survey_type_id
   survey_start_datetime = edit_values$survey_start_datetime
   survey_end_datetime = edit_values$survey_end_datetime
   observer_last_name = edit_values$observer
@@ -215,24 +242,26 @@ survey_update = function(edit_values) {
     con, glue_sql("UPDATE survey SET ",
                   "survey_datetime = $1, ",
                   "data_source_id = $2, ",
-                  "survey_method_id = $3, ",
-                  "data_review_status_id = $4, ",
-                  "upper_end_point_id = $5, ",
-                  "lower_end_point_id = $6, ",
-                  "survey_completion_status_id = $7, ",
-                  "survey_start_datetime = $8, ",
-                  "survey_end_datetime = $9, ",
-                  "observer_last_name = $10, ",
-                  "data_submitter_last_name = $11, ",
-                  "modified_datetime = $12, ",
-                  "modified_by = $13 ",
-                  "where survey_id = $14"))
-  dbBind(update_result, list(survey_datetime, data_source_id, survey_method_id,
-                             data_review_status_id, upper_end_point_id,
+                  "data_source_unit_id = $3, ",
+                  "survey_method_id = $4, ",
+                  "data_review_status_id = $5, ",
+                  "upper_end_point_id = $6, ",
+                  "lower_end_point_id = $7, ",
+                  "survey_completion_status_id = $8, ",
+                  "incomplete_survey_type_id = $9, ",
+                  "survey_start_datetime = $10, ",
+                  "survey_end_datetime = $11, ",
+                  "observer_last_name = $12, ",
+                  "data_submitter_last_name = $13, ",
+                  "modified_datetime = $14, ",
+                  "modified_by = $15 ",
+                  "where survey_id = $16"))
+  dbBind(update_result, list(survey_datetime, data_source_id, data_source_unit_id,
+                             survey_method_id, data_review_status_id, upper_end_point_id,
                              lower_end_point_id, survey_completion_status_id,
-                             survey_start_datetime, survey_end_datetime,
-                             observer_last_name, data_submitter_last_name,
-                             mod_dt, mod_by, survey_id))
+                             incomplete_survey_type_id, survey_start_datetime,
+                             survey_end_datetime, observer_last_name,
+                             data_submitter_last_name, mod_dt, mod_by, survey_id))
   dbGetRowsAffected(update_result)
   dbClearResult(update_result)
   poolReturn(con)

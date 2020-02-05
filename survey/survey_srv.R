@@ -7,25 +7,54 @@ output$survey_method_select = renderUI({
                  width = "115px")
 })
 
+output$upper_rm_select = renderUI({
+  rm_list = rm_list()$rm_label
+  selectizeInput("upper_rm_select", label = "upper_rm",
+                 choices = rm_list, selected = rm_list[[1]],
+                 width = "150px")
+})
+
+output$lower_rm_select = renderUI({
+  rm_list = rm_list()$rm_label
+  selectizeInput("lower_rm_select", label = "lower_rm",
+                 choices = rm_list, selected = rm_list[[1]],
+                 width = "150px")
+})
+
 output$data_source_select = renderUI({
-  data_source_list = get_data_source()$data_source_code
+  data_source_list = get_data_source()$data_source
   selectizeInput("data_source_select", label = "data_source",
-                 choices = data_source_list, selected = "WDFW",
-                 width = "100px")
+                 choices = data_source_list,
+                 selected = "WDFW: Washington Department of Fish and Wildlife",
+                 width = "310px")
+})
+
+output$data_source_unit_select = renderUI({
+  data_source_unit_list = get_data_source_unit()$data_source_unit
+  selectizeInput("data_source_unit_select", label = "data_source_unit",
+                 choices = data_source_unit_list, selected = "Not applicable",
+                 width = "225px")
 })
 
 output$data_review_select = renderUI({
   data_review_list = get_data_review()$data_review
   selectizeInput("data_review_select", label = "data_review",
-                 choices = data_review_list, selected = data_review_list[1],
-                 width = "115px")
+                 choices = data_review_list, selected = "Preliminary",
+                 width = "250px")
 })
 
 output$completion_select = renderUI({
   completion_list = get_completion_status()$completion
   selectizeInput("completion_select", label = "completed?",
-                 choices = completion_list, selected = completion_list[1],
+                 choices = completion_list, selected = "Completed survey",
                  width = "150px")
+})
+
+output$incomplete_type_select = renderUI({
+  incomplete_type_list = get_incomplete_type()$incomplete_type
+  selectizeInput("incomplete_type_select", label = "why not completed?",
+                 choices = incomplete_type_list, selected = "Not applicable",
+                 width = "225px")
 })
 
 # Primary DT datatable for database
@@ -37,8 +66,9 @@ output$surveys = renderDT({
     mutate(start_time = start_time_dt, end_time = end_time_dt) %>%
     select(survey_dt = survey_date_dt, survey_method, up_rm,
            lo_rm, start_time, end_time, observer, submitter,
-           data_source, data_review, completion, created_dt,
-           created_by, modified_dt, modified_by)
+           data_source_code, data_source_unit, data_review, completion,
+           incomplete_type, created_dt, created_by, modified_dt,
+           modified_by)
   # Generate table
   datatable(survey_data,
             selection = list(mode = 'single'),
@@ -86,9 +116,12 @@ selected_survey_data = reactive({
                            end_time = surveys$end_time[survey_row],
                            observer = surveys$observer[survey_row],
                            submitter = surveys$submitter[survey_row],
+                           data_source_code = surveys$data_source_code[survey_row],
                            data_source = surveys$data_source[survey_row],
+                           data_source_unit = surveys$data_source_unit[survey_row],
                            data_review = surveys$data_review[survey_row],
                            completed = surveys$completion[survey_row],
+                           incomplete_type = surveys$incomplete_type[survey_row],
                            created_date = surveys$created_date[survey_row],
                            created_by = surveys$created_by[survey_row],
                            modified_date = surveys$modified_date[survey_row],
@@ -113,8 +146,10 @@ observeEvent(input$surveys_rows_selected, {
   updateTextInput(session, "observer_input", value = ssdat$observer)
   updateTextInput(session, "submitter_input", value = ssdat$submitter)
   updateSelectizeInput(session, "data_source_select", selected = ssdat$data_source)
+  updateSelectizeInput(session, "data_source_unit_select", selected = ssdat$data_source_unit)
   updateSelectizeInput(session, "data_review_select", selected = ssdat$data_review)
   updateSelectizeInput(session, "completion_select", selected = ssdat$completed)
+  updateSelectizeInput(session, "incomplete_type_select", selected = ssdat$incomplete_type)
 })
 
 #========================================================
@@ -132,8 +167,19 @@ survey_create = reactive({
   } else {
     data_source_vals = get_data_source()
     data_source_id = data_source_vals %>%
-      filter(data_source_code == data_source_input) %>%
+      filter(data_source == data_source_input) %>%
       pull(data_source_id)
+  }
+  data_source_code = remisc::get_text_item(data_source_input, 1, ":")
+  # Data source unit
+  data_source_unit_input = input$data_source_unit_select
+  if (data_source_unit_input == "" ) {
+    data_source_unit_id = NA
+  } else {
+    data_source_unit_vals = get_data_source_unit()
+    data_source_unit_id = data_source_unit_vals %>%
+      filter(data_source_unit == data_source_unit_input) %>%
+      pull(data_source_unit_id)
   }
   # Survey method
   survey_method_input = input$survey_method_select
@@ -190,9 +236,22 @@ survey_create = reactive({
       filter(completion == completion_input) %>%
       pull(survey_completion_status_id)
   }
+  # Incomplete type
+  incomplete_type_input = input$incomplete_type_select
+  if (incomplete_type_input == "" ) {
+    incomplete_survey_type_id = NA
+  } else {
+    incomplete_type_vals = get_incomplete_type()
+    incomplete_survey_type_id = incomplete_type_vals %>%
+      filter(incomplete_type == incomplete_type_input) %>%
+      pull(incomplete_survey_type_id)
+  }
   new_survey = tibble(survey_dt = survey_date_input,
                       data_source = data_source_input,
+                      data_source_code = data_source_code,
                       data_source_id = data_source_id,
+                      data_source_unit = data_source_unit_input,
+                      data_source_unit_id = data_source_unit_id,
                       survey_method = survey_method_input,
                       survey_method_id = survey_method_id,
                       data_review = data_review_input,
@@ -207,6 +266,8 @@ survey_create = reactive({
                       submitter = input$submitter_input,
                       completion = completion_input,
                       survey_completion_status_id = survey_completion_status_id,
+                      incomplete_type = incomplete_type_input,
+                      incomplete_survey_type_id = incomplete_survey_type_id,
                       created_dt = lubridate::with_tz(Sys.time(), "UTC"),
                       created_by = Sys.getenv("USERNAME"))
   new_survey = new_survey %>%
@@ -221,7 +282,8 @@ output$survey_modal_insert_vals = renderDT({
     mutate(start_time = format(start_time, "%H:%M")) %>%
     mutate(end_time = format(end_time, "%H:%M")) %>%
     select(survey_dt, survey_method, up_rm, lo_rm, start_time, end_time,
-           observer, submitter, data_source, data_review, completion)
+           observer, submitter, data_source_code, data_source_unit,
+           data_review, completion, incomplete_type)
   # Generate table
   datatable(survey_modal_in_vals,
             rownames = FALSE,
@@ -252,8 +314,10 @@ observeEvent(input$survey_add, {
                   is.na(new_survey_vals$observer) |
                   is.na(new_survey_vals$submitter) |
                   is.na(new_survey_vals$data_source) |
+                  is.na(new_survey_vals$data_source_unit) |
                   is.na(new_survey_vals$data_review) |
-                  is.na(new_survey_vals$completion) ) {
+                  is.na(new_survey_vals$completion) |
+                  is.na(new_survey_vals$incomplete_type) ) {
                modalDialog (
                  size = "m",
                  title = "Warning",
@@ -310,10 +374,11 @@ survey_insert_vals = reactive({
     mutate(survey_end_datetime = with_tz(survey_end_datetime, tzone = "UTC")) %>%
     mutate(survey_dt = as.POSIXct(format(survey_dt), tz = "America/Los_Angeles")) %>%
     mutate(survey_dt = with_tz(survey_dt, tzone = "UTC")) %>%
-    select(survey_dt, data_source_id, survey_method_id, data_review_status_id,
-           upper_end_point_id, lower_end_point_id, survey_completion_status_id, survey_start_datetime,
-           survey_end_datetime, observer_last_name = observer, data_submitter_last_name = submitter,
-           created_by)
+    select(survey_dt, data_source_id, data_source_unit_id, survey_method_id,
+           data_review_status_id, upper_end_point_id, lower_end_point_id,
+           survey_completion_status_id, incomplete_survey_type_id,
+           survey_start_datetime, survey_end_datetime, observer_last_name = observer,
+           data_submitter_last_name = submitter, created_by)
   return(new_values)
 })
 
@@ -325,8 +390,9 @@ observeEvent(input$insert_survey, {
     mutate(start_time = start_time_dt, end_time = end_time_dt) %>%
     select(survey_dt = survey_date_dt, survey_method, up_rm,
            lo_rm, start_time, end_time, observer, submitter,
-           data_source, data_review, completion, created_dt,
-           created_by, modified_dt, modified_by)
+           data_source_code, data_source_unit, data_review, completion,
+           incomplete_type, created_dt, created_by, modified_dt,
+           modified_by)
   replaceData(survey_dt_proxy, post_insert_vals)
 })
 
@@ -340,8 +406,19 @@ survey_edit = reactive({
   data_source_vals = get_data_source()
   data_source_input = input$data_source_select
   data_source_id = data_source_vals %>%
-    filter(data_source_code == data_source_input) %>%
+    filter(data_source == data_source_input) %>%
     pull(data_source_id)
+  data_source_code = remisc::get_text_item(data_source_input, 1, ":")
+  # Data source unit
+  data_source_unit_input = input$data_source_unit_select
+  if (data_source_unit_input == "" ) {
+    data_source_unit_id = NA
+  } else {
+    data_source_unit_vals = get_data_source_unit()
+    data_source_unit_id = data_source_unit_vals %>%
+      filter(data_source_unit == data_source_unit_input) %>%
+      pull(data_source_unit_id)
+  }
   # Survey method
   survey_method_vals = get_survey_method()
   survey_method_input = input$survey_method_select
@@ -364,16 +441,29 @@ survey_edit = reactive({
   lower_end_point_id = rm_vals %>%
     filter(rm_label == lo_rm_input) %>%
     pull(location_id)
-  # Data source
+  # Survey completion
   completion_vals = get_completion_status()
   completion_input = input$completion_select
   survey_completion_status_id = completion_vals %>%
     filter(completion == completion_input) %>%
     pull(survey_completion_status_id)
+  # Incomplete type
+  incomplete_type_input = input$incomplete_type_select
+  if (incomplete_type_input == "" ) {
+    incomplete_survey_type_id = NA
+  } else {
+    incomplete_type_vals = get_incomplete_type()
+    incomplete_survey_type_id = incomplete_type_vals %>%
+      filter(incomplete_type == incomplete_type_input) %>%
+      pull(incomplete_survey_type_id)
+  }
   edit_survey = tibble(survey_id = selected_survey_data()$survey_id,
                        survey_dt = input$survey_date_input,
                        data_source = data_source_input,
+                       data_source_code = data_source_code,
                        data_source_id = data_source_id,
+                       data_source_unit = data_source_unit_input,
+                       data_source_unit_id = data_source_unit_id,
                        survey_method = survey_method_input,
                        survey_method_id = survey_method_id,
                        data_review = data_review_input,
@@ -388,6 +478,8 @@ survey_edit = reactive({
                        submitter = input$submitter_input,
                        completion = completion_input,
                        survey_completion_status_id = survey_completion_status_id,
+                       incomplete_type = incomplete_type_input,
+                       incomplete_survey_type_id = incomplete_survey_type_id,
                        modified_dt = lubridate::with_tz(Sys.time(), "UTC"),
                        modified_by = Sys.getenv("USERNAME"))
   edit_survey = edit_survey %>%
@@ -414,7 +506,8 @@ survey_edit = reactive({
 output$survey_modal_update_vals = renderDT({
   survey_modal_up_vals = survey_edit() %>%
     select(survey_dt, survey_method, up_rm, lo_rm, start_time, end_time,
-           observer, submitter, data_source, data_review, completion)
+           observer, submitter, data_source_code, data_source_unit, data_review,
+           completion, incomplete_type)
   # Generate table
   datatable(survey_modal_up_vals,
             rownames = FALSE,
@@ -434,11 +527,12 @@ observeEvent(input$survey_edit, {
     mutate(start_time = if_else(is.na(start_time), "00:00", start_time)) %>%
     mutate(end_time = if_else(is.na(end_time), "00:00", end_time)) %>%
     select(survey_dt = survey_date, survey_method, up_rm, lo_rm, start_time,
-           end_time, observer, submitter, data_source, data_review,
-           completion = completed)
+           end_time, observer, submitter, data_source, data_source_unit,
+           data_review, completion = completed, incomplete_type)
   new_vals = survey_edit() %>%
     select(survey_dt, survey_method, up_rm, lo_rm, start_time, end_time,
-           observer, submitter, data_source, data_review, completion)
+           observer, submitter, data_source, data_source_unit, data_review,
+           completion, incomplete_type)
   showModal(
     tags$div(id = "survey_update_modal",
              if ( !length(input$surveys_rows_selected) == 1 ) {
@@ -465,7 +559,7 @@ observeEvent(input$survey_edit, {
                    DT::DTOutput("survey_modal_update_vals"),
                    br(),
                    br(),
-                   actionButton("save_edits","Save changes")
+                   actionButton("save_survey_edits","Save changes")
                  ),
                  easyClose = TRUE,
                  footer = NULL
@@ -475,15 +569,16 @@ observeEvent(input$survey_edit, {
 })
 
 # Update DB and reload DT
-observeEvent(input$save_edits, {
+observeEvent(input$save_survey_edits, {
   survey_update(survey_edit())
   removeModal()
   post_edit_vals = get_surveys(waterbody_id(), year_vals()) %>%
     mutate(start_time = start_time_dt, end_time = end_time_dt) %>%
     select(survey_dt = survey_date_dt, survey_method, up_rm,
            lo_rm, start_time, end_time, observer, submitter,
-           data_source, data_review, completion, created_dt,
-           created_by, modified_dt, modified_by)
+           data_source_code, data_source_unit, data_review, completion,
+           incomplete_type, created_dt, created_by, modified_dt,
+           modified_by)
   replaceData(survey_dt_proxy, post_edit_vals)
 })
 
@@ -499,8 +594,9 @@ output$survey_modal_delete_vals = renderDT({
     mutate(start_time = start_time_dt, end_time = end_time_dt) %>%
     select(survey_dt = survey_date_dt, survey_method, up_rm,
            lo_rm, start_time, end_time, observer, submitter,
-           data_source, data_review, completion, created_dt,
-           created_by, modified_dt, modified_by)
+           data_source_code, data_source_unit, data_review, completion,
+           incomplete_type, created_dt, created_by, modified_dt,
+           modified_by)
   # Generate table
   datatable(survey_modal_del_vals,
             rownames = FALSE,
@@ -560,7 +656,8 @@ observeEvent(input$delete_survey, {
     mutate(start_time = start_time_dt, end_time = end_time_dt) %>%
     select(survey_dt = survey_date_dt, survey_method, up_rm,
            lo_rm, start_time, end_time, observer, submitter,
-           data_source, data_review, completion, created_dt,
-           created_by, modified_dt, modified_by)
+           data_source_code, data_source_unit, data_review, completion,
+           incomplete_type, created_dt, created_by, modified_dt,
+           modified_by)
   replaceData(survey_dt_proxy, surveys_after_delete)
 })

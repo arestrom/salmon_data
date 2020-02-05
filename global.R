@@ -82,7 +82,7 @@
 #     difference in river_mile. Then leave historical data alone.
 # 23. Find css to narrow sidebar in header boxplus.
 # 24. Add spinners or progress bar when loading locations.
-# 25. Add colored background to required inputs.
+# 25. Add colored background to required inputs. #eff3ff, #9eb3d633
 # 26. Zoom to stream extent when setting locations via map.
 #     Right now marker is sometimes off the screen.
 # 28. See example code "current_redd_locations" in redd_encounter_srv.R

@@ -29,6 +29,23 @@
 /* Controls space under inputs to provide space for label when wrapping */
 .form-group {
   margin-bottom: 20px;
+  border-radius: 4px;
+}
+
+.form-control {
+  font-size: 11px;
+  height: 26px;
+  padding: 4px 4px;
+  border-radius: 4px;
+}
+
+.selectize-input {
+  min-height: 26px;
+  height: 26px;             /* keep: Sets consistent height across inputs...but hides multi-selections */
+  font-size: 11px;
+  vertical-align: middle;
+  padding-top: 3px;         /* keep: This does the trick in centering vertically */
+  border-radius: 4px;
 }
 
 .shiny-output-error-validation {
@@ -36,6 +53,54 @@
   font-weight: normal;
   font-size: 1.18em;
 }
+
+/* Required fields =============================================================*/
+#survey_date_input .form-control {
+  background-color: #9ed6a140;
+}
+
+#survey_method_select .selectize-input {
+  background-color: #9ed6a140;
+}
+
+#upper_rm_select .selectize-input {
+  background-color: #9ed6a140;
+}
+
+#lower_rm_select .selectize-input {
+  background-color: #9ed6a140;
+}
+
+#observer_input.form-control {
+  background-color: #9ed6a140;
+}
+
+#submitter_input.form-control {
+  background-color: #9ed6a140;
+}
+
+#data_source_select .selectize-input {
+  background-color: #9ed6a140;
+}
+
+#data_source_unit_select .selectize-input {
+  background-color: #9ed6a140;
+}
+
+#data_review_select .selectize-input {
+  background-color: #9ed6a140;
+}
+
+#completion_select .selectize-input {
+  background-color: #9ed6a140;
+}
+
+#incomplete_type_select .selectize-input {
+  background-color: #9ed6a140;
+}
+
+
+/* End of required fields =============================================================*/
 
 #sthd_image {
   display:inline-block;
@@ -461,20 +526,6 @@
   color: #b6a4bf;
 }
 */
-
-.form-control {
-  font-size: 11px;
-  height: 26px;
-  padding: 4px 4px;
-}
-
-.selectize-input {
-  min-height: 26px;
-  height: 26px;             /* keep: Sets consistent height across inputs...but hides multi-selections */
-  font-size: 11px;
-  vertical-align: middle;
-  padding-top: 3px;         /* keep: This does the trick in centering vertically */
-}
 
 #start_time_select {
   display: inline-block;

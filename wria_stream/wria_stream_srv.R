@@ -174,21 +174,11 @@ rm_list = reactive({
 year_vals = reactive({
   req(input$year_select)
   req(!input$year_select == "No surveys")
+  # input$insert_survey
+  # input$save_survey_edits
+  # input$delete_survey
   year_vals = paste0(input$year_select, collapse = ", ")
   return(year_vals)
-})
-
-# Update river_mile selects
-observe({
-  updated_rm_list = rm_list()$rm_label
-  # Update upper rm
-  updateSelectizeInput(session, "upper_rm_select",
-                       choices = updated_rm_list,
-                       selected = updated_rm_list[1])
-  # Update lower rm
-  updateSelectizeInput(session, "lower_rm_select",
-                       choices = updated_rm_list,
-                       selected = updated_rm_list[1])
 })
 
 #========================================================
