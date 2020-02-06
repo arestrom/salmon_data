@@ -22,7 +22,7 @@ output$cwt_detect_method_select = renderUI({
   cwt_detect_method_list = get_cwt_detect_method()$cwt_detect_method
   cwt_detect_method_list = c("", cwt_detect_method_list)
   selectizeInput("cwt_detect_method_select", label = "cwt_detect_method",
-                 choices = cwt_detect_method_list, selected = NULL,
+                 choices = cwt_detect_method_list, selected = "Not applicable",
                  width = "125px")
 })
 
@@ -30,7 +30,14 @@ output$run_select = renderUI({
   run_list = get_run()$run
   run_list = c("", run_list)
   selectizeInput("run_select", label = "run",
-                 choices = run_list, selected = NULL,
+                 choices = run_list, selected = "Unknown",
+                 width = "125px")
+})
+
+output$run_year_select = renderUI({
+  run_year_list = seq(as.integer(year_vals()) - 4L, as.integer(year_vals()) + 1L)
+  selectizeInput("run_year_select", label = "run_year",
+                 choices = run_year_list, selected = as.integer(year_vals()),
                  width = "125px")
 })
 

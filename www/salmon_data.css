@@ -54,7 +54,8 @@
   font-size: 1.18em;
 }
 
-/* Required fields =============================================================*/
+/* Required fields survey =============================================================*/
+
 #survey_date_input .form-control {
   background-color: #9ed6a140;
 }
@@ -98,6 +99,87 @@
 #incomplete_type_select .selectize-input {
   background-color: #9ed6a140;
 }
+
+/* Required fields survey_intent =============================================================*/
+
+#intent_species_select .selectize-input {
+  background-color: #9ed6a140;
+}
+
+#intent_count_type_select .selectize-input {
+  background-color: #9ed6a140;
+}
+
+/* Required fields survey_event =============================================================*/
+
+#event_species_select .selectize-input {
+  background-color: #9ed6a140;
+}
+
+#survey_design_select .selectize-input {
+  background-color: #9ed6a140;
+}
+
+#cwt_detect_method_select .selectize-input {
+  background-color: #9ed6a140;
+}
+
+#run_select .selectize-input {
+  background-color: #9ed6a140;
+}
+
+#run_year_select .selectize-input {
+  background-color: #9ed6a140;
+}
+
+/* Required fields fish_location =============================================================*/
+
+#fish_name_input.form-control {
+  background-color: #9ed6a140;
+}
+
+#fish_channel_type_select .selectize-input {
+  background-color: #9ed6a140;
+}
+
+#fish_orientation_type_select .selectize-input {
+  background-color: #9ed6a140;
+}
+
+/* Required fields fish_counts =============================================================*/
+
+#fish_count_input.form-control {
+  background-color: #9ed6a140;
+}
+
+#fish_status_select .selectize-input {
+  background-color: #9ed6a140;
+}
+
+#sex_select .selectize-input {
+  background-color: #9ed6a140;
+}
+
+#maturity_select .selectize-input {
+  background-color: #9ed6a140;
+}
+
+#origin_select .selectize-input {
+  background-color: #9ed6a140;
+}
+
+#cwt_status_select .selectize-input {
+  background-color: #9ed6a140;
+}
+
+#clip_status_select .selectize-input {
+  background-color: #9ed6a140;
+}
+
+#prev_counted_select-selectized {
+  background-color: #9ed6a140;
+}
+
 
 
 /* End of required fields =============================================================*/
