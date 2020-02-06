@@ -26,6 +26,29 @@
 }
 */
 
+.shiny-input-container {
+  display: inline-block;
+  vertical-align:top;
+  min-height: 28px;
+  height: 28px;
+  font-size: 11px;
+  line-height: 1.0;
+  border-radius: 4px;
+}
+
+.container-fluid {
+  width: 100%;
+}
+
+.box-title {
+  font-size: 14px;
+  color: #33079a;
+}
+
+.collapsed {
+  color: #881f8e;
+}
+
 /* Controls space under inputs to provide space for label when wrapping */
 .form-group {
   margin-bottom: 20px;
@@ -54,132 +77,137 @@
   font-size: 1.18em;
 }
 
-/* Required fields survey =============================================================*/
+/* Required fields survey At home: #9ed6a140, then at work: #17ea2d42, =============================================================*/
 
 #survey_date_input .form-control {
-  background-color: #9ed6a140;
+  background-color: #17ea2d42;
 }
 
 #survey_method_select .selectize-input {
-  background-color: #9ed6a140;
+  background-color: #17ea2d42;
 }
 
 #upper_rm_select .selectize-input {
-  background-color: #9ed6a140;
+  background-color: #17ea2d42;
 }
 
 #lower_rm_select .selectize-input {
-  background-color: #9ed6a140;
+  background-color: #17ea2d42;
 }
 
 #observer_input.form-control {
-  background-color: #9ed6a140;
+  background-color: #17ea2d42;
 }
 
 #submitter_input.form-control {
-  background-color: #9ed6a140;
+  background-color: #17ea2d42;
 }
 
 #data_source_select .selectize-input {
-  background-color: #9ed6a140;
+  background-color: #17ea2d42;
 }
 
 #data_source_unit_select .selectize-input {
-  background-color: #9ed6a140;
+  background-color: #17ea2d42;
 }
 
 #data_review_select .selectize-input {
-  background-color: #9ed6a140;
+  background-color: #17ea2d42;
 }
 
 #completion_select .selectize-input {
-  background-color: #9ed6a140;
+  background-color: #17ea2d42;
 }
 
 #incomplete_type_select .selectize-input {
-  background-color: #9ed6a140;
+  background-color: #17ea2d42;
 }
 
 /* Required fields survey_intent =============================================================*/
 
 #intent_species_select .selectize-input {
-  background-color: #9ed6a140;
+  background-color: #17ea2d42;
 }
 
 #intent_count_type_select .selectize-input {
-  background-color: #9ed6a140;
+  background-color: #17ea2d42;
 }
 
 /* Required fields survey_event =============================================================*/
 
 #event_species_select .selectize-input {
-  background-color: #9ed6a140;
+  background-color: #17ea2d42;
 }
 
 #survey_design_select .selectize-input {
-  background-color: #9ed6a140;
+  background-color: #17ea2d42;
 }
 
 #cwt_detect_method_select .selectize-input {
-  background-color: #9ed6a140;
+  background-color: #17ea2d42;
 }
 
 #run_select .selectize-input {
-  background-color: #9ed6a140;
+  background-color: #17ea2d42;
 }
 
 #run_year_select .selectize-input {
-  background-color: #9ed6a140;
+  background-color: #17ea2d42;
 }
 
 /* Required fields fish_location =============================================================*/
 
 #fish_name_input.form-control {
-  background-color: #9ed6a140;
+  background-color: #17ea2d42;
 }
 
 #fish_channel_type_select .selectize-input {
-  background-color: #9ed6a140;
+  background-color: #17ea2d42;
 }
 
 #fish_orientation_type_select .selectize-input {
-  background-color: #9ed6a140;
+  background-color: #17ea2d42;
 }
 
 /* Required fields fish_counts =============================================================*/
 
 #fish_count_input.form-control {
-  background-color: #9ed6a140;
+  background-color: #17ea2d42;
 }
 
 #fish_status_select .selectize-input {
-  background-color: #9ed6a140;
+  background-color: #17ea2d42;
 }
 
 #sex_select .selectize-input {
-  background-color: #9ed6a140;
+  background-color: #17ea2d42;
 }
 
 #maturity_select .selectize-input {
-  background-color: #9ed6a140;
+  background-color: #17ea2d42;
 }
 
 #origin_select .selectize-input {
-  background-color: #9ed6a140;
+  background-color: #17ea2d42;
 }
 
 #cwt_status_select .selectize-input {
-  background-color: #9ed6a140;
+  background-color: #17ea2d42;
 }
 
 #clip_status_select .selectize-input {
-  background-color: #9ed6a140;
+  background-color: #17ea2d42;
 }
 
-#prev_counted_select-selectized {
-  background-color: #9ed6a140;
+/*
+#prev_counted_select.form-group.shiny-input-container.selectize-input {
+  background-color: #17ea2d42;
 }
 
+#required_input .selectize-input {
+  background-color: #17ea2d42;
+}
+*/
 
 
 /* End of required fields =============================================================*/
@@ -578,30 +606,6 @@
   line-height: 1.3;
   border-radius: 4px;
 }
-
-.shiny-input-container {
-  display: inline-block;
-  vertical-align:top;
-  min-height: 28px;
-  height: 28px;
-  font-size: 11px;
-  line-height: 1.0;
-  border-radius: 4px;
-}
-
-.container-fluid {
-  width: 100%;
-}
-
-.box-title {
-  font-size: 14px;
-  color: #33079a;
-}
-
-.collapsed {
-  color: #881f8e;
-}
-
 /*
 
 #accordian .a {

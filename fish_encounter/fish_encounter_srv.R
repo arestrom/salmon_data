@@ -20,7 +20,7 @@ output$fish_name_select = renderUI({
   fish_name_list = c("no location data", fish_name_list)
   selectizeInput("fish_name_select", label = "fish_name",
                  choices = fish_name_list, selected = NULL,
-                 width = "200px")
+                 width = "125px")
 })
 
 output$fish_status_select = renderUI({

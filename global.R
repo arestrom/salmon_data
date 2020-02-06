@@ -93,6 +93,10 @@
 #     pre-run location queries for fish and redds, print stats
 #     on n-surveys, n-redds, n-carcasses on front-page
 # 30. Set defaults for all required inputs.
+# 31. Consider adding theme selector to set background
+#     colors, themes, etc.
+# 32. Consider using shinyjs to add class "required_field" directly
+#     to each required element. Then just use one css entry for all.
 #
 # AS 2020-01-17
 #==============================================================
