@@ -199,14 +199,29 @@
   background-color: #17ea2d42;
 }
 
-/*
-#prev_counted_select.form-group.shiny-input-container.selectize-input {
-  background-color: #17ea2d42;
+#prev_counted_select .form-control.shinyjs-resettables.selectized.shiny-bound-input {
+  background: #17ea2d42;
 }
 
+
+
+
+/*
 #required_input .selectize-input {
   background-color: #17ea2d42;
 }
+
+tags$style(HTML("
+#id + div>.selectize-input.items.not-full.has-options{border-bottom: 1px solid #F2F2F2;}
+#id + div>.selectize-dropdown, #id+ div>.selectize-input, #id+ div>.selectize-input input{ color: gray;}
+#id + div> div> .item {color: gray;}
+"))
+
+#prev_counted_select.selectize-control.single.selectize-input {
+  background-color: #17ea2d42;
+}
+
+
 */
 
 
