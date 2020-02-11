@@ -199,31 +199,71 @@
   background-color: #17ea2d42;
 }
 
-#prev_counted_select .form-control.shinyjs-resettables.selectized.shiny-bound-input {
-  background: #17ea2d42;
-}
-
-
-
-
-/*
-#required_input .selectize-input {
+#prev_counted_select .selectize-input {
   background-color: #17ea2d42;
 }
 
-tags$style(HTML("
-#id + div>.selectize-input.items.not-full.has-options{border-bottom: 1px solid #F2F2F2;}
-#id + div>.selectize-dropdown, #id+ div>.selectize-input, #id+ div>.selectize-input input{ color: gray;}
-#id + div> div> .item {color: gray;}
-"))
+/* Required fields individual_fish =============================================================*/
 
-#prev_counted_select.selectize-control.single.selectize-input {
+#fish_condition_select .selectize-input {
   background-color: #17ea2d42;
 }
 
+#fish_trauma_select .selectize-input {
+  background-color: #17ea2d42;
+}
 
-*/
+#gill_condition_select .selectize-input {
+  background-color: #17ea2d42;
+}
 
+#spawn_condition_select .selectize-input {
+  background-color: #17ea2d42;
+}
+
+#cwt_result_select .selectize-input {
+  background-color: #17ea2d42;
+}
+
+/* Required fields fish_measurement =============================================================*/
+
+#length_cm_input.form-control {
+  background-color: #17ea2d42;
+}
+
+#length_type_select .selectize-input {
+  background-color: #17ea2d42;
+}
+
+/* Required fields redd_location =============================================================*/
+
+#redd_name_input.form-control {
+  background-color: #17ea2d42;
+}
+
+#channel_type_select .selectize-input {
+  background-color: #17ea2d42;
+}
+
+#orientation_type_select .selectize-input {
+  background-color: #17ea2d42;
+}
+
+/* Required fields redd_counts =============================================================*/
+
+#redd_status_select .selectize-input {
+  background-color: #17ea2d42;
+}
+
+#redd_count_input.form-control {
+  background-color: #17ea2d42;
+}
+
+/* Required fields individual_redd =============================================================*/
+
+#redd_shape_select .selectize-input {
+  background-color: #17ea2d42;
+}
 
 /* End of required fields =============================================================*/
 

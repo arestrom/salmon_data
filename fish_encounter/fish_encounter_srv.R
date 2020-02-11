@@ -79,6 +79,13 @@ output$fish_behavior_select = renderUI({
                  width = "115px")
 })
 
+output$prev_counted_select = renderUI({
+  prev_counted_list = c("No", "Yes")
+  selectizeInput("prev_counted_select", label = "prev_counted",
+                 choices = prev_counted_list, selected = "Yes",
+                 width = "90px")
+})
+
 #========================================================
 # Primary datatable for fish_encounters
 #========================================================
