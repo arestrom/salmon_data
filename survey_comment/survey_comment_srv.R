@@ -379,7 +379,12 @@ survey_comment_insert_vals = reactive({
 
 # Update DB and reload DT
 observeEvent(input$insert_survey_comment, {
-  survey_comment_insert(survey_comment_insert_vals())
+  tryCatch({
+    survey_comment_insert(survey_comment_insert_vals())
+    shinytoastr::toastr_success("New survey comments were added")
+  }, error = function(e) {
+    shinytoastr::toastr_error(title = "Database error", conditionMessage(e))
+  })
   removeModal()
   post_comment_insert_vals = get_survey_comment(selected_survey_data()$survey_id) %>%
     select(area_surveyed, abundance_condition, stream_condition,
@@ -590,7 +595,12 @@ observeEvent(input$comment_edit, {
 
 # Update DB and reload DT
 observeEvent(input$save_comment_edits, {
-  survey_comment_update(survey_comment_edit())
+  tryCatch({
+    survey_comment_update(survey_comment_edit())
+    shinytoastr::toastr_success("Survey comments were edited")
+  }, error = function(e) {
+    shinytoastr::toastr_error(title = "Database error", conditionMessage(e))
+  })
   removeModal()
   post_comment_edit_vals = get_survey_comment(selected_survey_data()$survey_id) %>%
     select(area_surveyed, abundance_condition, stream_condition,
@@ -655,7 +665,12 @@ observeEvent(input$comment_delete, {
 
 # Update DB and reload DT
 observeEvent(input$delete_survey_comment, {
-  survey_comment_delete(selected_survey_comment_data())
+  tryCatch({
+    survey_comment_delete(selected_survey_comment_data())
+    shinytoastr::toastr_success("Survey comments were deleted")
+  }, error = function(e) {
+    shinytoastr::toastr_error(title = "Database error", conditionMessage(e))
+  })
   removeModal()
   survey_comments_after_delete = get_survey_comment(selected_survey_data()$survey_id) %>%
     select(area_surveyed, abundance_condition, stream_condition,
