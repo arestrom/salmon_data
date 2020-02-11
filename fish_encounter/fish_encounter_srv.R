@@ -20,7 +20,7 @@ output$fish_name_select = renderUI({
   fish_name_list = c("no location data", fish_name_list)
   selectizeInput("fish_name_select", label = "fish_name",
                  choices = fish_name_list, selected = NULL,
-                 width = "200px")
+                 width = "125px")
 })
 
 output$fish_status_select = renderUI({
@@ -35,7 +35,7 @@ output$sex_select = renderUI({
   sex_list = get_sex()$sex
   sex_list = c("", sex_list)
   selectizeInput("sex_select", label = "fish_sex",
-                 choices = sex_list, selected = NULL,
+                 choices = sex_list, selected = "Not applicable",
                  width = "115px")
 })
 
@@ -43,7 +43,7 @@ output$maturity_select = renderUI({
   maturity_list = get_maturity()$maturity
   maturity_list = c("", maturity_list)
   selectizeInput("maturity_select", label = "maturity",
-                 choices = maturity_list, selected = NULL,
+                 choices = maturity_list, selected = "Not applicable",
                  width = "115px")
 })
 
@@ -51,7 +51,7 @@ output$origin_select = renderUI({
   origin_list = get_origin()$origin
   origin_list = c("", origin_list)
   selectizeInput("origin_select", label = "origin",
-                 choices = origin_list, selected = NULL,
+                 choices = origin_list, selected = "Unknown",
                  width = "100px")
 })
 
@@ -59,7 +59,7 @@ output$cwt_status_select = renderUI({
   cwt_status_list = get_cwt_status()$cwt_status
   cwt_status_list = c("", cwt_status_list)
   selectizeInput("cwt_status_select", label = "cwt_status",
-                 choices = cwt_status_list, selected = NULL,
+                 choices = cwt_status_list, selected = "Not applicable",
                  width = "210px")
 })
 
@@ -67,7 +67,7 @@ output$clip_status_select = renderUI({
   clip_status_list = get_clip_status()$clip_status
   clip_status_list = c("", clip_status_list)
   selectizeInput("clip_status_select", label = "clip_status",
-                 choices = clip_status_list, selected = NULL,
+                 choices = clip_status_list, selected = "Not applicable",
                  width = "210px")
 })
 
@@ -77,6 +77,13 @@ output$fish_behavior_select = renderUI({
   selectizeInput("fish_behavior_select", label = "fish_behavior",
                  choices = fish_behavior_list, selected = NULL,
                  width = "115px")
+})
+
+output$prev_counted_select = renderUI({
+  prev_counted_list = c("No", "Yes")
+  selectizeInput("prev_counted_select", label = "prev_counted",
+                 choices = prev_counted_list, selected = "Yes",
+                 width = "90px")
 })
 
 #========================================================

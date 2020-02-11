@@ -174,10 +174,7 @@ rm_list = reactive({
 year_vals = reactive({
   req(input$year_select)
   req(!input$year_select == "No surveys")
-  # input$insert_survey
-  # input$save_survey_edits
-  # input$delete_survey
-  year_vals = paste0(input$year_select, collapse = ", ")
+  year_vals = input$year_select
   return(year_vals)
 })
 
