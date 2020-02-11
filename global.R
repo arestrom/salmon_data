@@ -121,6 +121,7 @@ library(sf)
 library(lubridate)
 library(remisc)
 library(leaflet.extras)
+library(shinytoastr)
 #library(reactlog)
 
 # Keep connections pane from opening
