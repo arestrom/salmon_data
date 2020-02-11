@@ -632,6 +632,24 @@ fish_location_dependencies = reactive({
   return(fish_loc_dep)
 })
 
+# Generate values to show in modal
+output$fish_location_modal_dependency_vals = renderDT({
+  req(input$tabs == "data_entry")
+  fish_location_modal_dep_vals = fish_location_dependencies() %>%
+    select(fish_encounter_date, fish_encounter_time, fish_status,
+           fish_count, fish_name)
+  # Generate table
+  datatable(fish_location_modal_dep_vals,
+            rownames = FALSE,
+            options = list(dom = 't',
+                           scrollX = T,
+                           ordering = FALSE,
+                           initComplete = JS(
+                             "function(settings, json) {",
+                             "$(this.api().table().header()).css({'background-color': '#9eb3d6'});",
+                             "}")))
+})
+
 observeEvent(input$fish_loc_delete, {
   req(input$tabs == "data_entry")
   fish_location_id = selected_fish_location_data()$fish_location_id
