@@ -388,7 +388,12 @@ fish_location_insert_vals = reactive({
 observeEvent(input$insert_fish_location, {
   req(input$surveys_rows_selected)
   req(input$survey_events_rows_selected)
-  fish_location_insert(fish_location_insert_vals())
+  tryCatch({
+    fish_location_insert(fish_location_insert_vals())
+    shinytoastr::toastr_success("New carcass location was added")
+  }, error = function(e) {
+    shinytoastr::toastr_error(title = "Database error", conditionMessage(e))
+  })
   removeModal()
   # Collect parameters
   up_rm = selected_survey_data()$up_rm
@@ -565,7 +570,12 @@ observeEvent(input$fish_loc_edit, {
 observeEvent(input$save_fish_loc_edits, {
   req(input$surveys_rows_selected)
   req(input$survey_events_rows_selected)
-  fish_location_update(fish_location_edit(), selected_fish_location_data())
+  tryCatch({
+    fish_location_update(fish_location_edit(), selected_fish_location_data())
+    shinytoastr::toastr_success("Carcass location was edited")
+  }, error = function(e) {
+    shinytoastr::toastr_error(title = "Database error", conditionMessage(e))
+  })
   removeModal()
   # Collect parameters
   up_rm = selected_survey_data()$up_rm
@@ -698,7 +708,12 @@ observeEvent(input$fish_loc_delete, {
 observeEvent(input$delete_fish_location, {
   req(input$surveys_rows_selected)
   req(input$survey_events_rows_selected)
-  fish_location_delete(selected_fish_location_data())
+  tryCatch({
+    fish_location_delete(selected_fish_location_data())
+    shinytoastr::toastr_success("Carcass location was deleted")
+  }, error = function(e) {
+    shinytoastr::toastr_error(title = "Database error", conditionMessage(e))
+  })
   removeModal()
   # Collect parameters
   up_rm = selected_survey_data()$up_rm

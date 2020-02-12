@@ -390,7 +390,12 @@ redd_location_insert_vals = reactive({
 observeEvent(input$insert_redd_location, {
   req(input$surveys_rows_selected)
   req(input$survey_events_rows_selected)
-  redd_location_insert(redd_location_insert_vals())
+  tryCatch({
+    redd_location_insert(redd_location_insert_vals())
+    shinytoastr::toastr_success("New redd location was added")
+  }, error = function(e) {
+    shinytoastr::toastr_error(title = "Database error", conditionMessage(e))
+  })
   removeModal()
   # Collect parameters
   up_rm = selected_survey_data()$up_rm
@@ -567,7 +572,12 @@ observeEvent(input$redd_loc_edit, {
 observeEvent(input$save_redd_loc_edits, {
   req(input$surveys_rows_selected)
   req(input$survey_events_rows_selected)
-  redd_location_update(redd_location_edit(), selected_redd_location_data())
+  tryCatch({
+    redd_location_update(redd_location_edit(), selected_redd_location_data())
+    shinytoastr::toastr_success("Redd location was edited")
+  }, error = function(e) {
+    shinytoastr::toastr_error(title = "Database error", conditionMessage(e))
+  })
   removeModal()
   # Collect parameters
   up_rm = selected_survey_data()$up_rm
@@ -707,7 +717,12 @@ observeEvent(input$redd_loc_delete, {
 observeEvent(input$delete_redd_location, {
   req(input$surveys_rows_selected)
   req(input$survey_events_rows_selected)
-  redd_location_delete(selected_redd_location_data())
+  tryCatch({
+    redd_location_delete(selected_redd_location_data())
+    shinytoastr::toastr_success("Redd location was deleted")
+  }, error = function(e) {
+    shinytoastr::toastr_error(title = "Database error", conditionMessage(e))
+  })
   removeModal()
   # Collect parameters
   up_rm = selected_survey_data()$up_rm

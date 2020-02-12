@@ -264,7 +264,12 @@ survey_event_insert_vals = reactive({
 
 # Update DB and reload DT
 observeEvent(input$insert_survey_event, {
-  survey_event_insert(survey_event_insert_vals())
+  tryCatch({
+    survey_event_insert(survey_event_insert_vals())
+    shinytoastr::toastr_success("New species data was added")
+  }, error = function(e) {
+    shinytoastr::toastr_error(title = "Database error", conditionMessage(e))
+  })
   removeModal()
   post_event_insert_vals = get_survey_event(selected_survey_data()$survey_id) %>%
     select(species, survey_design, cwt_detect_method, run, run_year, pct_fish_seen,
@@ -402,7 +407,12 @@ observeEvent(input$survey_event_edit, {
 
 # Update DB and reload DT
 observeEvent(input$save_survey_event_edits, {
-  survey_event_update(survey_event_edit())
+  tryCatch({
+    survey_event_update(survey_event_edit())
+    shinytoastr::toastr_success("Species data was edited")
+  }, error = function(e) {
+    shinytoastr::toastr_error(title = "Database error", conditionMessage(e))
+  })
   removeModal()
   post_survey_event_edit_vals = get_survey_event(selected_survey_data()$survey_id) %>%
     select(species, survey_design, cwt_detect_method, run, run_year, pct_fish_seen,
@@ -467,7 +477,12 @@ observeEvent(input$survey_event_delete, {
 
 # Update DB and reload DT
 observeEvent(input$delete_survey_event, {
-  survey_event_delete(selected_survey_event_data())
+  tryCatch({
+    survey_event_delete(selected_survey_event_data())
+    shinytoastr::toastr_success("Species data was deleted")
+  }, error = function(e) {
+    shinytoastr::toastr_error(title = "Database error", conditionMessage(e))
+  })
   removeModal()
   survey_events_after_delete = get_survey_event(selected_survey_data()$survey_id) %>%
     select(species, survey_design, cwt_detect_method, run, run_year, pct_fish_seen,

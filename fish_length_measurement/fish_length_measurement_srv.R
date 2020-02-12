@@ -186,7 +186,12 @@ length_measurement_insert_vals = reactive({
 
 # Update DB and reload DT
 observeEvent(input$insert_length_measurements, {
-  length_measurement_insert(length_measurement_insert_vals())
+  tryCatch({
+    length_measurement_insert(length_measurement_insert_vals())
+    shinytoastr::toastr_success("New measurement was added")
+  }, error = function(e) {
+    shinytoastr::toastr_error(title = "Database error", conditionMessage(e))
+  })
   removeModal()
   post_length_measurement_insert_vals = get_length_measurements(selected_individual_fish_data()$individual_fish_id) %>%
     select(length_type, length_cm, created_dt, created_by, modified_dt, modified_by)
@@ -284,7 +289,12 @@ observeEvent(input$fish_meas_edit, {
 
 # Update DB and reload DT
 observeEvent(input$save_length_meas_edits, {
-  length_measurement_update(length_measurement_edit())
+  tryCatch({
+    length_measurement_update(length_measurement_edit())
+    shinytoastr::toastr_success("Measurement was edited")
+  }, error = function(e) {
+    shinytoastr::toastr_error(title = "Database error", conditionMessage(e))
+  })
   removeModal()
   post_length_measurement_edit_vals = get_length_measurements(selected_individual_fish_data()$individual_fish_id) %>%
     select(length_type, length_cm, created_dt, created_by, modified_dt, modified_by)
@@ -344,7 +354,12 @@ observeEvent(input$fish_meas_delete, {
 
 # Update DB and reload DT
 observeEvent(input$delete_length_measurements, {
-  length_measurement_delete(selected_length_measurement_data())
+  tryCatch({
+    length_measurement_delete(selected_length_measurement_data())
+    shinytoastr::toastr_success("Measurement was deleted")
+  }, error = function(e) {
+    shinytoastr::toastr_error(title = "Database error", conditionMessage(e))
+  })
   removeModal()
   length_measurement_after_delete = get_length_measurements(selected_individual_fish_data()$individual_fish_id) %>%
     select(length_type, length_cm, created_dt, created_by, modified_dt, modified_by)

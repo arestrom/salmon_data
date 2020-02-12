@@ -236,7 +236,12 @@ redd_encounter_insert_vals = reactive({
 
 # Update DB and reload DT
 observeEvent(input$insert_redd_encounter, {
-  redd_encounter_insert(redd_encounter_insert_vals())
+  tryCatch({
+    redd_encounter_insert(redd_encounter_insert_vals())
+    shinytoastr::toastr_success("New redd count data was added")
+  }, error = function(e) {
+    shinytoastr::toastr_error(title = "Database error", conditionMessage(e))
+  })
   removeModal()
   post_redd_encounter_insert_vals = get_redd_encounter(selected_survey_event_data()$survey_event_id) %>%
     select(redd_encounter_dt, redd_status, redd_count, redd_name, redd_comment,
@@ -372,7 +377,12 @@ observeEvent(input$redd_enc_edit, {
 
 # Update DB and reload DT
 observeEvent(input$save_redd_enc_edits, {
-  redd_encounter_update(redd_encounter_edit())
+  tryCatch({
+    redd_encounter_update(redd_encounter_edit())
+    shinytoastr::toastr_success("Redd count data was edited")
+  }, error = function(e) {
+    shinytoastr::toastr_error(title = "Database error", conditionMessage(e))
+  })
   removeModal()
   post_redd_encounter_edit_vals = get_redd_encounter(selected_survey_event_data()$survey_event_id) %>%
     select(redd_encounter_dt, redd_status, redd_count, redd_name, redd_comment,
@@ -452,7 +462,12 @@ observeEvent(input$redd_enc_delete, {
 
 # Update DB and reload DT
 observeEvent(input$delete_redd_encounter, {
-  redd_encounter_delete(selected_redd_encounter_data())
+  tryCatch({
+    redd_encounter_delete(selected_redd_encounter_data())
+    shinytoastr::toastr_success("Redd count data was deleted")
+  }, error = function(e) {
+    shinytoastr::toastr_error(title = "Database error", conditionMessage(e))
+  })
   removeModal()
   redd_encounters_after_delete = get_redd_encounter(selected_survey_event_data()$survey_event_id) %>%
     select(redd_encounter_dt, redd_status, redd_count, redd_name, redd_comment,

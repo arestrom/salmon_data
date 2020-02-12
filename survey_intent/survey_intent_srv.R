@@ -185,7 +185,12 @@ survey_intent_insert_vals = reactive({
 
 # Update DB and reload DT
 observeEvent(input$insert_survey_intent, {
-  survey_intent_insert(survey_intent_insert_vals())
+  tryCatch({
+    survey_intent_insert(survey_intent_insert_vals())
+    shinytoastr::toastr_success("New survey intent was added")
+  }, error = function(e) {
+    shinytoastr::toastr_error(title = "Database error", conditionMessage(e))
+  })
   removeModal()
   post_intent_insert_vals = get_survey_intent(selected_survey_data()$survey_id) %>%
     select(species, count_type, created_dt, created_by, modified_dt, modified_by)
@@ -297,7 +302,12 @@ observeEvent(input$intent_edit, {
 
 # Update DB and reload DT
 observeEvent(input$save_intent_edits, {
-  survey_intent_update(survey_intent_edit())
+  tryCatch({
+    survey_intent_update(survey_intent_edit())
+    shinytoastr::toastr_success("Survey intent was edited")
+  }, error = function(e) {
+    shinytoastr::toastr_error(title = "Database error", conditionMessage(e))
+  })
   removeModal()
   post_intent_edit_vals = get_survey_intent(selected_survey_data()$survey_id) %>%
     select(species, count_type, created_dt, created_by, modified_dt, modified_by)
@@ -357,7 +367,12 @@ observeEvent(input$intent_delete, {
 
 # Update DB and reload DT
 observeEvent(input$delete_survey_intent, {
-  survey_intent_delete(selected_survey_intent_data())
+  tryCatch({
+    survey_intent_delete(selected_survey_intent_data())
+    shinytoastr::toastr_success("Survey intent was deleted")
+  }, error = function(e) {
+    shinytoastr::toastr_error(title = "Database error", conditionMessage(e))
+  })
   removeModal()
   survey_intents_after_delete = get_survey_intent(selected_survey_data()$survey_id) %>%
     select(species, count_type, created_dt, created_by, modified_dt, modified_by)

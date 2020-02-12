@@ -386,7 +386,12 @@ fish_encounter_insert_vals = reactive({
 
 # Update DB and reload DT
 observeEvent(input$insert_fish_encounter, {
-  fish_encounter_insert(fish_encounter_insert_vals())
+  tryCatch({
+    fish_encounter_insert(fish_encounter_insert_vals())
+    shinytoastr::toastr_success("Fish count data was added")
+  }, error = function(e) {
+    shinytoastr::toastr_error(title = "Database error", conditionMessage(e))
+  })
   removeModal()
   post_fish_encounter_insert_vals = get_fish_encounter(selected_survey_event_data()$survey_event_id) %>%
     select(fish_encounter_dt, fish_count, fish_status, fish_name, sex, maturity, origin,
@@ -592,7 +597,12 @@ observeEvent(input$fish_enc_edit, {
 
 # Update DB and reload DT
 observeEvent(input$save_fish_enc_edits, {
-  fish_encounter_update(fish_encounter_edit())
+  tryCatch({
+    fish_encounter_update(fish_encounter_edit())
+    shinytoastr::toastr_success("Fish count data was edited")
+  }, error = function(e) {
+    shinytoastr::toastr_error(title = "Database error", conditionMessage(e))
+  })
   removeModal()
   post_fish_encounter_edit_vals = get_fish_encounter(selected_survey_event_data()$survey_event_id) %>%
     select(fish_encounter_dt, fish_count, fish_status, fish_name, sex, maturity, origin,
@@ -666,7 +676,12 @@ observeEvent(input$fish_enc_delete, {
 
 # Update DB and reload DT
 observeEvent(input$delete_fish_encounter, {
-  fish_encounter_delete(selected_fish_encounter_data())
+  tryCatch({
+    fish_encounter_delete(selected_fish_encounter_data())
+    shinytoastr::toastr_success("Fish count data was deleted")
+  }, error = function(e) {
+    shinytoastr::toastr_error(title = "Database error", conditionMessage(e))
+  })
   removeModal()
   fish_encounters_after_delete = get_fish_encounter(selected_survey_event_data()$survey_event_id) %>%
     select(fish_encounter_dt, fish_count, fish_status, fish_name, sex, maturity, origin,

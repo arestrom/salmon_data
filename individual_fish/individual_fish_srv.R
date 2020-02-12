@@ -346,7 +346,12 @@ individual_fish_insert_vals = reactive({
 
 # Update DB and reload DT
 observeEvent(input$insert_individual_fish, {
-  individual_fish_insert(individual_fish_insert_vals())
+  tryCatch({
+    individual_fish_insert(individual_fish_insert_vals())
+    shinytoastr::toastr_success("New sample data was added")
+  }, error = function(e) {
+    shinytoastr::toastr_error(title = "Database error", conditionMessage(e))
+  })
   removeModal()
   post_individual_fish_insert_vals = get_individual_fish(selected_fish_encounter_data()$fish_encounter_id) %>%
     select(fish_condition, fish_trauma, gill_condition, spawn_condition, fish_sample_num, scale_card_num,
@@ -540,7 +545,12 @@ observeEvent(input$ind_fish_edit, {
 
 # Update DB and reload DT
 observeEvent(input$save_ind_fish_edits, {
-  individual_fish_update(individual_fish_edit())
+  tryCatch({
+    individual_fish_update(individual_fish_edit())
+    shinytoastr::toastr_success("Sample data was edited")
+  }, error = function(e) {
+    shinytoastr::toastr_error(title = "Database error", conditionMessage(e))
+  })
   removeModal()
   post_individual_fish_edit_vals = get_individual_fish(selected_fish_encounter_data()$fish_encounter_id) %>%
     select(fish_condition, fish_trauma, gill_condition, spawn_condition, fish_sample_num, scale_card_num,
@@ -607,7 +617,12 @@ observeEvent(input$ind_fish_delete, {
 
 # Update DB and reload DT
 observeEvent(input$delete_individual_fish, {
-  individual_fish_delete(selected_individual_fish_data())
+  tryCatch({
+    individual_fish_delete(selected_individual_fish_data())
+    shinytoastr::toastr_success("Sample data was deleted")
+  }, error = function(e) {
+    shinytoastr::toastr_error(title = "Database error", conditionMessage(e))
+  })
   removeModal()
   individual_fish_after_delete = get_individual_fish(selected_fish_encounter_data()$fish_encounter_id) %>%
     select(fish_condition, fish_trauma, gill_condition, spawn_condition, fish_sample_num, scale_card_num,
