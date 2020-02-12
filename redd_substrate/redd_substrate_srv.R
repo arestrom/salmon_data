@@ -246,7 +246,12 @@ redd_substrate_insert_vals = reactive({
 
 # Update DB and reload DT
 observeEvent(input$insert_redd_substrate, {
-  redd_substrate_insert(redd_substrate_insert_vals())
+  tryCatch({
+    redd_substrate_insert(redd_substrate_insert_vals())
+    shinytoastr::toastr_success("New substrate data was added")
+  }, error = function(e) {
+    shinytoastr::toastr_error(title = "Database error", conditionMessage(e))
+  })
   removeModal()
   post_redd_substrate_insert_vals = get_redd_substrate(selected_redd_encounter_data()$redd_encounter_id) %>%
     select(substrate_level, substrate_type, substrate_pct,
@@ -384,7 +389,12 @@ observeEvent(input$substrate_edit, {
 
 # Update DB and reload DT
 observeEvent(input$save_substrate_edits, {
-  redd_substrate_update(redd_substrate_edit())
+  tryCatch({
+    redd_substrate_update(redd_substrate_edit())
+    shinytoastr::toastr_success("Substrate data was edited")
+  }, error = function(e) {
+    shinytoastr::toastr_error(title = "Database error", conditionMessage(e))
+  })
   removeModal()
   post_redd_substrate_edit_vals = get_redd_substrate(selected_redd_encounter_data()$redd_encounter_id) %>%
     select(substrate_level, substrate_type, substrate_pct,
@@ -445,7 +455,12 @@ observeEvent(input$substrate_delete, {
 
 # Update DB and reload DT
 observeEvent(input$delete_redd_substrate, {
-  redd_substrate_delete(selected_redd_substrate_data())
+  tryCatch({
+    redd_substrate_delete(selected_redd_substrate_data())
+    shinytoastr::toastr_success("Substrate data was deleted")
+  }, error = function(e) {
+    shinytoastr::toastr_error(title = "Database error", conditionMessage(e))
+  })
   removeModal()
   redd_substrates_after_delete = get_redd_substrate(selected_redd_encounter_data()$redd_encounter_id) %>%
     select(substrate_level, substrate_type, substrate_pct,

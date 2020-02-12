@@ -249,7 +249,12 @@ individual_redd_insert_vals = reactive({
 
 # Update DB and reload DT
 observeEvent(input$insert_individual_redd, {
-  individual_redd_insert(individual_redd_insert_vals())
+  tryCatch({
+    individual_redd_insert(individual_redd_insert_vals())
+    shinytoastr::toastr_success("New individual redd data was added")
+  }, error = function(e) {
+    shinytoastr::toastr_error(title = "Database error", conditionMessage(e))
+  })
   removeModal()
   post_individual_redd_insert_vals = get_individual_redd(selected_redd_encounter_data()$redd_encounter_id) %>%
     select(redd_shape, dewatered_type, pct_visible, redd_length_m, redd_width_m,
@@ -385,7 +390,12 @@ observeEvent(input$ind_redd_edit, {
 
 # Update DB and reload DT
 observeEvent(input$save_ind_redd_edits, {
-  individual_redd_update(individual_redd_edit())
+  tryCatch({
+    individual_redd_update(individual_redd_edit())
+    shinytoastr::toastr_success("Individual redd data was edited")
+  }, error = function(e) {
+    shinytoastr::toastr_error(title = "Database error", conditionMessage(e))
+  })
   removeModal()
   post_individual_redd_edit_vals = get_individual_redd(selected_redd_encounter_data()$redd_encounter_id) %>%
     select(redd_shape, dewatered_type, pct_visible, redd_length_m, redd_width_m,
@@ -449,7 +459,12 @@ observeEvent(input$ind_redd_delete, {
 
 # Update DB and reload DT
 observeEvent(input$delete_individual_redd, {
-  individual_redd_delete(selected_individual_redd_data())
+  tryCatch({
+    individual_redd_delete(selected_individual_redd_data())
+    shinytoastr::toastr_success("Individual redd data was deleted")
+  }, error = function(e) {
+    shinytoastr::toastr_error(title = "Database error", conditionMessage(e))
+  })
   removeModal()
   individual_redds_after_delete = get_individual_redd(selected_redd_encounter_data()$redd_encounter_id) %>%
     select(redd_shape, dewatered_type, pct_visible, redd_length_m, redd_width_m,

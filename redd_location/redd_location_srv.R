@@ -38,7 +38,7 @@ output$redd_locations = renderDT({
   survey_date = format(as.Date(selected_survey_data()$survey_date))
   species_id = selected_survey_event_data()$species_id
   redd_location_data = get_redd_locations(waterbody_id(), up_rm, lo_rm, survey_date, species_id) %>%
-    select(survey_dt, redd_name, redd_status, channel_type, orientation_type,
+    select(survey_dt, species, redd_name, redd_status, channel_type, orientation_type,
            latitude, longitude, horiz_accuracy, location_description,
            created_dt, created_by, modified_dt, modified_by)
 
@@ -390,7 +390,12 @@ redd_location_insert_vals = reactive({
 observeEvent(input$insert_redd_location, {
   req(input$surveys_rows_selected)
   req(input$survey_events_rows_selected)
-  redd_location_insert(redd_location_insert_vals())
+  tryCatch({
+    redd_location_insert(redd_location_insert_vals())
+    shinytoastr::toastr_success("New redd location was added")
+  }, error = function(e) {
+    shinytoastr::toastr_error(title = "Database error", conditionMessage(e))
+  })
   removeModal()
   # Collect parameters
   up_rm = selected_survey_data()$up_rm
@@ -398,7 +403,7 @@ observeEvent(input$insert_redd_location, {
   survey_date = format(as.Date(selected_survey_data()$survey_date))
   species_id = selected_survey_event_data()$species_id
   post_redd_location_insert_vals = get_redd_locations(waterbody_id(), up_rm, lo_rm, survey_date, species_id) %>%
-    select(survey_dt, redd_name, redd_status, channel_type, orientation_type,
+    select(survey_dt, species, redd_name, redd_status, channel_type, orientation_type,
            latitude, longitude, horiz_accuracy, location_description,
            created_dt, created_by, modified_dt, modified_by)
   replaceData(redd_location_dt_proxy, post_redd_location_insert_vals)
@@ -415,7 +420,7 @@ observeEvent(input$insert_redd_encounter, {
   species_id = selected_survey_event_data()$species_id
   # Update redd location table
   redd_locs_after_redd_count_insert = get_redd_locations(waterbody_id(), up_rm, lo_rm, survey_date, species_id) %>%
-    select(survey_dt, redd_name, redd_status, channel_type, orientation_type,
+    select(survey_dt, species, redd_name, redd_status, channel_type, orientation_type,
            latitude, longitude, horiz_accuracy, location_description,
            created_dt, created_by, modified_dt, modified_by)
   replaceData(redd_location_dt_proxy, redd_locs_after_redd_count_insert)
@@ -567,7 +572,12 @@ observeEvent(input$redd_loc_edit, {
 observeEvent(input$save_redd_loc_edits, {
   req(input$surveys_rows_selected)
   req(input$survey_events_rows_selected)
-  redd_location_update(redd_location_edit(), selected_redd_location_data())
+  tryCatch({
+    redd_location_update(redd_location_edit(), selected_redd_location_data())
+    shinytoastr::toastr_success("Redd location was edited")
+  }, error = function(e) {
+    shinytoastr::toastr_error(title = "Database error", conditionMessage(e))
+  })
   removeModal()
   # Collect parameters
   up_rm = selected_survey_data()$up_rm
@@ -576,7 +586,7 @@ observeEvent(input$save_redd_loc_edits, {
   species_id = selected_survey_event_data()$species_id
   # Update redd location table
   post_redd_location_edit_vals = get_redd_locations(waterbody_id(), up_rm, lo_rm, survey_date, species_id) %>%
-    select(survey_dt, redd_name, redd_status, channel_type, orientation_type,
+    select(survey_dt, species, redd_name, redd_status, channel_type, orientation_type,
            latitude, longitude, horiz_accuracy, location_description,
            created_dt, created_by, modified_dt, modified_by)
   replaceData(redd_location_dt_proxy, post_redd_location_edit_vals)
@@ -593,7 +603,7 @@ observeEvent(input$save_redd_enc_edits, {
   species_id = selected_survey_event_data()$species_id
   # Update redd location table
   redd_locs_after_redd_count_edit = get_redd_locations(waterbody_id(), up_rm, lo_rm, survey_date, species_id) %>%
-    select(survey_dt, redd_name, redd_status, channel_type, orientation_type,
+    select(survey_dt, species, redd_name, redd_status, channel_type, orientation_type,
            latitude, longitude, horiz_accuracy, location_description,
            created_dt, created_by, modified_dt, modified_by)
   replaceData(redd_location_dt_proxy, redd_locs_after_redd_count_edit)
@@ -707,7 +717,12 @@ observeEvent(input$redd_loc_delete, {
 observeEvent(input$delete_redd_location, {
   req(input$surveys_rows_selected)
   req(input$survey_events_rows_selected)
-  redd_location_delete(selected_redd_location_data())
+  tryCatch({
+    redd_location_delete(selected_redd_location_data())
+    shinytoastr::toastr_success("Redd location was deleted")
+  }, error = function(e) {
+    shinytoastr::toastr_error(title = "Database error", conditionMessage(e))
+  })
   removeModal()
   # Collect parameters
   up_rm = selected_survey_data()$up_rm
@@ -715,7 +730,7 @@ observeEvent(input$delete_redd_location, {
   survey_date = format(as.Date(selected_survey_data()$survey_date))
   species_id = selected_survey_event_data()$species_id
   redd_locations_after_delete = get_redd_locations(waterbody_id(), up_rm, lo_rm, survey_date, species_id) %>%
-    select(survey_dt, redd_name, redd_status, channel_type, orientation_type,
+    select(survey_dt, species, redd_name, redd_status, channel_type, orientation_type,
            latitude, longitude, horiz_accuracy, location_description,
            created_dt, created_by, modified_dt, modified_by)
   replaceData(redd_location_dt_proxy, redd_locations_after_delete)
@@ -729,7 +744,7 @@ observeEvent(input$delete_redd_encounter, {
   survey_date = format(as.Date(selected_survey_data()$survey_date))
   species_id = selected_survey_event_data()$species_id
   redd_locations_after_encounter_delete = get_redd_locations(waterbody_id(), up_rm, lo_rm, survey_date, species_id) %>%
-    select(survey_dt, redd_name, redd_status, channel_type, orientation_type,
+    select(survey_dt, species, redd_name, redd_status, channel_type, orientation_type,
            latitude, longitude, horiz_accuracy, location_description,
            created_dt, created_by, modified_dt, modified_by)
   replaceData(redd_location_dt_proxy, redd_locations_after_encounter_delete)

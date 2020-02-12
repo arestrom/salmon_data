@@ -7,7 +7,7 @@ output$reach_point_type_select = renderUI({
   reach_point_type_list = get_location_type()$reach_point_type
   reach_point_type_list = c("", reach_point_type_list)
   selectizeInput("reach_point_type_select", label = "reach_point_type",
-                 choices = reach_point_type_list, selected = NULL,
+                 choices = reach_point_type_list, selected = "Reach boundary point",
                  width = "175px")
 })
 
@@ -344,10 +344,15 @@ reach_point_insert_vals = reactive({
 
 # Update DB and reload DT
 observeEvent(input$insert_reach_point, {
-  reach_point_insert(reach_point_insert_vals())
+  tryCatch({
+    reach_point_insert(reach_point_insert_vals())
+    shinytoastr::toastr_success("New reach end point was added")
+  }, error = function(e) {
+    shinytoastr::toastr_error(title = "Database error", conditionMessage(e))
+  })
   removeModal()
   post_reach_point_insert_vals = get_reach_point(waterbody_id()) %>%
-    select(river_mile, reach_point_type, reach_point_code, reach_point_name, #channel_type, orientation_type,
+    select(river_mile, reach_point_type, reach_point_code, reach_point_name,
            latitude, longitude, horiz_accuracy, reach_point_description,
            created_dt, created_by, modified_dt, modified_by)
   replaceData(reach_point_dt_proxy, post_reach_point_insert_vals)
@@ -516,7 +521,12 @@ observeEvent(input$reach_point_edit, {
 
 # Update DB and reload DT
 observeEvent(input$save_reach_point_edits, {
-  reach_point_update(reach_point_edit())
+  tryCatch({
+    reach_point_update(reach_point_edit())
+    shinytoastr::toastr_success("Reach end point was edited")
+  }, error = function(e) {
+    shinytoastr::toastr_error(title = "Database error", conditionMessage(e))
+  })
   removeModal()
   post_reach_point_edit_vals = get_reach_point(waterbody_id()) %>%
     select(river_mile, reach_point_type, reach_point_code, reach_point_name, #channel_type, orientation_type,
@@ -621,7 +631,12 @@ observeEvent(input$reach_point_delete, {
 
 # Update DB and reload DT
 observeEvent(input$delete_reach_point, {
-  reach_point_delete(selected_reach_point_data())
+  tryCatch({
+    reach_point_delete(selected_reach_point_data())
+    shinytoastr::toastr_success("Reach end point was deleted")
+  }, error = function(e) {
+    shinytoastr::toastr_error(title = "Database error", conditionMessage(e))
+  })
   removeModal()
   reach_points_after_delete = get_reach_point(waterbody_id()) %>%
     select(river_mile, reach_point_type, reach_point_code, reach_point_name, #channel_type, orientation_type,

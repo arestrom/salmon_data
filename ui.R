@@ -1,5 +1,6 @@
 ui = dashboardPagePlus(
   shinyjs::useShinyjs(),
+  shinytoastr::useToastr(),
   enable_preloader = TRUE,
   header = dash_header,
   sidebar = dash_leftsidebar,

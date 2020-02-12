@@ -218,7 +218,12 @@ waterbody_meas_insert_vals = reactive({
 
 # Update DB and reload DT
 observeEvent(input$insert_waterbody_meas, {
-  waterbody_meas_insert(waterbody_meas_insert_vals())
+  tryCatch({
+    waterbody_meas_insert(waterbody_meas_insert_vals())
+    shinytoastr::toastr_success("New measurements were added")
+  }, error = function(e) {
+    shinytoastr::toastr_error(title = "Database error", conditionMessage(e))
+  })
   removeModal()
   post_waterbody_meas_insert_vals = get_waterbody_meas(selected_survey_data()$survey_id) %>%
     select(clarity_type, clarity_meter, flow_cfs, start_temperature, start_tmp_dt,
@@ -353,7 +358,12 @@ observeEvent(input$wbm_edit, {
 
 # Update DB and reload DT
 observeEvent(input$save_wbm_edits, {
-  waterbody_meas_update(waterbody_meas_edit())
+  tryCatch({
+    waterbody_meas_update(waterbody_meas_edit())
+    shinytoastr::toastr_success("Measurements were edited")
+  }, error = function(e) {
+    shinytoastr::toastr_error(title = "Database error", conditionMessage(e))
+  })
   removeModal()
   post_wbm_edit_vals = get_waterbody_meas(selected_survey_data()$survey_id) %>%
     select(clarity_type, clarity_meter, flow_cfs, start_temperature, start_tmp_dt,
@@ -416,7 +426,12 @@ observeEvent(input$wbm_delete, {
 
 # Update DB and reload DT
 observeEvent(input$delete_waterbody_meas, {
-  waterbody_meas_delete(selected_waterbody_meas_data())
+  tryCatch({
+    waterbody_meas_delete(selected_waterbody_meas_data())
+    shinytoastr::toastr_success("Measurements were deleted")
+  }, error = function(e) {
+    shinytoastr::toastr_error(title = "Database error", conditionMessage(e))
+  })
   removeModal()
   post_waterbody_meas_delete_vals = get_waterbody_meas(selected_survey_data()$survey_id) %>%
     select(clarity_type, clarity_meter, flow_cfs, start_temperature, start_tmp_dt,

@@ -384,7 +384,12 @@ survey_insert_vals = reactive({
 
 # Update DB and reload DT
 observeEvent(input$insert_survey, {
-  survey_insert(survey_insert_vals())
+  tryCatch({
+    survey_insert(survey_insert_vals())
+    shinytoastr::toastr_success("New survey was added")
+  }, error = function(e) {
+    shinytoastr::toastr_error(title = "Database error", conditionMessage(e))
+  })
   removeModal()
   post_insert_vals = get_surveys(waterbody_id(), year_vals()) %>%
     mutate(start_time = start_time_dt, end_time = end_time_dt) %>%
@@ -570,7 +575,12 @@ observeEvent(input$survey_edit, {
 
 # Update DB and reload DT
 observeEvent(input$save_survey_edits, {
-  survey_update(survey_edit())
+  tryCatch({
+    survey_update(survey_edit())
+    shinytoastr::toastr_success("Survey was edited")
+  }, error = function(e) {
+    shinytoastr::toastr_error(title = "Database error", conditionMessage(e))
+  })
   removeModal()
   post_edit_vals = get_surveys(waterbody_id(), year_vals()) %>%
     mutate(start_time = start_time_dt, end_time = end_time_dt) %>%
@@ -650,7 +660,12 @@ observeEvent(input$survey_delete, {
 
 # Update DB and reload DT
 observeEvent(input$delete_survey, {
-  survey_delete(selected_survey_data())
+  tryCatch({
+    survey_delete(selected_survey_data())
+    shinytoastr::toastr_success("Survey was deleted")
+  }, error = function(e) {
+    shinytoastr::toastr_error(title = "Database error", conditionMessage(e))
+  })
   removeModal()
   surveys_after_delete = get_surveys(waterbody_id(), year_vals()) %>%
     mutate(start_time = start_time_dt, end_time = end_time_dt) %>%

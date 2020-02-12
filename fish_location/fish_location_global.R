@@ -27,11 +27,10 @@ get_fish_locations = function(waterbody_id, up_rm, lo_rm, survey_date, species_i
   # Pull out location_ids for second query
   loc_ids = paste0(paste0("'", unique(fish_loc_one$fish_location_id), "'"), collapse = ", ")
   # Define query for fish locations already tied to surveys
-  qry_two = glue("select s.survey_datetime as fish_survey_date, se.species_id, ",
-                 "uploc.river_mile_measure as up_rm, loloc.river_mile_measure as lo_rm, ",
-                 "floc.location_id as fish_location_id, ",
-                 "floc.location_name as fish_name, ",
-                 "fs.fish_status_description as fish_status, ",
+  qry_two = glue("select s.survey_datetime as fish_survey_date, se.species_id as db_species_id, ",
+                 "sp.common_name as species, uploc.river_mile_measure as up_rm, ",
+                 "loloc.river_mile_measure as lo_rm, floc.location_id as fish_location_id, ",
+                 "floc.location_name as fish_name, fs.fish_status_description as fish_status, ",
                  "lc.location_coordinates_id, ",
                  "st_x(st_transform(lc.geom, 4326)) as longitude, ",
                  "st_y(st_transform(lc.geom, 4326)) as latitude, ",
@@ -45,6 +44,7 @@ get_fish_locations = function(waterbody_id, up_rm, lo_rm, survey_date, species_i
                  "inner join location as uploc on s.upper_end_point_id = uploc.location_id ",
                  "inner join location as loloc on s.lower_end_point_id = loloc.location_id ",
                  "inner join survey_event as se on s.survey_id = se.survey_id ",
+                 "inner join species_lut as sp on se.species_id = sp.species_id ",
                  "inner join fish_encounter as fe on se.survey_event_id = fe.survey_event_id ",
                  "inner join fish_status_lut as fs on fe.fish_status_id = fs.fish_status_id ",
                  "inner join location as floc on fe.fish_location_id = floc.location_id ",
@@ -54,13 +54,14 @@ get_fish_locations = function(waterbody_id, up_rm, lo_rm, survey_date, species_i
                  "where fe.fish_location_id in ({loc_ids}) ",
                  "and uploc.river_mile_measure <= {up_rm} ",
                  "and loloc.river_mile_measure >= {lo_rm} ",
-                 "and se.species_id = '{species_id}'")
+                 "and fs.fish_status_description = 'Dead'")
   fish_loc_two = DBI::dbGetQuery(con, qry_two)
   poolReturn(con)
   # Dump entries in fish_loc_one that have surveys attached
   fish_loc_one = fish_loc_one %>%
     anti_join(fish_loc_two, by = "fish_location_id")
   fish_locations = bind_rows(fish_loc_one, fish_loc_two) %>%
+    filter(is.na(db_species_id) | db_species_id == species_id) %>%
     mutate(latitude = round(latitude, 7)) %>%
     mutate(longitude = round(longitude, 7)) %>%
     mutate(fish_survey_date = with_tz(fish_survey_date, tzone = "America/Los_Angeles")) %>%
@@ -72,11 +73,11 @@ get_fish_locations = function(waterbody_id, up_rm, lo_rm, survey_date, species_i
     mutate(modified_date = with_tz(modified_date, tzone = "America/Los_Angeles")) %>%
     mutate(modified_dt = format(modified_date, "%m/%d/%Y %H:%M")) %>%
     select(fish_location_id, location_coordinates_id,
-           survey_date = fish_survey_date, survey_dt, fish_name, fish_status,
-           latitude, longitude, horiz_accuracy, channel_type,
-           orientation_type, location_description, created_date,
-           created_dt, created_by, modified_date, modified_dt,
-           modified_by) %>%
+           survey_date = fish_survey_date, survey_dt, species,
+           fish_name, fish_status, latitude, longitude, horiz_accuracy,
+           channel_type, orientation_type, location_description,
+           created_date, created_dt, created_by, modified_date,
+           modified_dt, modified_by) %>%
     arrange(created_date)
   return(fish_locations)
 }

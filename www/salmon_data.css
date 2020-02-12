@@ -265,6 +265,16 @@
   background-color: #17ea2d42;
 }
 
+/* Required fields fish_measurement =============================================================*/
+
+#river_mile_input.form-control {
+  background-color: #17ea2d42;
+}
+
+#reach_point_type_select .selectize-input {
+  background-color: #17ea2d42;
+}
+
 /* End of required fields =============================================================*/
 
 #sthd_image {
