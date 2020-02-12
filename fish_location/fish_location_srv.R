@@ -38,7 +38,7 @@ output$fish_locations = renderDT({
   survey_date = format(as.Date(selected_survey_data()$survey_date))
   species_id = selected_survey_event_data()$species_id
   fish_location_data = get_fish_locations(waterbody_id(), up_rm, lo_rm, survey_date, species_id) %>%
-    select(survey_dt, fish_name, fish_status, channel_type, orientation_type,
+    select(survey_dt, species, fish_name, fish_status, channel_type, orientation_type,
            latitude, longitude, horiz_accuracy, location_description,
            created_dt, created_by, modified_dt, modified_by)
 
@@ -396,7 +396,7 @@ observeEvent(input$insert_fish_location, {
   survey_date = format(as.Date(selected_survey_data()$survey_date))
   species_id = selected_survey_event_data()$species_id
   post_fish_location_insert_vals = get_fish_locations(waterbody_id(), up_rm, lo_rm, survey_date, species_id) %>%
-    select(survey_dt, fish_name, fish_status, channel_type, orientation_type,
+    select(survey_dt, species, fish_name, fish_status, channel_type, orientation_type,
            latitude, longitude, horiz_accuracy, location_description,
            created_dt, created_by, modified_dt, modified_by)
   replaceData(fish_location_dt_proxy, post_fish_location_insert_vals)
@@ -413,7 +413,7 @@ observeEvent(input$insert_fish_encounter, {
   species_id = selected_survey_event_data()$species_id
   # Update fish location table
   fish_locs_after_fish_count_insert = get_fish_locations(waterbody_id(), up_rm, lo_rm, survey_date, species_id) %>%
-    select(survey_dt, fish_name, fish_status, channel_type, orientation_type,
+    select(survey_dt, species, fish_name, fish_status, channel_type, orientation_type,
            latitude, longitude, horiz_accuracy, location_description,
            created_dt, created_by, modified_dt, modified_by)
   replaceData(fish_location_dt_proxy, fish_locs_after_fish_count_insert)
@@ -574,7 +574,7 @@ observeEvent(input$save_fish_loc_edits, {
   species_id = selected_survey_event_data()$species_id
   # Update redd location table
   post_fish_location_edit_vals = get_fish_locations(waterbody_id(), up_rm, lo_rm, survey_date, species_id) %>%
-    select(survey_dt, fish_name, fish_status, channel_type, orientation_type,
+    select(survey_dt, species, fish_name, fish_status, channel_type, orientation_type,
            latitude, longitude, horiz_accuracy, location_description,
            created_dt, created_by, modified_dt, modified_by)
   replaceData(fish_location_dt_proxy, post_fish_location_edit_vals)
@@ -591,7 +591,7 @@ observeEvent(input$save_fish_enc_edits, {
   species_id = selected_survey_event_data()$species_id
   # Update redd location table
   fish_locs_after_fish_count_edit = get_fish_locations(waterbody_id(), up_rm, lo_rm, survey_date, species_id) %>%
-    select(survey_dt, fish_name, fish_status, channel_type, orientation_type,
+    select(survey_dt, species, fish_name, fish_status, channel_type, orientation_type,
            latitude, longitude, horiz_accuracy, location_description,
            created_dt, created_by, modified_dt, modified_by)
   replaceData(fish_location_dt_proxy, fish_locs_after_fish_count_edit)
@@ -706,7 +706,7 @@ observeEvent(input$delete_fish_location, {
   survey_date = format(as.Date(selected_survey_data()$survey_date))
   species_id = selected_survey_event_data()$species_id
   fish_locations_after_delete = get_fish_locations(waterbody_id(), up_rm, lo_rm, survey_date, species_id) %>%
-    select(survey_dt, fish_name, fish_status, channel_type, orientation_type,
+    select(survey_dt, species, fish_name, fish_status, channel_type, orientation_type,
            latitude, longitude, horiz_accuracy, location_description,
            created_dt, created_by, modified_dt, modified_by)
   replaceData(fish_location_dt_proxy, fish_locations_after_delete)
@@ -720,7 +720,7 @@ observeEvent(input$delete_fish_encounter, {
   survey_date = format(as.Date(selected_survey_data()$survey_date))
   species_id = selected_survey_event_data()$species_id
   fish_locations_after_encounter_delete = get_fish_locations(waterbody_id(), up_rm, lo_rm, survey_date, species_id) %>%
-    select(survey_dt, fish_name, fish_status, channel_type, orientation_type,
+    select(survey_dt, species, fish_name, fish_status, channel_type, orientation_type,
            latitude, longitude, horiz_accuracy, location_description,
            created_dt, created_by, modified_dt, modified_by)
   replaceData(fish_location_dt_proxy, fish_locations_after_encounter_delete)
