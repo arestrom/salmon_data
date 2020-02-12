@@ -24,6 +24,8 @@
 #                               https://shiny.rstudio.com/articles/scoping.html
 #  7. For wria_stream code to work...needed to use eventReactive(), Solved problem
 #     with weird firing of querys and leaked pool.
+#  8. See: https://www.endpoint.com/blog/2015/08/12/bucardo-postgres-replication-pgbench
+#     for possible replication scenarios.
 #
 #
 # ToDo:

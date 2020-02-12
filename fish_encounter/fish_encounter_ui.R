@@ -8,7 +8,7 @@ fish_encounter_ui = tags$div(
   actionButton(inputId = "fish_enc_edit", label = "Edit", class = "edit_button"),
   actionButton(inputId = "fish_enc_delete", label = "Delete", class = "delete_button"),
   tippy("<i style='color:#1a5e86;padding-left:8px', class='fas fa-info-circle'></i>",
-        tooltip = glue("To enable tracking carcass over time, please enter the fish ",
+        tooltip = glue("To enable tracking carcasses over time, please enter the fish ",
                        "location data first. Then to associate carcass data with ",
                        "a fish location, select the 'fish_name' in the drop-down menu.",
                        "To enter counts only (no location) select 'no location data' ",
