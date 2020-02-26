@@ -680,6 +680,11 @@ observeEvent(input$delete_survey_comment, {
   replaceData(survey_comment_dt_proxy, survey_comments_after_delete)
 })
 
+# Set row selection to NULL if survey comment is deleted
+observeEvent(input$delete_survey_comment, {
+  selectRows(survey_dt_proxy, NULL)
+})
+
 
 
 
