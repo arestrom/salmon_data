@@ -97,6 +97,7 @@
 #     colors, themes, etc.
 # 32. Consider using shinyjs to add class "required_field" directly
 #     to each required element. Then just use one css entry for all.
+# 33. FUNCTIONS get_wrias() and get_streams() in wria_stream....CAN AND SHOULD BE OPTIMIZED !!!!!!
 #
 # AS 2020-02-11
 #==============================================================
