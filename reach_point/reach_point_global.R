@@ -22,8 +22,6 @@ get_reach_point = function(waterbody_id) {
   reach_points = DBI::dbGetQuery(con, qry)
   poolReturn(con)
   reach_points = reach_points %>%
-    mutate(location_id = tolower(location_id)) %>%
-    mutate(location_coordinates_id = tolower(location_coordinates_id)) %>%
     mutate(river_mile = round(river_mile, 2)) %>%
     mutate(latitude = round(latitude, 6)) %>%
     mutate(longitude = round(longitude, 6)) %>%
