@@ -288,6 +288,7 @@ get_individual_fish_dependencies = function(individual_fish_id) {
              "where fl.individual_fish_id = '{individual_fish_id}'")
   con = poolCheckout(pool)
   individual_fish_dependents = DBI::dbGetQuery(pool, qry)
+  poolReturn(con)
   has_entries = function(x) any(x > 0L)
   individual_fish_dependents = individual_fish_dependents %>%
     select_if(has_entries)
