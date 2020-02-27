@@ -259,6 +259,7 @@ get_fish_encounter_dependencies = function(fish_encounter_id) {
              "where fe.fish_encounter_id = '{fish_encounter_id}'")
   con = poolCheckout(pool)
   fish_encounter_dependents = DBI::dbGetQuery(pool, qry)
+  poolReturn(con)
   has_entries = function(x) any(x > 0L)
   fish_encounter_dependents = fish_encounter_dependents %>%
     select_if(has_entries)
