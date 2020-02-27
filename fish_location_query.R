@@ -147,6 +147,26 @@ get_fish_locations = function(waterbody_id, up_rm, lo_rm, survey_date, species_i
 # Run
 fish_locs = get_fish_locations(waterbody_id, up_rm, lo_rm, survey_date, species_id)
 
+# Create point as wkb
+(stpt = st_point(c(-122.1234,47.3487)))
+(stpt = st_sfc(stpt, crs = 4326))
+(stpt_loc = st_transform(stpt, 2927))
+(stpt_bin = st_as_binary(stpt_loc, hex = TRUE))
+
+# Parameters
+latitude = 47.3487
+longitude = -122.1234
+
+# Test creating hex binary point
+fish_pt = st_point(c(longitude, latitude)) %>%
+  st_sfc(., crs = 4326) %>%
+  st_transform(., 2927) %>%
+  st_as_binary(., hex = TRUE)
+fish_pt
+
+# Verify...yes
+identical(stpt_bin, fish_pt)
+
 
 
 
