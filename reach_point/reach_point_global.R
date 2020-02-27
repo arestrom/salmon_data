@@ -50,7 +50,6 @@ get_location_type = function() {
              "and location_type_description in ('Reach boundary point', 'Section break point')")
   con = poolCheckout(pool)
   reach_point_type_list = DBI::dbGetQuery(con, qry) %>%
-    mutate(location_type_id = tolower(location_type_id)) %>%
     arrange(reach_point_type) %>%
     select(location_type_id, reach_point_type)
   poolReturn(con)
@@ -100,7 +99,7 @@ reach_point_insert = function(new_reach_point_values) {
                   "location_description, ",
                   "created_by) ",
                   "VALUES (",
-                  "?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)"))
+                  "$1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)"))
   dbBind(insert_rp_result, list(location_id, waterbody_id, wria_id,
                                 location_type_id, stream_channel_type_id,
                                 location_orientation_type_id, river_mile_measure,
@@ -170,14 +169,14 @@ reach_point_update = function(reach_point_edit_values) {
   con = poolCheckout(pool)
   update_result = dbSendStatement(
     con, glue_sql("UPDATE location SET ",
-                  "location_type_id = ?, ",
-                  "river_mile_measure = ?, ",
-                  "location_code = ?, ",
-                  "location_name = ?, ",
-                  "location_description = ?, ",
-                  "modified_datetime = ?, ",
-                  "modified_by = ? ",
-                  "where location_id = ?"))
+                  "location_type_id = $1, ",
+                  "river_mile_measure = $2, ",
+                  "location_code = $3, ",
+                  "location_name = $4, ",
+                  "location_description = $5, ",
+                  "modified_datetime = $6, ",
+                  "modified_by = $7 ",
+                  "where location_id = $8"))
   dbBind(update_result, list(location_type_id, river_mile_measure,
                              location_code, location_name,
                              location_description,
@@ -239,12 +238,12 @@ reach_point_delete = function(delete_values) {
   # Checkout a connection
   con = poolCheckout(pool)
   delete_result_one = dbSendStatement(
-    con, glue_sql("DELETE FROM location_coordinates WHERE location_id = ?"))
+    con, glue_sql("DELETE FROM location_coordinates WHERE location_id = $1"))
   dbBind(delete_result_one, list(location_id))
   dbGetRowsAffected(delete_result_one)
   dbClearResult(delete_result_one)
   delete_result_two = dbSendStatement(
-    con, glue_sql("DELETE FROM location WHERE location_id = ?"))
+    con, glue_sql("DELETE FROM location WHERE location_id = $1"))
   dbBind(delete_result_two, list(location_id))
   dbGetRowsAffected(delete_result_two)
   dbClearResult(delete_result_two)
