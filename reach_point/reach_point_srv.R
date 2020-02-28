@@ -17,6 +17,8 @@ output$reach_point_type_select = renderUI({
 
 # Primary DT datatable for survey_intent
 output$reach_points = renderDT({
+  req(input$tabs == "reach_point")
+  req(input$stream_select)
   reach_point_title = glue("Reach points for {input$stream_select}")
   reach_point_data = get_reach_point(waterbody_id()) %>%
     select(river_mile, reach_point_type, reach_point_code, reach_point_name, #channel_type, orientation_type,
@@ -48,6 +50,7 @@ reach_point_dt_proxy = dataTableProxy(outputId = "reach_points")
 
 # Create reactive to collect input values for update and delete actions
 selected_reach_point_data = reactive({
+  req(input$tabs == "reach_point")
   req(input$reach_points_rows_selected)
   reach_point_data = get_reach_point(waterbody_id())
   reach_point_row = input$reach_points_rows_selected
@@ -91,6 +94,8 @@ observeEvent(input$reach_points_rows_selected, {
 
 # Get centroid of stream for setting view of redd_map
 selected_reach_point_coords = reactive({
+  req(input$tabs == "reach_point")
+  req(input$reach_points_rows_selected)
   # Get centroid of stream....always available if stream is selected
   center_lat = selected_stream_centroid()$center_lat
   center_lon = selected_stream_centroid()$center_lon
