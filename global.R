@@ -1,6 +1,18 @@
 #==============================================================
 # Application to edit data for spawning_ground database
 #
+# Notes for Lea...form related
+#  1. Should change logins for consistency, so created_by can be pulled from start portion.
+#     Could be underscore or . If data entry is listed as "real_time" can I just use observer?
+#     It looks like observer is always just one person....better than using VAR...
+#  2. Ask if first and last names should be used for observers. I prefer just
+#     last name.
+#  3. Why is run year defined at header level?
+#  4. Can data_source always be assigned to WDFW? Is a data_source_unit needed?
+#  5. If required data are missing...may want to just assign a default value,
+#     upload, then output a file with problematic data?
+#  6. Can I just use observers for data_submitter...I am for now.
+#
 # Notes:
 #  1. Very strange error using the pool and dbplyr query for
 #     get_beaches(). I had to wrap output with as.data.frame().
@@ -94,12 +106,36 @@
 #     pre-run location queries for fish and redds, print stats
 #     on n-surveys, n-redds, n-carcasses on front-page
 # 31. Consider adding theme selector to set background
-#     colors, themes, etc.
+#     colors, themes, etc. Look at bootstraplib package.
 # 32. Consider using shinyjs to add class "required_field" directly
 #     to each required element. Then just use one css entry for all.
 # 33. FUNCTIONS get_wrias() and get_streams() in wria_stream....CAN AND SHOULD BE OPTIMIZED !!!!!!
+# 34. Add raster tile coverage for full offline capability... !!!
+# 35. Eventually test with lidar and raytracer mapping.
+# 36. Using get_uuid() for all insert code....spatialite CreateUUID() did not always fire.
+#     Got rid of spatialite dll's and cleaned up create script to not include default uuid.
+#     Got rid of load extension code in global.R. Added get_uuid() to globals only.
+# 37. All datetime values be stored in sqlite as UTC. Dates stored as text after review
+#     of options. Updated globals to convert to local in sql rather than lubridate.
+#     Sqlite datetime('localtime') function was tested and is dst enabled.
+# 38. Update all names in inputs and DT columns to more readable format.
+# 39. Add code to unselect row in parent table whenever a row is deleted in child table.
+#     Use example from survey_comment_srv code.
+# 40. Consider using fish_location_insert code from here in salmon_data (parameterized...not postgis sql)
+# 41. Check all st_read arguments to make sure they include crs = 2927!!!!!!!!!!!!!
+# 42. For update of sqlite data to main pg DB, need to include any new locations
+#     or streams entered to local.
+# 43. Look into using busy spinner with loading datatable in mobile operations
+# 44. Disable button to write new surveys in mobile_import if streams or reaches missing.
+# 45. Need to update newly added stream geometry and waterbodies to sqlite DB. Currently
+#     data are only in local version of spawning_ground. Later, update to prod.
+#     Wait till I get response from Nick and Lea to run updates.
+# 46. Change stream drop-down code to use display_name not full waterbody_name
+# 47. Create reactive that zooms to stream in wria_map when stream is selected
+# 48. Change required fields in reach_point to omit river_mile. We should start
+#     weaning off RMs and go with codes, descriptors and coords instead.
 #
-# AS 2020-02-11
+# AS 2020-03-13
 #==============================================================
 
 # Load libraries
