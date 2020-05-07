@@ -134,6 +134,10 @@
 # 47. Create reactive that zooms to stream in wria_map when stream is selected
 # 48. Change required fields in reach_point to omit river_mile. We should start
 #     weaning off RMs and go with codes, descriptors and coords instead.
+# 49. Allow using reach_point map without first selecting a row. Need to be able to
+#     add points where none were previously entered.
+# 50. Need spinner widget for delete reach point. Takes so time to find all surveys
+#     affected by delete.
 #
 # AS 2020-03-13
 #==============================================================
