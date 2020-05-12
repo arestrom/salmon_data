@@ -38,6 +38,10 @@
 #     with weird firing of querys and leaked pool.
 #  8. See: https://www.endpoint.com/blog/2015/08/12/bucardo-postgres-replication-pgbench
 #     for possible replication scenarios.
+#  9. To prune merged git branches:
+#     a, Check which branches have been merged:       git branch --merged
+#     b, Once branch has been deleted from remote:    git fetch -p            # To prune those no longer on remote
+#     c, To delete branch from local:                 git branch -d <branch>
 #
 #
 # ToDo:
@@ -140,7 +144,8 @@
 #     affected by delete.
 # 51. Need to correct error in data entry screen when no RMs are present in database for
 #     the given stream
-# 52.
+# 52. Need code to insert new reach point geometry if point exists but geometry does not.
+#     See note in reach_point_global.R. Line 188.
 #
 # AS 2020-03-13
 #==============================================================
