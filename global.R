@@ -138,6 +138,9 @@
 #     add points where none were previously entered.
 # 50. Need spinner widget for delete reach point. Takes so time to find all surveys
 #     affected by delete.
+# 51. Need to correct error in data entry screen when no RMs are present in database for
+#     the given stream
+# 52.
 #
 # AS 2020-03-13
 #==============================================================

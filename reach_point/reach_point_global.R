@@ -184,6 +184,10 @@ reach_point_update = function(reach_point_edit_values) {
                              location_id))
   dbGetRowsAffected(update_result)
   dbClearResult(update_result)
+
+  # ADD CODE TO INSERT NEW GEOMETRY IF IT DOES NOT ALREADY EXIST
+
+
   # Update coordinates to location_coordinates
   qry = glue_sql("UPDATE location_coordinates ",
                  "SET horizontal_accuracy = {horizontal_accuracy}, ",

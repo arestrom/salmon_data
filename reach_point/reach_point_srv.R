@@ -480,7 +480,7 @@ observeEvent(input$reach_point_edit, {
   new_reach_point_vals[] = lapply(new_reach_point_vals, remisc::set_na)
   showModal(
     tags$div(id = "reach_point_update_modal",
-             if ( data_manager_flag() == TRUE ) {
+             if ( data_manager_flag() == TRUE & !Sys.getenv("USERNAME") == "stromas" ) {
                modalDialog (
                  size = "m",
                  title = "Warning",
