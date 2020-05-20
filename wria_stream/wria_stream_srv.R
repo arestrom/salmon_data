@@ -18,11 +18,11 @@ output$wria_select = renderUI({
 # Get streams in wria
 wria_streams = reactive({
   req(input$wria_select)
-  streams = get_streams(chosen_wria = input$wria_select) %>%
+  chosen_wria = substr(input$wria_select, 1, 2)
+  streams = get_streams(chosen_wria) %>%
     mutate(stream_label = if_else(is.na(stream_name) & !is.na(waterbody_name),
                                   waterbody_name, stream_name)) %>%
     mutate(stream_label = paste0(stream_name, ": ", llid)) %>%
-    mutate(waterbody_id = tolower(waterbody_id)) %>%
     st_transform(4326) %>%
     select(waterbody_id, stream_id, stream_label, geometry)
   return(streams)
@@ -111,10 +111,10 @@ output$stream_map <- renderLeaflet({
   m
 })
 
-# Update leaflet proxy map
+# Update leaflet proxy map with all streams in selected wria
 observe({
-  stream_map_proxy = leafletProxy("stream_map")
-  stream_map_proxy %>%
+  input$wria_select
+  stream_map_proxy = leafletProxy("stream_map") %>%
     clearShapes() %>%
     addPolylines(data = wria_streams(),
                  group = "Streams",
@@ -127,6 +127,16 @@ observe({
                      baseGroups = c("Esri World Imagery", "Open Topo Map"),
                      overlayGroups = c("Streams"),
                      options = layersControlOptions(collapsed = TRUE))
+})
+
+# Focus map on selected stream
+observe({
+  input$stream_select
+  stream_map_proxy = leafletProxy("stream_map") %>%
+    fitBounds(lng1 = selected_stream_bounds()$min_lon,
+              lat1 = selected_stream_bounds()$min_lat,
+              lng2 = selected_stream_bounds()$max_lon,
+              lat2 = selected_stream_bounds()$max_lat)
 })
 
 #========================================================
@@ -190,13 +200,25 @@ selected_stream_centroid = reactive({
 })
 
 #========================================================
+# Get bounds of selected stream for fish_map & redd_map
+#========================================================
+
+# Get centroid of stream for setting view of fish_map
+selected_stream_bounds = reactive({
+  req(input$stream_select)
+  stream_bounds = get_stream_bounds(waterbody_id())
+  return(stream_bounds)
+})
+
+#========================================================
 # Get wria for location insert, redds and fish
 #========================================================
 
 # Reactive to pull out wria_id
 wria_id = reactive({
   req(input$wria_select)
-  get_streams(chosen_wria = input$wria_select) %>%
+  chosen_wria = substr(input$wria_select, 1, 2)
+  get_streams(chosen_wria) %>%
     st_drop_geometry() %>%
     mutate(wria_id = tolower(wria_id)) %>%
     select(wria_id) %>%

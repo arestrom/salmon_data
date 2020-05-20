@@ -92,51 +92,75 @@ observeEvent(input$reach_points_rows_selected, {
 # Get either selected reach coordinates or default stream centroid
 #================================================================
 
-# Get centroid of stream for setting view of redd_map
-selected_reach_point_coords = reactive({
-  req(input$tabs == "reach_point")
-  req(input$reach_points_rows_selected)
-  # Get centroid of stream....always available if stream is selected
-  center_lat = selected_stream_centroid()$center_lat
-  center_lon = selected_stream_centroid()$center_lon
-  # Get reach coordinates from inputs if present
-  if ( is.na(input$reach_point_latitude_input) | is.na(input$reach_point_longitude_input) ) {
-    reach_point_lat = center_lat
-    reach_point_lon = center_lon
-    reach_point_name = "need reach name"
-  } else {
-    reach_point_lat = input$reach_point_latitude_input
-    reach_point_lon = input$reach_point_longitude_input
-    reach_point_name = input$reach_point_name_input
-    if ( is.na(reach_point_name) | reach_point_name == "" ) {
-      reach_point_name = "need reach name"
-    }
-  }
-  reach_point_coords = tibble(reach_point_name = reach_point_name,
-                              reach_point_lat = reach_point_lat,
-                              reach_point_lon = reach_point_lon)
-  return(reach_point_coords)
-})
-
 # Output leaflet bidn map....could also use color to indicate species:
+# Notes:
+# 1. input$reach_point_rows_selected is either row number or NULL
+# 2. input$reach_point_latitude_input is either value or NA
 # See: https://rstudio.github.io/leaflet/markers.html
 output$reach_point_map <- renderLeaflet({
-  reach_point_data = selected_reach_point_coords()
-  reach_point_lat = reach_point_data$reach_point_lat
-  reach_point_lon = reach_point_data$reach_point_lon
-  reach_point_name = reach_point_data$reach_point_name
-  m = leaflet() %>%
-    setView(
-      lng = selected_stream_centroid()$center_lon,
-      lat = selected_stream_centroid()$center_lat,
-      zoom = 14) %>%
-    # Needed to enable draggable circle-markers
-    addDrawToolbar(circleOptions = NA,
-                   circleMarkerOptions = NA,
-                   markerOptions = NA,
-                   polygonOptions = NA,
-                   rectangleOptions = NA,
-                   polylineOptions = NA) %>%
+  req(input$tabs == "reach_point")
+  # Force map to rerender every time use_reach_point_map button is clicked
+  input$use_reach_point_map
+  reach_coords = get_reach_point(waterbody_id()) %>%
+    filter(!is.na(latitude) & !is.na(longitude)) %>%
+    mutate(min_lat = min(latitude),
+           min_lon = min(longitude),
+           max_lat = max(latitude),
+           max_lon = max(longitude)) %>%
+    mutate(reach_descr = if_else(is.na(reach_point_description),
+                                 "No description",
+                                 reach_point_description)) %>%
+    mutate(reach_label = paste0("River mile: ", river_mile, ", ", reach_descr)) %>%
+    select(location_id, reach_label, latitude, longitude,
+           min_lat, min_lon, max_lat, max_lon)
+  # Get data for setting map bounds ========================
+  if ( nrow(reach_coords) == 0L |
+       is.na(input$reach_point_latitude_input) |
+       is.na(input$reach_point_longitude_input) ) {
+    bounds = tibble(lng1 = selected_stream_bounds()$min_lon,
+                    lat1 = selected_stream_bounds()$min_lat,
+                    lng2 = selected_stream_bounds()$max_lon,
+                    lat2 = selected_stream_bounds()$max_lat)
+  } else {
+    # Add buffer, otherwise, if only a single point is available in reach_coords,
+    # map zoom may be so high that the map does not render
+    bounds = tibble(lng1 = (reach_coords$min_lon[1] - 0.0015),
+                    lat1 = (reach_coords$min_lat[1] - 0.0015),
+                    lng2 = (reach_coords$max_lon[1] + 0.0015),
+                    lat2 = (reach_coords$max_lat[1] + 0.0015))
+  }
+  # Generate basemap ======================================
+  edit_reach_loc = leaflet() %>%
+    fitBounds(lng1 = bounds$lng1,
+              lat1 = bounds$lat1,
+              lng2 = bounds$lng2,
+              lat2 = bounds$lat2) %>%
+    addProviderTiles("Esri.WorldImagery", group = "Esri World Imagery") %>%
+    addProviderTiles("OpenTopoMap", group = "Open Topo Map") %>%
+    addLayersControl(position = 'bottomright',
+                     baseGroups = c("Esri World Imagery", "Open Topo Map"),
+                     overlayGroups = c("Streams"),
+                     options = layersControlOptions(collapsed = TRUE)) %>%
+    # Add edit features
+    leaflet.extras::addDrawToolbar(
+      targetGroup = "reach_edits",
+      position = "topleft",
+      polylineOptions = FALSE,
+      polygonOptions = FALSE,
+      circleOptions = FALSE,
+      rectangleOptions = FALSE,
+      markerOptions = FALSE,
+      circleMarkerOptions = drawCircleMarkerOptions(
+        color = "#ace600",
+        stroke = TRUE,
+        weight = 2,
+        fillOpacity = 0.5),
+      editOptions = editToolbarOptions(
+        selectedPathOptions = selectedPathOptions()),
+      singleFeature = TRUE) %>%
+    addMeasure(primaryLengthUnit = "miles",
+               activeColor = "#d91424",
+               completedColor = "#d914c2") %>%
     addPolylines(
       data = wria_streams(),
       group = "Streams",
@@ -144,43 +168,47 @@ output$reach_point_map <- renderLeaflet({
       color = "#0000e6",
       label = ~stream_label,
       layerId = ~stream_label,
-      labelOptions = labelOptions(noHide = FALSE)) %>%
+      labelOptions = labelOptions(noHide = FALSE))
+  # Test if carcass_coords has data ==========================
+  if ( !nrow(reach_coords) > 0L ) {
+    return(edit_reach_loc)
+  } else {
+    edit_reach_loc_two = edit_reach_loc %>%
+      # Add existing data if locations exist ===================
     addCircleMarkers(
-      lng = reach_point_lon,
-      lat = reach_point_lat,
-      #layerId = fish_encounter_id,
-      popup = reach_point_name,
+      lng = reach_coords$longitude,
+      lat = reach_coords$latitude,
+      popup = reach_coords$reach_label,
+      layerId = reach_coords$location_id,
       radius = 8,
       color = "red",
       fillOpacity = 0.5,
       stroke = FALSE,
-      options = markerOptions(draggable = TRUE,
-                              riseOnHover = TRUE)) %>%
-    addProviderTiles("Esri.WorldImagery", group = "Esri World Imagery") %>%
-    addProviderTiles("OpenTopoMap", group = "Open Topo Map") %>%
-    addLayersControl(position = 'bottomright',
-                     baseGroups = c("Esri World Imagery", "Open Topo Map"),
-                     overlayGroups = c("Streams"),
-                     options = layersControlOptions(collapsed = TRUE))
-  m
-})
-
-# Create reactive to hold click data
-reach_point_marker_data = reactive({
-  req(input$reach_point_map_marker_click)
-  reach_point_click_data = input$reach_point_map_marker_click
-  reach_point_dat = tibble(latitude = round(as.numeric(reach_point_click_data$lat), digits = 6),
-                           longitude = round(as.numeric(reach_point_click_data$lng), digits = 6))
-  return(reach_point_dat)
-})
-
-# Get dataframe of updated locations
-output$reach_point_coordinates = renderUI({
-  if ( length(input$reach_point_map_marker_click) == 0L ) {
-    HTML("Drag marker to edit reach point. Click on marker to set coordinates")
-  } else {
-    HTML(glue("Reach point coordinates: ", { reach_point_marker_data()$latitude }, ": ", { reach_point_marker_data()$longitude }))
+      options = markerOptions(draggable = FALSE,
+                              riseOnHover = TRUE))
+    return(edit_reach_loc_two)
   }
+})
+
+# Create a reactive values object for drawn_features
+reach_edit_rv = reactiveValues(lat = NULL, lon = NULL)
+
+# Set rv to NULL on initiation of map
+observeEvent(input$use_reach_point_map, {
+  reach_edit_rv$lat = NULL
+  reach_edit_rv$lon = NULL
+}, priority = 9999)
+
+# Assign coordinates from mapedit circle marker
+observeEvent(c(input$reach_point_map_draw_all_features), {
+  reach_edit_rv$lat = as.numeric(input$reach_point_map_draw_all_features$features[[1]]$geometry$coordinates[[2]])
+  reach_edit_rv$lon = as.numeric(input$reach_point_map_draw_all_features$features[[1]]$geometry$coordinates[[1]])
+})
+
+# Get html output of updated locations
+output$reach_point_coordinates = renderUI({
+  coords_out = HTML(glue("Reach point location: ", {reach_edit_rv$lat}, ": ", {reach_edit_rv$lon}))
+  return(coords_out)
 })
 
 # Modal for new reach points...add or edit a point...write coordinates to lat, lon
@@ -200,13 +228,16 @@ observeEvent(input$use_reach_point_map, {
                  ),
                  fluidRow(
                    column(width = 3,
-                          actionButton("capture_reach_point", "Capture reach point"),
+                          actionButton("capture_reach_point", "Save coordinates"),
                           tippy("<i style='color:#1a5e86;padding-left:8px', class='fas fa-info-circle'></i>",
-                                tooltip = glue("You can zoom in on the map and drag the marker to the ",
-                                               "correct reach end-point location. Click on the marker ",
-                                               "to set the coordinates. Then click on the button to ",
-                                               "capture the location and send the coordinates to the ",
-                                               "data entry screen."))),
+                                tooltip = glue("<span style='font-size:11px;'>",
+                                               "You can zoom in on the map and use the circle marker ",
+                                               "tool at the upper left to place a marker where the ",
+                                               "reach end point should be located. You can use the ",
+                                               "edit tool to fine-tune the position of the marker. ",
+                                               "You can also use the measure tool at the upper right ",
+                                               "to measure the distance in miles from the mouth. ",
+                                               "When done, click on the 'Save coordinates' button.<span>"))),
                    column(width = 9,
                           htmlOutput("reach_point_coordinates"))
                  )
@@ -216,7 +247,7 @@ observeEvent(input$use_reach_point_map, {
              )
     )
   )
-})
+}, priority = -1)
 
 #======================================================================
 # Update coordinate inputs to coordinates selected on map
@@ -224,11 +255,158 @@ observeEvent(input$use_reach_point_map, {
 
 # Update all input values to values in selected row
 observeEvent(input$capture_reach_point, {
-  reach_point_coord_data = reach_point_marker_data()
-  updateNumericInput(session, "reach_point_latitude_input", value = reach_point_coord_data$latitude)
-  updateNumericInput(session, "reach_point_longitude_input", value = reach_point_coord_data$longitude)
+  updateNumericInput(session, "reach_point_latitude_input", value = reach_edit_rv$lat)
+  updateNumericInput(session, "reach_point_longitude_input", value = reach_edit_rv$lon)
   removeModal()
-})
+}, priority = 9999)
+
+# Set rv to NULL
+observeEvent(input$capture_reach_point, {
+  reach_edit_rv$lat = NULL
+  reach_edit_rv$lon = NULL
+}, priority = -1)
+
+# #================================================================
+# # Get either selected reach coordinates or default stream centroid
+# #================================================================
+#
+# # Get centroid of stream for setting view of redd_map
+# selected_reach_point_coords = reactive({
+#   req(input$tabs == "reach_point")
+#   req(input$reach_points_rows_selected)
+#   # Get centroid of stream....always available if stream is selected
+#   center_lat = selected_stream_centroid()$center_lat
+#   center_lon = selected_stream_centroid()$center_lon
+#   # Get reach coordinates from inputs if present
+#   if ( is.na(input$reach_point_latitude_input) | is.na(input$reach_point_longitude_input) ) {
+#     reach_point_lat = center_lat
+#     reach_point_lon = center_lon
+#     reach_point_name = "need reach name"
+#   } else {
+#     reach_point_lat = input$reach_point_latitude_input
+#     reach_point_lon = input$reach_point_longitude_input
+#     reach_point_name = input$reach_point_name_input
+#     if ( is.na(reach_point_name) | reach_point_name == "" ) {
+#       reach_point_name = "need reach name"
+#     }
+#   }
+#   reach_point_coords = tibble(reach_point_name = reach_point_name,
+#                               reach_point_lat = reach_point_lat,
+#                               reach_point_lon = reach_point_lon)
+#   return(reach_point_coords)
+# })
+#
+# # Output leaflet bidn map....could also use color to indicate species:
+# # See: https://rstudio.github.io/leaflet/markers.html
+# output$reach_point_map <- renderLeaflet({
+#   reach_point_data = selected_reach_point_coords()
+#   reach_point_lat = reach_point_data$reach_point_lat
+#   reach_point_lon = reach_point_data$reach_point_lon
+#   reach_point_name = reach_point_data$reach_point_name
+#   m = leaflet() %>%
+#     setView(
+#       lng = selected_stream_centroid()$center_lon,
+#       lat = selected_stream_centroid()$center_lat,
+#       zoom = 14) %>%
+#     # Needed to enable draggable circle-markers
+#     addDrawToolbar(circleOptions = NA,
+#                    circleMarkerOptions = NA,
+#                    markerOptions = NA,
+#                    polygonOptions = NA,
+#                    rectangleOptions = NA,
+#                    polylineOptions = NA) %>%
+#     addPolylines(
+#       data = wria_streams(),
+#       group = "Streams",
+#       weight = 3,
+#       color = "#0000e6",
+#       label = ~stream_label,
+#       layerId = ~stream_label,
+#       labelOptions = labelOptions(noHide = FALSE)) %>%
+#     addCircleMarkers(
+#       lng = reach_point_lon,
+#       lat = reach_point_lat,
+#       #layerId = fish_encounter_id,
+#       popup = reach_point_name,
+#       radius = 8,
+#       color = "red",
+#       fillOpacity = 0.5,
+#       stroke = FALSE,
+#       options = markerOptions(draggable = TRUE,
+#                               riseOnHover = TRUE)) %>%
+#     addProviderTiles("Esri.WorldImagery", group = "Esri World Imagery") %>%
+#     addProviderTiles("OpenTopoMap", group = "Open Topo Map") %>%
+#     addLayersControl(position = 'bottomright',
+#                      baseGroups = c("Esri World Imagery", "Open Topo Map"),
+#                      overlayGroups = c("Streams"),
+#                      options = layersControlOptions(collapsed = TRUE))
+#   m
+# })
+#
+# # Create reactive to hold click data
+# reach_point_marker_data = reactive({
+#   req(input$reach_point_map_marker_click)
+#   reach_point_click_data = input$reach_point_map_marker_click
+#   reach_point_dat = tibble(latitude = round(as.numeric(reach_point_click_data$lat), digits = 6),
+#                            longitude = round(as.numeric(reach_point_click_data$lng), digits = 6))
+#   return(reach_point_dat)
+# })
+#
+# # Get dataframe of updated locations
+# output$reach_point_coordinates = renderUI({
+#   if ( length(input$reach_point_map_marker_click) == 0L ) {
+#     HTML("Drag marker to edit reach point. Click on marker to set coordinates")
+#   } else {
+#     HTML(glue("Reach point coordinates: ", { reach_point_marker_data()$latitude }, ": ", { reach_point_marker_data()$longitude }))
+#   }
+# })
+#
+# # Modal for new reach points...add or edit a point...write coordinates to lat, lon
+# observeEvent(input$use_reach_point_map, {
+#   showModal(
+#     # Verify required fields have data...none can be blank
+#     tags$div(id = "reach_point_map_modal",
+#              modalDialog (
+#                size = 'l',
+#                title = glue("Add or edit a reach point"),
+#                fluidPage (
+#                  fluidRow(
+#                    column(width = 12,
+#                           leafletOutput("reach_point_map", height = 500),
+#                           br()
+#                    )
+#                  ),
+#                  fluidRow(
+#                    column(width = 3,
+#                           actionButton("capture_reach_point", "Capture reach point"),
+#                           tippy("<i style='color:#1a5e86;padding-left:8px', class='fas fa-info-circle'></i>",
+#                                 tooltip = glue("You can zoom in on the map and drag the marker to the ",
+#                                                "correct reach end-point location. Click on the marker ",
+#                                                "to set the coordinates. Then click on the button to ",
+#                                                "capture the location and send the coordinates to the ",
+#                                                "data entry screen."))),
+#                    column(width = 9,
+#                           htmlOutput("reach_point_coordinates"))
+#                  )
+#                ),
+#                easyClose = TRUE,
+#                footer = NULL
+#              )
+#     )
+#   )
+# })
+#
+# #======================================================================
+# # Update coordinate inputs to coordinates selected on map
+# #======================================================================
+#
+# # Update all input values to values in selected row
+# observeEvent(input$capture_reach_point, {
+#   reach_point_coord_data = reach_point_marker_data()
+#   updateNumericInput(session, "reach_point_latitude_input", value = reach_point_coord_data$latitude)
+#   updateNumericInput(session, "reach_point_longitude_input", value = reach_point_coord_data$longitude)
+#   removeModal()
+# })
 
 #========================================================
 # Insert operations: reactives, observers and modals
@@ -277,7 +455,7 @@ output$reach_point_modal_insert_vals = renderDT({
                              "}")))
 })
 
-# Modal for new redd locations
+# Modal for new reach point locations
 observeEvent(input$reach_point_add, {
   new_reach_point_vals = reach_point_create()
   old_reach_point_vals = get_reach_point(waterbody_id())
@@ -485,9 +663,9 @@ observeEvent(input$reach_point_edit, {
                  size = "m",
                  title = "Warning",
                  paste0("Edits would alter data for both historical and more recent surveys. ",
-                       "Please contact the data manager to request the updates. Another option ",
-                       "would be to enter a new reach end-point that differs by 0.01 Mile (52 ft) ",
-                       "from any existing end point on the stream."),
+                        "Please contact the data manager to request the updates. Another option ",
+                        "would be to enter a new reach end-point that differs by 0.01 Mile (52 ft) ",
+                        "from any existing end point on the stream."),
                  fluidPage (
                    br(),
                    br(),
@@ -527,7 +705,7 @@ observeEvent(input$reach_point_edit, {
 # Update DB and reload DT
 observeEvent(input$save_reach_point_edits, {
   tryCatch({
-    reach_point_update(reach_point_edit())
+    reach_point_update(reach_point_edit(), selected_reach_point_data())
     shinytoastr::toastr_success("Reach end point was edited")
   }, error = function(e) {
     shinytoastr::toastr_error(title = "Database error", conditionMessage(e))

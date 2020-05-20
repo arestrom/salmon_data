@@ -233,6 +233,52 @@ pool = pool::dbPool(RPostgres::Postgres(), dbname = "spawning_ground", host = "l
 
 # Define functions =============================================================
 
+#==========================================================================
+# Get centroid of waterbody to use in interactive maps
+#==========================================================================
+
+# # Stream centroid query
+# get_stream_centroid = function(waterbody_id) {
+#   qry = glue("select DISTINCT st.waterbody_id, ",
+#              "st.geom as geometry ",
+#              "from stream as st ",
+#              "where st.waterbody_id = '{waterbody_id}'")
+#   con = poolCheckout(pool)
+#   stream_centroid = sf::st_read(con, query = qry, crs = 2927) %>%
+#     mutate(stream_center = st_centroid(geometry)) %>%
+#     mutate(stream_center = st_transform(stream_center, 4326)) %>%
+#     mutate(center_lon = as.numeric(st_coordinates(stream_center)[,1])) %>%
+#     mutate(center_lat = as.numeric(st_coordinates(stream_center)[,2])) %>%
+#     st_drop_geometry() %>%
+#     select(waterbody_id, center_lon, center_lat)
+#   poolReturn(con)
+#   return(stream_centroid)
+# }
+
+# Stream bounds query
+get_stream_bounds = function(waterbody_id) {
+  qry = glue("select DISTINCT st.waterbody_id, ",
+             "st.geom as geometry ",
+             "from stream as st ",
+             "where st.waterbody_id = '{waterbody_id}'")
+  con = poolCheckout(pool)
+  stream_bounds = sf::st_read(con, query = qry, crs = 2927)
+  poolReturn(con)
+  stream_bounds = stream_bounds %>%
+    st_transform(., 4326) %>%
+    st_cast(., "POINT", warn = FALSE) %>%
+    mutate(lat = as.numeric(st_coordinates(geometry)[,2])) %>%
+    mutate(lon = as.numeric(st_coordinates(geometry)[,1])) %>%
+    st_drop_geometry() %>%
+    mutate(min_lat = min(lat),
+           min_lon = min(lon),
+           max_lat = max(lat),
+           max_lon = max(lon)) %>%
+    select(waterbody_id, min_lat, min_lon, max_lat, max_lon) %>%
+    distinct()
+  return(stream_bounds)
+}
+
 # Function to close pool
 onStop(function() {
   poolClose(pool)

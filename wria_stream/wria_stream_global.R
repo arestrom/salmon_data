@@ -1,9 +1,7 @@
 
 get_wrias = function() {
   qry = glue("select distinct wr.wria_code || ' ' || wr.wria_description as wria_name ",
-             "from waterbody_lut as wb ",
-             "inner join stream as st on wb.waterbody_id = st.waterbody_id ",
-             "inner join wria_lut as wr on st_intersects(st.geom, wr.geom) ",
+             "from wria_lut as wr ",
              "order by wria_name")
   con = poolCheckout(pool)
   wria_list = DBI::dbGetQuery(con, qry) %>%
@@ -20,12 +18,11 @@ get_streams = function(chosen_wria) {
              "from waterbody_lut as wb ",
              "inner join stream as st on wb.waterbody_id = st.waterbody_id ",
              "inner join wria_lut as wr on st_intersects(st.geom, wr.geom) ",
-             "order by stream_name")
+             "where wr.wria_code = '{chosen_wria}' ",
+             "order by wb.waterbody_name")
   con = poolCheckout(pool)
   streams_st = sf::st_read(con, query = qry)
   poolReturn(con)
-  streams_st = streams_st %>%
-    filter(wria_name %in% chosen_wria)
   return(streams_st)
 }
 
@@ -50,8 +47,8 @@ get_end_points = function(waterbody_id) {
              "loc.location_description as rm_desc ",
              "from location as loc ",
              "inner join location_type_lut as lt on loc.location_type_id = lt.location_type_id ",
-             "where location_type_description in ('Reach boundary point', 'Section break point') ",
-             "and waterbody_id = '{waterbody_id}'")
+             "where lt.location_type_description in ('Reach boundary point', 'Section break point') ",
+             "and loc.waterbody_id = '{waterbody_id}'")
   con = poolCheckout(pool)
   end_points = DBI::dbGetQuery(con, qry)
   poolReturn(con)
